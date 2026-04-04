@@ -1,0 +1,52 @@
+name: healthcare_emr_mobile
+description: "Healthcare providers' Electronic Medical Record System - Mobile App"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  provider: ^6.1.0
+
+  # HTTP Client
+  dio: ^5.4.0
+
+  # Secure Storage (auth tokens)
+  flutter_secure_storage: ^9.0.0
+
+  # JSON Serialization
+  json_annotation: ^4.10.0
+
+  # URL Launcher (Stripe checkout)
+  cupertino_icons: ^1.0.8
+  url_launcher: ^6.3.2
+
+  # ── Phase 2 additions ─────────────────────────────────────────────────────
+  
+  # Local SQLite database for offline caching
+  sqflite: ^2.3.3+1
+
+  # Path helper (required by sqflite to locate the DB file)
+  path: ^1.9.0
+
+  # Network connectivity detection (online/offline indicator)
+  connectivity_plus: ^6.1.1
+
+  # Shared preferences for lightweight key-value storage (cache metadata)
+  shared_preferences: ^2.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.11.0
+  json_serializable: ^6.12.0
+
+flutter:
+  uses-material-design: true
