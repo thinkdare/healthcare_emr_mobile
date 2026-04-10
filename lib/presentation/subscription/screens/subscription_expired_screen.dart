@@ -33,29 +33,25 @@ class SubscriptionExpiredScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Your organization\'s subscription has expired. Please contact your administrator to renew.',
+                  'Your organization\'s subscription has expired. '
+                  'Please contact your administrator to renew.',
                   style: TextStyle(
-                    fontSize: 16,
-                    color: AppTheme.gray600,
-                    height: 1.5,
-                  ),
+                      fontSize: 16, color: AppTheme.gray600, height: 1.5),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 48),
+
                 Consumer<SubscriptionProvider>(
-                  builder: (context, subscriptionProvider, child) {
-                    final trialStatus = subscriptionProvider.trialStatus;
-
-                    if (trialStatus != null &&
-                        trialStatus.subscriptionStatus == 'trial') {
-                      return _buildTrialExpiredContent(context);
-                    }
-
-                    return _buildSubscriptionExpiredContent(context);
+                  builder: (context, sp, _) {
+                    final isTrial = sp.subscription?.isTrial ?? false;
+                    return isTrial
+                        ? _buildTrialBanner(context)
+                        : _buildExpiredBanner(context);
                   },
                 ),
+
                 const SizedBox(height: 32),
-                _buildContactSupport(context),
+                _buildContactSupport(),
               ],
             ),
           ),
@@ -64,7 +60,7 @@ class SubscriptionExpiredScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTrialExpiredContent(BuildContext context) {
+  Widget _buildTrialBanner(BuildContext context) {
     return Column(
       children: [
         Container(
@@ -73,35 +69,27 @@ class SubscriptionExpiredScreen extends StatelessWidget {
             color: AppTheme.warningColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: AppTheme.warningColor.withValues(alpha: 0.3),
-            ),
+                color: AppTheme.warningColor.withValues(alpha: 0.3)),
           ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                color: AppTheme.warningColor,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Your 30-day free trial has ended',
-                  style: TextStyle(
+          child: Row(children: [
+            Icon(Icons.info_outline, color: AppTheme.warningColor),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Your free trial has ended',
+                style: TextStyle(
                     color: AppTheme.warningColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                    fontWeight: FontWeight.w600),
               ),
-            ],
-          ),
+            ),
+          ]),
         ),
         const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(context).pushNamed('/subscription/upgrade');
-            },
+            onPressed: () =>
+                Navigator.of(context).pushNamed('/subscription/upgrade'),
             icon: const Icon(Icons.upgrade),
             label: const Text('Upgrade Now'),
             style: ElevatedButton.styleFrom(
@@ -114,7 +102,7 @@ class SubscriptionExpiredScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSubscriptionExpiredContent(BuildContext context) {
+  Widget _buildExpiredBanner(BuildContext context) {
     return Column(
       children: [
         Container(
@@ -122,31 +110,27 @@ class SubscriptionExpiredScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppTheme.errorColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: AppTheme.errorColor.withValues(alpha: 0.3),
-            ),
+            border:
+                Border.all(color: AppTheme.errorColor.withValues(alpha: 0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Icon(Icons.error_outline, color: AppTheme.errorColor),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Payment Required',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+              Row(children: [
+                Icon(Icons.error_outline, color: AppTheme.errorColor),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Payment Required',
+                    style: TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600),
                   ),
-                ],
-              ),
+                ),
+              ]),
               const SizedBox(height: 8),
               Text(
-                'Please contact your organization administrator to renew the subscription.',
+                'Please contact your organization administrator to '
+                'renew the subscription.',
                 style: TextStyle(color: AppTheme.gray600),
               ),
             ],
@@ -156,51 +140,42 @@ class SubscriptionExpiredScreen extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: () {
-              Navigator.of(context).pushNamed('/auth/logout');
-            },
+            onPressed: () =>
+                Navigator.of(context).pushNamed('/auth/logout'),
             icon: const Icon(Icons.logout),
             label: const Text('Logout'),
             style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
+                padding: const EdgeInsets.symmetric(vertical: 16)),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildContactSupport(BuildContext context) {
+  Widget _buildContactSupport() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppTheme.gray50,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        children: [
-          Icon(Icons.support_agent, color: AppTheme.gray600),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Need Help?',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                Text(
-                  'Contact support@emrsystem.com',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.gray600,
-                  ),
-                ),
-              ],
-            ),
+      child: Row(children: [
+        Icon(Icons.support_agent, color: AppTheme.gray600),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Need Help?',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+              Text(
+                'Contact support@emrsystem.com',
+                style: TextStyle(fontSize: 12, color: AppTheme.gray600),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ]),
     );
   }
 }

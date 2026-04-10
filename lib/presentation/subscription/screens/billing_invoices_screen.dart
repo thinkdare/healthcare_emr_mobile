@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/subscription_provider.dart';
 import '../../../data/models/subscription_models.dart';
 import '../../../config/theme.dart';
@@ -12,11 +13,16 @@ class BillingInvoicesScreen extends StatefulWidget {
 }
 
 class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
+  String? _orgId;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SubscriptionProvider>().loadInvoices();
+      _orgId = context.read<AuthProvider>().organizationId;
+      if (_orgId != null) {
+        context.read<SubscriptionProvider>().loadInvoices(_orgId!);
+      }
     });
   }
 
@@ -31,7 +37,9 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              context.read<SubscriptionProvider>().loadInvoices();
+              if (_orgId != null) {
+                context.read<SubscriptionProvider>().loadInvoices(_orgId!);
+              }
             },
             tooltip: 'Refresh',
           ),
@@ -75,7 +83,9 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
           }
 
           return RefreshIndicator(
-            onRefresh: () => subscriptionProvider.loadInvoices(),
+            onRefresh: () => _orgId != null
+              ? subscriptionProvider.loadInvoices(_orgId!)
+              : Future.value(),
             child: SingleChildScrollView(
               padding: EdgeInsets.all(isWeb ? 32 : 16),
               child: Center(
@@ -111,10 +121,11 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
   Widget _buildStatsCards(List<InvoiceModel> invoices) {
     final totalPaid = invoices
         .where((i) => i.status == 'paid')
-        .fold(0, (sum, i) => sum + i.amount);
+        .fold(0, (sum, i) => sum + i.totalAmount);
     
     final paidCount = invoices.where((i) => i.status == 'paid').length;
-    final pendingCount = invoices.where((i) => i.status == 'pending').length;
+    final pendingCount = invoices.where((i) =>
+        i.status == 'sent' || i.status == 'viewed' || i.status == 'partially_paid').length;
 
     return Row(
       children: [
@@ -199,7 +210,12 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
         statusColor = AppTheme.successColor;
         statusIcon = Icons.check_circle;
         break;
-      case 'pending':
+      case 'sent':
+      case 'viewed':
+        statusColor = AppTheme.warningColor;
+        statusIcon = Icons.mail_outline;
+        break;
+      case 'partially_paid':
         statusColor = AppTheme.warningColor;
         statusIcon = Icons.pending;
         break;
@@ -208,8 +224,14 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
         statusIcon = Icons.error;
         break;
       case 'cancelled':
+      case 'refunded':
         statusColor = AppTheme.gray600;
         statusIcon = Icons.cancel;
+        break;
+      case 'draft':
+      default:
+        statusColor = AppTheme.gray600;
+        statusIcon = Icons.draft_outlined;
         break;
     }
 
@@ -252,7 +274,7 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          _formatDate(invoice.createdAt),
+                          _formatDate(invoice.invoiceDate ?? invoice.dueDate ?? DateTime.now()),
                           style: TextStyle(
                             fontSize: 14,
                             color: AppTheme.gray600,
@@ -267,7 +289,7 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        invoice.formattedAmount,
+                        invoice.formattedTotal,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -305,12 +327,13 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
               ),
               
               // Due Date (if applicable)
-              if (invoice.status == 'pending' || invoice.status == 'overdue') ...[
+              if (invoice.status == 'sent' || invoice.status == 'viewed' ||
+                  invoice.status == 'partially_paid' || invoice.status == 'overdue') ...[
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: invoice.status == 'overdue'
+                    color: invoice.isOverdue
                         ? AppTheme.errorColor.withValues(alpha: 0.1)
                         : AppTheme.gray50,
                     borderRadius: BorderRadius.circular(4),
@@ -320,16 +343,16 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                       Icon(
                         Icons.schedule,
                         size: 16,
-                        color: invoice.status == 'overdue'
+                        color: invoice.isOverdue
                             ? AppTheme.errorColor
                             : AppTheme.gray600,
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Due: ${_formatDate(invoice.dueDate)}',
+                        'Due: ${invoice.dueDate != null ? _formatDate(invoice.dueDate!) : 'N/A'}',
                         style: TextStyle(
                           fontSize: 12,
-                          color: invoice.status == 'overdue'
+                          color: invoice.isOverdue
                               ? AppTheme.errorColor
                               : AppTheme.gray600,
                         ),
@@ -411,18 +434,19 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
 
               // Details
               _buildDetailRow('Invoice Number', invoice.invoiceNumber),
-              _buildDetailRow('Amount', invoice.formattedAmount),
+              _buildDetailRow('Amount', invoice.formattedTotal),
               _buildDetailRow('Currency', invoice.currency),
               _buildDetailRow('Status', invoice.status.toUpperCase()),
-              _buildDetailRow('Created', _formatDate(invoice.createdAt)),
-              _buildDetailRow('Due Date', _formatDate(invoice.dueDate)),
+              _buildDetailRow('Invoice Date', invoice.invoiceDate != null ? _formatDate(invoice.invoiceDate!) : '—'),
+              _buildDetailRow('Due Date', invoice.dueDate != null ? _formatDate(invoice.dueDate!) : '—'),
               if (invoice.paidAt != null)
                 _buildDetailRow('Paid On', _formatDate(invoice.paidAt!)),
 
               const SizedBox(height: 24),
 
               // Actions
-              if (invoice.status == 'pending') ...[
+              if (invoice.status == 'sent' || invoice.status == 'overdue' ||
+                  invoice.status == 'partially_paid') ...[
                 SizedBox(
                   width: double.infinity,
                   height: 56,

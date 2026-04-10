@@ -8,12 +8,12 @@ class AppConfig {
 
   static String get baseUrl {
     if (Platform.isAndroid) {
-      // return 'http://10.0.2.2:8000/api/v1';
-      return 'http://10.0.3.2:8001/api/v1';
+      // 10.0.2.2 = host loopback on Android emulator; backend runs on port 80 via Nginx
+      return 'http://10.0.2.2/api/v1';
     } else if (Platform.isIOS) {
-      return 'http://localhost:8001/api/v1';
+      return 'http://localhost/api/v1';
     } else {
-      return 'http://localhost:8001/api/v1';
+      return 'http://localhost/api/v1';
     }
   }
 

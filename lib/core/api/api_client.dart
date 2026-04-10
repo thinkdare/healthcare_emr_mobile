@@ -45,6 +45,15 @@ class ApiClient {
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
+
+          // Clinical routes require X-Tenant-ID (the active facility UUID).
+          // Inject it automatically if present; controllers that don't need it
+          // (auth, billing, orgs) ignore unknown headers.
+          final tenantId = await _storage.read(key: 'active_tenant_id');
+          if (tenantId != null) {
+            options.headers['X-Tenant-ID'] = tenantId;
+          }
+
           print('REQUEST: ${options.method} ${options.uri}');
           print('DATA: ${options.data}');
           return handler.next(options);
@@ -61,8 +70,8 @@ class ApiClient {
           
           if (error.response?.statusCode == 401) {
             await _storage.delete(key: 'auth_token');
-            await _storage.delete(key: 'user_data');
-            await _storage.delete(key: 'provider_data');
+            await _storage.delete(key: 'active_tenant_id');
+            await _storage.delete(key: 'current_user');
           }
           return handler.next(error);
         },
@@ -249,5 +258,25 @@ class ApiClient {
   // Helper method to clear token
   Future<void> clearToken() async {
     await _storage.delete(key: 'auth_token');
+  }
+
+  // Tenant (active facility) helpers
+  Future<void> saveTenantId(String tenantId) async {
+    await _storage.write(key: 'active_tenant_id', value: tenantId);
+  }
+
+  Future<String?> getTenantId() async {
+    return await _storage.read(key: 'active_tenant_id');
+  }
+
+  Future<void> clearTenantId() async {
+    await _storage.delete(key: 'active_tenant_id');
+  }
+
+  /// Clear all auth state — call on logout.
+  Future<void> clearAll() async {
+    await _storage.delete(key: 'auth_token');
+    await _storage.delete(key: 'active_tenant_id');
+    await _storage.delete(key: 'current_user');
   }
 }

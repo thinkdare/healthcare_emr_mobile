@@ -117,17 +117,15 @@ class PatientRepository {
   /// search when offline.
   Future<PatientsResult> searchPatients({
     required String query,
-    String searchBy = 'name',
     String? providerId,
     int page = 1,
     int perPage = 25,
   }) async {
     try {
       final response = await apiClient.get(
-        '/patients/search',
+        '/patients',
         queryParameters: {
-          'q': query,
-          'search_by': searchBy,
+          'search': query,
           'page': page,
           'per_page': perPage,
         },
@@ -213,7 +211,7 @@ class PatientRepository {
     String patientId,
     Map<String, dynamic> data,
   ) async {
-    final response = await apiClient.patch('/patients/$patientId', data: data);
+    final response = await apiClient.put('/patients/$patientId', data: data);
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to update patient');
     }

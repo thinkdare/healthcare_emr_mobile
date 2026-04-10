@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/models.dart';
+import '../models/auth_models.dart';
 import '../repositories/organization_repository.dart';
 
 class OrganizationProvider extends ChangeNotifier {
@@ -7,36 +7,38 @@ class OrganizationProvider extends ChangeNotifier {
 
   OrganizationProvider({required this.repository});
 
-  List<OrganizationLiteModel> _organizations = [];
+  CheckEmailResponse? _checkEmailResult;
   bool _isLoading = false;
   String? _error;
 
-  List<OrganizationLiteModel> get organizations => _organizations;
+  CheckEmailResponse? get checkEmailResult => _checkEmailResult;
+  List<AuthFacilityModel> get facilities => _checkEmailResult?.facilities ?? [];
+  bool get exists => _checkEmailResult?.exists ?? false;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<List<OrganizationLiteModel>?> checkEmail(String email) async {
+  Future<CheckEmailResponse?> checkEmail(String email) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
       final result = await repository.checkEmail(email);
-      _organizations = result;
+      _checkEmailResult = result;
       _isLoading = false;
       notifyListeners();
       return result;
     } catch (e) {
       _error = e.toString();
       _isLoading = false;
-      _organizations = [];
+      _checkEmailResult = null;
       notifyListeners();
       return null;
     }
   }
 
-  void clearOrganizations() {
-    _organizations = [];
+  void clear() {
+    _checkEmailResult = null;
     _error = null;
     notifyListeners();
   }

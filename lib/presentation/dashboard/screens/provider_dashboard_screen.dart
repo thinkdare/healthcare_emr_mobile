@@ -21,44 +21,43 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadAll();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadAll());
   }
 
   Future<void> _loadAll() async {
     final auth = context.read<AuthProvider>();
-    final providerId = auth.currentProvider?.id;
+    final userId = auth.currentUserId;
 
+    final orgId = auth.organizationId;
     await Future.wait([
-      context.read<SubscriptionProvider>().loadTrialStatus(),
-      if (providerId != null)
-        context.read<PatientProvider>().loadPatients(providerId: providerId),
+      if (orgId != null)
+        context.read<SubscriptionProvider>().loadSubscription(orgId),
+      if (userId != null)
+        context.read<PatientProvider>().loadPatients(providerId: userId),
     ]);
 
-    if (providerId != null && mounted) {
-      await context
-          .read<PatientProvider>()
-          .loadDashboardStats(providerId);
+    if (userId != null && mounted) {
+      await context.read<PatientProvider>().loadDashboardStats(userId);
     }
   }
 
   Future<void> _handleRefresh() async {
     final auth = context.read<AuthProvider>();
-    final providerId = auth.currentProvider?.id;
+    final userId = auth.currentUserId;
 
+    final orgId = auth.organizationId;
     await Future.wait([
-      auth.refreshCurrentUser(),
-      context.read<SubscriptionProvider>().loadTrialStatus(),
-      if (providerId != null)
+      if (orgId != null)
+        context.read<SubscriptionProvider>().loadSubscription(orgId),
+      if (userId != null)
         context.read<PatientProvider>().loadPatients(
-              providerId: providerId,
+              providerId: userId,
               forceRefresh: true,
             ),
     ]);
 
-    if (providerId != null && mounted) {
-      await context.read<PatientProvider>().loadDashboardStats(providerId);
+    if (userId != null && mounted) {
+      await context.read<PatientProvider>().loadDashboardStats(userId);
     }
   }
 
@@ -70,13 +69,12 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         content: const Text('Are you sure you want to logout?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.errorColor),
+            style:
+                ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor),
             child: const Text('Logout'),
           ),
         ],
@@ -85,15 +83,11 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
     if (confirmed == true && context.mounted) {
       final auth = context.read<AuthProvider>();
-      final providerId = auth.currentProvider?.id;
+      final userId = auth.currentUserId;
 
-      // Clear patient cache before logging out
-      if (providerId != null) {
-        await context
-            .read<PatientProvider>()
-            .clearCacheOnLogout(providerId);
+      if (userId != null) {
+        await context.read<PatientProvider>().clearCacheOnLogout(userId);
       }
-
       await auth.logout();
 
       if (context.mounted) {
@@ -125,13 +119,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           Expanded(
             child: Consumer<AuthProvider>(
               builder: (context, auth, _) {
-                final provider = auth.currentProvider;
-                final org = provider?.organization;
-
-                if (provider == null) {
-                  return const Center(
-                    child: Text('No provider data available'),
-                  );
+                if (auth.currentUser == null) {
+                  return const Center(child: Text('Loading…'));
                 }
 
                 return RefreshIndicator(
@@ -142,19 +131,17 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _WelcomeCard(provider: provider),
+                        _WelcomeCard(auth: auth),
                         const SizedBox(height: 16),
                         _SubscriptionCard(),
                         const SizedBox(height: 16),
-                        // ── PHASE 2: Real stats card ────────────────────────
-                        _PatientStatsCard(providerId: provider.id),
+                        _PatientStatsCard(userId: auth.currentUserId ?? ''),
                         const SizedBox(height: 16),
-                        // ── PHASE 2: Recent patients quick-access ───────────
-                        _RecentPatientsCard(providerId: provider.id),
+                        _RecentPatientsCard(userId: auth.currentUserId ?? ''),
                         const SizedBox(height: 16),
-                        _ProviderInfoCard(provider: provider),
+                        _StaffInfoCard(auth: auth),
                         const SizedBox(height: 16),
-                        if (org != null) _OrganizationCard(org: org),
+                        _FacilityCard(auth: auth),
                       ],
                     ),
                   ),
@@ -164,16 +151,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ),
         ],
       ),
-
-      // ── FAB: Add Patient ──────────────────────────────────────────────────
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const PatientListScreen(),
-            ),
-          );
-        },
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const PatientListScreen()),
+        ),
         icon: const Icon(Icons.people),
         label: const Text('Patients'),
         backgroundColor: AppTheme.primaryColor,
@@ -181,35 +162,29 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     );
   }
 
-  // ── Drawer ─────────────────────────────────────────────────────────────────
-
   Widget _buildDrawer(BuildContext context) {
     return Drawer(
       child: Column(
         children: [
           Consumer<AuthProvider>(
             builder: (context, auth, _) {
-              final provider = auth.currentProvider;
-              final user = auth.currentUser;
               return UserAccountsDrawerHeader(
-                decoration: const BoxDecoration(color: AppTheme.primaryColor),
+                decoration:
+                    const BoxDecoration(color: AppTheme.primaryColor),
                 accountName: Text(
-                  provider?.fullName ?? 'Provider',
+                  auth.displayName,
                   style: const TextStyle(
                       fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                accountEmail: Text(user?.email ?? ''),
+                accountEmail: Text(auth.currentUser?.email ?? ''),
                 currentAccountPicture: CircleAvatar(
                   backgroundColor: Colors.white,
                   child: Text(
-                    provider != null
-                        ? '${provider.firstName[0]}${provider.lastName[0]}'
-                        : 'P',
+                    auth.initials,
                     style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
-                    ),
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor),
                   ),
                 ),
               );
@@ -226,8 +201,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             onTap: () {
               Navigator.of(context).pop();
               Navigator.of(context).push(
-                MaterialPageRoute(
-                    builder: (_) => const PatientListScreen()),
+                MaterialPageRoute(builder: (_) => const PatientListScreen()),
               );
             },
           ),
@@ -241,8 +215,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ),
           const Divider(),
           ListTile(
-            leading:
-                const Icon(Icons.logout, color: AppTheme.errorColor),
+            leading: const Icon(Icons.logout, color: AppTheme.errorColor),
             title: const Text('Logout',
                 style: TextStyle(color: AppTheme.errorColor)),
             onTap: () {
@@ -253,10 +226,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           const Spacer(),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(
-              '${AppConfig.appName} v1.0.0',
-              style: TextStyle(fontSize: 12, color: AppTheme.gray600),
-            ),
+            child: Text('${AppConfig.appName} v1.0.0',
+                style: TextStyle(fontSize: 12, color: AppTheme.gray600)),
           ),
         ],
       ),
@@ -265,12 +236,12 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 }
 
 // =============================================================================
-// ── Extracted widget cards ────────────────────────────────────────────────────
+// ── Cards ─────────────────────────────────────────────────────────────────────
 // =============================================================================
 
 class _WelcomeCard extends StatelessWidget {
-  final dynamic provider;
-  const _WelcomeCard({required this.provider});
+  final AuthProvider auth;
+  const _WelcomeCard({required this.auth});
 
   @override
   Widget build(BuildContext context) {
@@ -292,19 +263,27 @@ class _WelcomeCard extends StatelessWidget {
             const Text('Welcome back,',
                 style: TextStyle(fontSize: 16, color: Colors.white70)),
             const SizedBox(height: 4),
-            Text(
-              provider.fullName,
-              style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white),
-            ),
+            Text(auth.displayName,
+                style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white)),
             const SizedBox(height: 8),
-            Text(
-              AppConfig.providerTypeNames[provider.providerType] ??
-                  provider.providerType,
-              style: const TextStyle(fontSize: 16, color: Colors.white70),
-            ),
+            if (auth.staffTypeDisplay.isNotEmpty)
+              Text(auth.staffTypeDisplay,
+                  style:
+                      const TextStyle(fontSize: 16, color: Colors.white70)),
+            if (auth.facilityName.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Row(children: [
+                const Icon(Icons.location_on,
+                    size: 14, color: Colors.white54),
+                const SizedBox(width: 4),
+                Text(auth.facilityName,
+                    style:
+                        const TextStyle(fontSize: 13, color: Colors.white70)),
+              ]),
+            ],
           ],
         ),
       ),
@@ -312,108 +291,93 @@ class _WelcomeCard extends StatelessWidget {
   }
 }
 
-// ── Patient Stats Card (Phase 2) ──────────────────────────────────────────────
+// ── Patient Stats Card ────────────────────────────────────────────────────────
 
 class _PatientStatsCard extends StatelessWidget {
-  final String providerId;
-  const _PatientStatsCard({required this.providerId});
+  final String userId;
+  const _PatientStatsCard({required this.userId});
 
   @override
   Widget build(BuildContext context) {
     return Consumer<PatientProvider>(
-      builder: (context, patientProvider, _) {
-        final stats = patientProvider.stats;
-        final isLoading = patientProvider.isLoadingStats;
-        final fromCache = patientProvider.statsFromCache;
-
+      builder: (context, p, _) {
+        final stats = p.stats;
         return Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Header ──────────────────────────────────────────────────
-                Row(
-                  children: [
-                    const Icon(Icons.analytics, color: AppTheme.primaryColor),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text('Patient Overview',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
+                Row(children: [
+                  const Icon(Icons.analytics, color: AppTheme.primaryColor),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text('Patient Overview',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                  ),
+                  if (p.patientsFromCache)
+                    Tooltip(
+                      message: 'Showing cached data',
+                      child: Icon(Icons.offline_bolt,
+                          size: 16, color: AppTheme.warningColor),
                     ),
-                    if (fromCache)
-                      Tooltip(
-                        message: 'Showing cached data',
-                        child: Icon(Icons.offline_bolt,
-                            size: 16, color: AppTheme.warningColor),
-                      ),
-                    if (isLoading)
-                      const SizedBox(
+                  if (p.isLoadingStats)
+                    const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                  ],
-                ),
+                        child: CircularProgressIndicator(strokeWidth: 2)),
+                ]),
                 const Divider(height: 24),
-
-                // ── Stats grid ───────────────────────────────────────────────
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatTile(
-                        icon: Icons.people,
-                        label: 'Total Patients',
-                        value: isLoading ? '…' : '${stats.totalPatients}',
-                        color: AppTheme.primaryColor,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (_) => const PatientListScreen()),
-                        ),
-                      ),
+                Row(children: [
+                  Expanded(
+                    child: _StatTile(
+                      icon: Icons.people,
+                      label: 'Total Patients',
+                      value:
+                          p.isLoadingStats ? '…' : '${stats.totalPatients}',
+                      color: AppTheme.primaryColor,
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => const PatientListScreen())),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatTile(
-                        icon: Icons.person_add,
-                        label: 'New (7 days)',
-                        value: isLoading ? '…' : '${stats.recentPatients}',
-                        color: AppTheme.successColor,
-                      ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _StatTile(
+                      icon: Icons.person_add,
+                      label: 'New (7 days)',
+                      value:
+                          p.isLoadingStats ? '…' : '${stats.recentPatients}',
+                      color: AppTheme.successColor,
                     ),
-                  ],
-                ),
+                  ),
+                ]),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatTile(
-                        icon: Icons.event,
-                        label: 'Appointments',
-                        value: '—',
-                        color: AppTheme.secondaryColor,
-                        subtitle: 'Phase 5',
-                      ),
+                Row(children: [
+                  Expanded(
+                    child: _StatTile(
+                      icon: Icons.event,
+                      label: 'Appointments',
+                      value: '—',
+                      color: AppTheme.secondaryColor,
+                      subtitle: 'Coming soon',
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatTile(
-                        icon: Icons.medication,
-                        label: 'Prescriptions',
-                        value: '—',
-                        color: AppTheme.warningColor,
-                        subtitle: 'Phase 5',
-                      ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _StatTile(
+                      icon: Icons.medication,
+                      label: 'Prescriptions',
+                      value: '—',
+                      color: AppTheme.warningColor,
+                      subtitle: 'Coming soon',
                     ),
-                  ],
-                ),
-
-                // ── Last refreshed ───────────────────────────────────────────
+                  ),
+                ]),
                 if (stats.lastRefreshed != null) ...[
                   const SizedBox(height: 12),
                   Text(
-                    'Last refreshed: ${_formatTime(stats.lastRefreshed!)}',
+                    'Last refreshed: ${_timeAgo(stats.lastRefreshed!)}',
                     style: TextStyle(fontSize: 11, color: AppTheme.gray600),
                   ),
                 ],
@@ -425,7 +389,7 @@ class _PatientStatsCard extends StatelessWidget {
     );
   }
 
-  String _formatTime(DateTime dt) {
+  String _timeAgo(DateTime dt) {
     final diff = DateTime.now().difference(dt);
     if (diff.inMinutes < 1) return 'just now';
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
@@ -434,22 +398,17 @@ class _PatientStatsCard extends StatelessWidget {
   }
 }
 
-// ── Recent Patients Card (Phase 2) ────────────────────────────────────────────
+// ── Recent Patients Card ──────────────────────────────────────────────────────
 
 class _RecentPatientsCard extends StatelessWidget {
-  final String providerId;
-  const _RecentPatientsCard({required this.providerId});
+  final String userId;
+  const _RecentPatientsCard({required this.userId});
 
   @override
   Widget build(BuildContext context) {
     return Consumer<PatientProvider>(
-      builder: (context, patientProvider, _) {
-        final patients = patientProvider.patients;
-        final isLoading = patientProvider.isLoading;
-        final fromCache = patientProvider.patientsFromCache;
-
-        // Show up to 5 most recent
-        final recent = patients.take(5).toList();
+      builder: (context, p, _) {
+        final recent = p.patients.take(5).toList();
 
         return Card(
           child: Padding(
@@ -457,50 +416,89 @@ class _RecentPatientsCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    const Icon(Icons.history, color: AppTheme.primaryColor),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text('Recent Patients',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
+                Row(children: [
+                  const Icon(Icons.history, color: AppTheme.primaryColor),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text('Recent Patients',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (_) => const PatientListScreen()),
                     ),
-                    if (fromCache)
-                      Tooltip(
-                        message: 'Showing cached data',
-                        child: Icon(Icons.offline_bolt,
-                            size: 16, color: AppTheme.warningColor),
-                      ),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                            builder: (_) => const PatientListScreen()),
-                      ),
-                      child: const Text('View All'),
-                    ),
-                  ],
-                ),
+                    child: const Text('View All'),
+                  ),
+                ]),
                 const Divider(height: 16),
-
-                if (isLoading)
+                if (p.isLoading)
                   const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: CircularProgressIndicator(),
+                      child: Padding(
+                          padding: EdgeInsets.all(24),
+                          child: CircularProgressIndicator()))
+                else if (recent.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(Icons.people_outline,
+                              size: 48, color: AppTheme.gray600),
+                          const SizedBox(height: 12),
+                          Text('No patients yet',
+                              style: TextStyle(color: AppTheme.gray600)),
+                        ],
+                      ),
                     ),
                   )
-                else if (recent.isEmpty)
-                  _EmptyPatientsPlaceholder()
                 else
                   ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: recent.length,
-                    separatorBuilder: (_, __) =>
-                        const Divider(height: 1),
-                    itemBuilder: (_, i) =>
-                        _PatientListTile(patient: recent[i]),
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (_, i) {
+                      final patient = recent[i];
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          backgroundColor:
+                              AppTheme.primaryColor.withValues(alpha: 0.1),
+                          child: Text(
+                            '${patient.firstName[0]}${patient.lastName[0]}',
+                            style: const TextStyle(
+                                color: AppTheme.primaryColor,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        title: Text(patient.fullName,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w600)),
+                        subtitle: Text(
+                          '${patient.gender} · ${patient.ageDisplay}'
+                          '${patient.bloodType != null ? ' · ${patient.bloodType}' : ''}',
+                          style: TextStyle(
+                              fontSize: 12, color: AppTheme.gray600),
+                        ),
+                        trailing: patient.hasCriticalAllergies
+                            ? Tooltip(
+                                message: 'Critical allergies',
+                                child: Icon(Icons.warning,
+                                    size: 18,
+                                    color: AppTheme.errorColor),
+                              )
+                            : null,
+                        onTap: () {
+                          context
+                              .read<PatientProvider>()
+                              .setSelectedPatient(patient);
+                          Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => const PatientListScreen()));
+                        },
+                      );
+                    },
                   ),
               ],
             ),
@@ -511,84 +509,20 @@ class _RecentPatientsCard extends StatelessWidget {
   }
 }
 
-class _PatientListTile extends StatelessWidget {
-  final dynamic patient;
-  const _PatientListTile({required this.patient});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(
-        backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
-        child: Text(
-          '${patient.firstName[0]}${patient.lastName[0]}',
-          style: const TextStyle(
-              color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
-        ),
-      ),
-      title: Text(
-        patient.fullName,
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
-      subtitle: Text(
-        '${patient.gender} · ${patient.ageDisplay}${patient.bloodType != null ? ' · ${patient.bloodType}' : ''}',
-        style: TextStyle(fontSize: 12, color: AppTheme.gray600),
-      ),
-      trailing: patient.hasCriticalAllergies
-          ? Tooltip(
-              message: 'Critical allergies',
-              child: Icon(Icons.warning,
-                  size: 18, color: AppTheme.errorColor),
-            )
-          : null,
-      onTap: () {
-        context.read<PatientProvider>().setSelectedPatient(patient);
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const PatientListScreen()),
-        );
-      },
-    );
-  }
-}
-
-class _EmptyPatientsPlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Column(
-        children: [
-          Icon(Icons.people_outline, size: 48, color: AppTheme.gray600),
-          const SizedBox(height: 12),
-          Text('No patients yet',
-              style: TextStyle(color: AppTheme.gray600, fontSize: 14)),
-          const SizedBox(height: 8),
-          TextButton.icon(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const PatientListScreen()),
-            ),
-            icon: const Icon(Icons.add),
-            label: const Text('Add First Patient'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Subscription Card (unchanged from Phase 1) ────────────────────────────────
+// ── Subscription Card ─────────────────────────────────────────────────────────
 
 class _SubscriptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<SubscriptionProvider>(
-      builder: (context, sub, _) {
-        final trialStatus = sub.trialStatus;
-        if (trialStatus == null) return const SizedBox.shrink();
+      builder: (context, sp, _) {
+        final subscription = sp.subscription;
+        if (subscription == null) return const SizedBox.shrink();
 
-        final onTrial = trialStatus.onTrial;
-        final daysRemaining = trialStatus.trialDaysRemaining;
+        final onTrial = subscription.isTrial;
+        final daysRemaining = subscription.trialDaysRemaining ?? 0;
+        final statusColor =
+            onTrial ? AppTheme.warningColor : AppTheme.successColor;
 
         return Card(
           child: Container(
@@ -596,25 +530,20 @@ class _SubscriptionCard extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               gradient: LinearGradient(
-                colors: onTrial
-                    ? [
-                        AppTheme.warningColor.withValues(alpha: 0.1),
-                        AppTheme.warningColor.withValues(alpha: 0.05),
-                      ]
-                    : [
-                        AppTheme.successColor.withValues(alpha: 0.1),
-                        AppTheme.successColor.withValues(alpha: 0.05),
-                      ],
+                colors: [
+                  statusColor.withValues(alpha: 0.1),
+                  statusColor.withValues(alpha: 0.05),
+                ],
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(children: [
-                  Icon(onTrial ? Icons.schedule : Icons.check_circle,
-                      color: onTrial
-                          ? AppTheme.warningColor
-                          : AppTheme.successColor),
+                  Icon(
+                    onTrial ? Icons.schedule : Icons.check_circle,
+                    color: statusColor,
+                  ),
                   const SizedBox(width: 8),
                   const Text('Subscription',
                       style: TextStyle(
@@ -622,9 +551,7 @@ class _SubscriptionCard extends StatelessWidget {
                 ]),
                 const Divider(height: 16),
                 _InfoRow('Status', onTrial ? 'Free Trial' : 'Active',
-                    valueColor: onTrial
-                        ? AppTheme.warningColor
-                        : AppTheme.successColor),
+                    valueColor: statusColor),
                 if (onTrial) ...[
                   const SizedBox(height: 8),
                   _InfoRow('Days Remaining', '$daysRemaining',
@@ -650,12 +577,17 @@ class _SubscriptionCard extends StatelessWidget {
   }
 }
 
-class _ProviderInfoCard extends StatelessWidget {
-  final dynamic provider;
-  const _ProviderInfoCard({required this.provider});
+// ── Staff Info Card ───────────────────────────────────────────────────────────
+
+class _StaffInfoCard extends StatelessWidget {
+  final AuthProvider auth;
+  const _StaffInfoCard({required this.auth});
 
   @override
   Widget build(BuildContext context) {
+    final membership = auth.activeMembership;
+    final rank = membership?.clinicalRank;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -665,26 +597,29 @@ class _ProviderInfoCard extends StatelessWidget {
             Row(children: [
               const Icon(Icons.person, color: AppTheme.primaryColor),
               const SizedBox(width: 8),
-              const Text('Provider Information',
+              const Text('Staff Profile',
                   style:
                       TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ]),
             const Divider(height: 24),
-            _InfoRow('Name', provider.fullName),
-            const SizedBox(height: 12),
-            _InfoRow(
-              'Type',
-              AppConfig.providerTypeNames[provider.providerType] ??
-                  provider.providerType,
-            ),
-            if (provider.specialization?.isNotEmpty == true) ...[
+            _InfoRow('Name', auth.displayName),
+            if (auth.staffTypeDisplay.isNotEmpty) ...[
               const SizedBox(height: 12),
-              _InfoRow('Specialization', provider.specialization!),
+              _InfoRow('Role', auth.staffTypeDisplay),
             ],
-            const SizedBox(height: 12),
-            _InfoRow('License', provider.licenseNumber),
-            const SizedBox(height: 12),
-            _InfoRow('Phone', provider.phone),
+            if (rank != null) ...[
+              const SizedBox(height: 12),
+              _InfoRow('Clinical Rank', rank.name),
+              const SizedBox(height: 12),
+              Wrap(spacing: 8, runSpacing: 4, children: [
+                if (rank.canPrescribe)
+                  _CapabilityChip('Prescribe', Icons.medication),
+                if (rank.canOrderLabs)
+                  _CapabilityChip('Order Labs', Icons.science),
+                if (rank.canPerformEmergencyAccess)
+                  _CapabilityChip('Emergency Access', Icons.emergency),
+              ]),
+            ],
           ],
         ),
       ),
@@ -692,12 +627,17 @@ class _ProviderInfoCard extends StatelessWidget {
   }
 }
 
-class _OrganizationCard extends StatelessWidget {
-  final dynamic org;
-  const _OrganizationCard({required this.org});
+// ── Facility Card ─────────────────────────────────────────────────────────────
+
+class _FacilityCard extends StatelessWidget {
+  final AuthProvider auth;
+  const _FacilityCard({required this.auth});
 
   @override
   Widget build(BuildContext context) {
+    final facility = auth.activeFacility;
+    if (facility == null) return const SizedBox.shrink();
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -707,21 +647,28 @@ class _OrganizationCard extends StatelessWidget {
             Row(children: [
               const Icon(Icons.business, color: AppTheme.primaryColor),
               const SizedBox(width: 8),
-              const Text('Organization',
+              const Text('Active Facility',
                   style:
                       TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ]),
             const Divider(height: 24),
-            _InfoRow('Name', org.name),
-            const SizedBox(height: 12),
-            _InfoRow('Type',
-                AppConfig.organizationTypeNames[org.type] ?? org.type),
-            const SizedBox(height: 12),
-            _InfoRow('Address', org.address),
-            const SizedBox(height: 12),
-            _InfoRow('Phone', org.phone ?? '—'),
-            const SizedBox(height: 12),
-            _InfoRow('Email', org.email ?? '—'),
+            _InfoRow('Facility', facility.name),
+            if (facility.organization != null) ...[
+              const SizedBox(height: 12),
+              _InfoRow('Organization', facility.organization!.name),
+            ],
+            if (facility.type != null) ...[
+              const SizedBox(height: 12),
+              _InfoRow('Type', facility.displayType),
+            ],
+            if (facility.address != null) ...[
+              const SizedBox(height: 12),
+              _InfoRow('Address', facility.address!),
+            ],
+            if (facility.phone != null) ...[
+              const SizedBox(height: 12),
+              _InfoRow('Phone', facility.phone!),
+            ],
           ],
         ),
       ),
@@ -729,7 +676,9 @@ class _OrganizationCard extends StatelessWidget {
   }
 }
 
-// ── Shared small widgets ──────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared small widgets
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _StatTile extends StatelessWidget {
   final IconData icon;
@@ -764,11 +713,9 @@ class _StatTile extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 26),
             const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                  fontSize: 24, fontWeight: FontWeight.bold, color: color),
-            ),
+            Text(value,
+                style: TextStyle(
+                    fontSize: 24, fontWeight: FontWeight.bold, color: color)),
             const SizedBox(height: 4),
             Text(label,
                 style: TextStyle(fontSize: 11, color: AppTheme.gray600),
@@ -805,13 +752,28 @@ class _InfoRow extends StatelessWidget {
                   color: AppTheme.gray600, fontWeight: FontWeight.w500)),
         ),
         Expanded(
-          child: Text(
-            value,
-            style: TextStyle(
-                fontWeight: FontWeight.w600, color: valueColor),
-          ),
+          child: Text(value,
+              style: TextStyle(
+                  fontWeight: FontWeight.w600, color: valueColor)),
         ),
       ],
+    );
+  }
+}
+
+class _CapabilityChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  const _CapabilityChip(this.label, this.icon);
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      avatar: Icon(icon, size: 14, color: AppTheme.successColor),
+      label: Text(label, style: const TextStyle(fontSize: 11)),
+      backgroundColor: AppTheme.successColor.withValues(alpha: 0.08),
+      side: BorderSide(color: AppTheme.successColor.withValues(alpha: 0.3)),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
     );
   }
 }

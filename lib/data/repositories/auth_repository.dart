@@ -1,94 +1,171 @@
+import 'package:dio/dio.dart';
 import '../../core/api/api_client.dart';
 import '../models/models.dart';
+import '../models/auth_models.dart';
 
 class AuthRepository {
   final ApiClient apiClient;
 
   AuthRepository({required this.apiClient});
 
-  Future<LoginResponseModel> login({
+  // ── Check email ──────────────────────────────────────────────────────────
+
+  /// Step 1 of login: look up which facilities the email belongs to.
+  Future<CheckEmailResponse> checkEmail(String email) async {
+    final response = await apiClient.post(
+      '/auth/check-email',
+      data: {'email': email},
+    );
+
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Email check failed');
+    }
+
+    return CheckEmailResponse.fromJson(
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
+  }
+
+  // ── Login ────────────────────────────────────────────────────────────────
+
+  /// Step 2: authenticate with password.
+  ///
+  /// Returns [LoginSuccess] (has token) or [LoginTwoFactorRequired]
+  /// (has challenge_token, caller must call [verifyTwoFactor]).
+  Future<LoginResult> login({
     required String email,
     required String password,
-    required String organizationId,
   }) async {
-    try {
-      final response = await apiClient.post(
-        '/auth/login',
-        data: {
-          'email': email,
-          'password': password,
-          'organization_id': organizationId,
-        },
-      );
+    final response = await apiClient.post(
+      '/auth/login',
+      data: {'email': email, 'password': password},
+    );
 
-      // Laravel response format: { "success": true, "message": "...", "data": {...} }
-      if (response['success'] != true) {
-        throw Exception(response['message'] ?? 'Login failed');
-      }
-
-      final data = response['data'];
-      if (data == null) {
-        throw Exception('Invalid login response: missing data');
-      }
-
-      final loginResponse = LoginResponseModel.fromJson(
-        Map<String, dynamic>.from(data),
-      );
-
-      // Save token to secure storage
-      await apiClient.saveToken(loginResponse.token);
-
-      return loginResponse;
-    } catch (e) {
-      print('Auth Repository Login Error: $e');
-      rethrow;
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Login failed');
     }
+
+    final data = Map<String, dynamic>.from(response['data'] as Map);
+    final result = loginResultFromJson(data);
+
+    if (result is LoginSuccess) {
+      await apiClient.saveToken(result.token);
+    }
+
+    return result;
   }
 
-  Future<void> logout() async {
-    try {
-      // Call logout endpoint
-      await apiClient.post('/auth/logout');
-    } catch (e) {
-      print('Logout API error (continuing anyway): $e');
-    } finally {
-      // Always clear local token
-      await apiClient.clearToken();
+  // ── 2FA ─────────────────────────────────────────────────────────────────
+
+  /// Exchange a challenge token + TOTP code (or backup code) for a full token.
+  Future<LoginSuccess> verifyTwoFactor({
+    required String challengeToken,
+    required String code,
+  }) async {
+    // The challenge token is used as the Bearer token for this one call.
+    final response = await apiClient.post(
+      '/auth/2fa/verify',
+      data: {'code': code},
+      options: Options(headers: {'Authorization': 'Bearer $challengeToken'}),
+    );
+
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? '2FA verification failed');
     }
+
+    final data = Map<String, dynamic>.from(response['data'] as Map);
+    final token = data['token'] as String;
+    await apiClient.saveToken(token);
+
+    return LoginSuccess(
+      token: token,
+      tokenType: data['token_type'] as String? ?? 'Bearer',
+    );
   }
 
-  Future<LoginResponseModel?> getCurrentUser() async {
+  // ── Current user ─────────────────────────────────────────────────────────
+
+  /// Fetch the authenticated user's profile. Returns null if no token stored.
+  Future<UserModel?> getCurrentUser() async {
+    final token = await apiClient.getToken();
+    if (token == null) return null;
+
     try {
-      final token = await apiClient.getToken();
-      if (token == null) {
-        return null;
-      }
+      final response = await apiClient.get('/auth/me');
+      if (response['success'] != true) return null;
 
-      final response = await apiClient.get('/auth/user');
-
-      if (response['success'] != true) {
-        return null;
-      }
-
-      final data = response['data'];
-      if (data == null) {
-        return null;
-      }
-
-      // The /auth/user endpoint returns user with userable (provider) loaded
-      // We need to transform it to match LoginResponseModel format
-      final user = UserModel.fromJson(data);
-      final provider = ProviderModel.fromJson(data['userable']);
-
-      return LoginResponseModel(
-        user: user,
-        provider: provider,
-        token: token,
-        tokenType: 'Bearer',
+      return UserModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map),
       );
-    } catch (e) {
-      print('Get Current User Error: $e');
+    } catch (_) {
       return null;
     }
   }
+
+  // ── Facilities ───────────────────────────────────────────────────────────
+
+  /// List facilities the current user has active memberships at.
+  Future<List<AuthFacilityModel>> getFacilities() async {
+    final response = await apiClient.get('/auth/facilities');
+
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to load facilities');
+    }
+
+    final list = response['data'] as List? ?? [];
+    return list
+        .map((e) =>
+            AuthFacilityModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Switch active facility. Stores the tenant ID in secure storage so
+  /// subsequent requests include X-Tenant-ID automatically.
+  Future<FacilitySwitchResponse> selectFacility(String tenantId) async {
+    final response = await apiClient.post(
+      '/auth/facility',
+      data: {'tenant_id': tenantId},
+    );
+
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to switch facility');
+    }
+
+    final result = FacilitySwitchResponse.fromJson(
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
+    await apiClient.saveTenantId(result.tenantId);
+    return result;
+  }
+
+  // ── Session management ───────────────────────────────────────────────────
+
+  Future<void> logout() async {
+    try {
+      await apiClient.post('/auth/logout');
+    } catch (_) {
+      // Even if the API call fails, clear local state.
+    } finally {
+      await apiClient.clearAll();
+    }
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final response = await apiClient.put(
+      '/auth/password',
+      data: {
+        'current_password': currentPassword,
+        'password': newPassword,
+        'password_confirmation': newPassword,
+      },
+    );
+
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Password change failed');
+    }
+  }
+
 }

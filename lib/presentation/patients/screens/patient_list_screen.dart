@@ -4,6 +4,7 @@ import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/patient_provider.dart';
 import '../../../config/theme.dart';
 import '../widgets/patient_card.dart';
+import 'patient_form_screen.dart';
 
 class PatientListScreen extends StatefulWidget {
   const PatientListScreen({super.key});
@@ -24,8 +25,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = context.read<AuthProvider>();
-      final providerId = auth.currentProvider?.id;
-      context.read<PatientProvider>().loadPatients(providerId: providerId);
+      context.read<PatientProvider>().loadPatients(providerId: auth.currentUserId);
     });
   }
 
@@ -43,7 +43,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
       final auth = context.read<AuthProvider>();
       context
           .read<PatientProvider>()
-          .loadMore(providerId: auth.currentProvider?.id);
+          .loadMore(providerId: auth.currentUserId);
     }
   }
 
@@ -52,7 +52,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
     context.read<PatientProvider>().clearSearch();
     _searchController.clear();
     await context.read<PatientProvider>().loadPatients(
-          providerId: auth.currentProvider?.id,
+          providerId: auth.currentUserId,
           forceRefresh: true,
         );
   }
@@ -61,13 +61,28 @@ class _PatientListScreenState extends State<PatientListScreen> {
     final auth = context.read<AuthProvider>();
     context.read<PatientProvider>().search(
           query,
-          providerId: auth.currentProvider?.id,
+          providerId: auth.currentUserId,
         );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.of(context).push(
+            MaterialPageRoute(
+                builder: (_) => const PatientFormScreen()),
+          );
+          if (result != null && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Patient registered')),
+            );
+          }
+        },
+        tooltip: 'New Patient',
+        child: const Icon(Icons.person_add),
+      ),
       appBar: AppBar(
         title: _showSearchBar
             ? TextField(

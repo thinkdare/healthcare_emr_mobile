@@ -5,12 +5,14 @@ import 'config/theme.dart';
 import 'core/api/api_client.dart';
 import 'core/database/local_database.dart';
 import 'data/repositories/auth_repository.dart';
+import 'data/repositories/clinical_repository.dart';
 import 'data/repositories/organization_repository.dart';
-import 'data/repositories/patient_repository.dart';         // Phase 2
+import 'data/repositories/patient_repository.dart';
 import 'data/repositories/subscription_repository.dart';
 import 'data/providers/auth_provider.dart';
+import 'data/providers/clinical_provider.dart';
 import 'data/providers/organization_provider.dart';
-import 'data/providers/patient_provider.dart';              // Phase 2
+import 'data/providers/patient_provider.dart';
 import 'data/providers/subscription_provider.dart';
 import 'presentation/auth/screens/login_screen.dart';
 import 'presentation/dashboard/screens/provider_dashboard_screen.dart';
@@ -46,6 +48,7 @@ class MyApp extends StatelessWidget {
     );
     final subscriptionRepository =
         SubscriptionRepository(apiClient: apiClient);
+    final clinicalRepository = ClinicalRepository(apiClient: apiClient);
 
     return MultiProvider(
       providers: [
@@ -57,13 +60,16 @@ class MyApp extends StatelessWidget {
           create: (_) =>
               OrganizationProvider(repository: organizationRepository),
         ),
-        // Phase 2: Patient state management
         ChangeNotifierProvider(
           create: (_) => PatientProvider(repository: patientRepository),
         ),
         ChangeNotifierProvider(
           create: (_) =>
               SubscriptionProvider(repository: subscriptionRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) =>
+              ClinicalProvider(repository: clinicalRepository),
         ),
       ],
       child: MaterialApp(

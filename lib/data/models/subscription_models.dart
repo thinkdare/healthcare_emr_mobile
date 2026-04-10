@@ -1,350 +1,277 @@
-import 'package:json_annotation/json_annotation.dart';
-import 'organization_models_enhanced.dart';
+// Subscription and billing models — hand-written fromJson (no build_runner needed).
+//
+// Backend billing routes: /api/v1/billing/...
+// Only org admins / super admins can access billing. Regular staff get 403.
 
-part 'subscription_models.g.dart';
+// ── Plan ─────────────────────────────────────────────────────────────────────
 
-// Subscription Model
-@JsonSerializable()
-class SubscriptionModel {
+class SubscriptionPlanModel {
   final String id;
-  
-  @JsonKey(name: 'organization_id')
-  final String organizationId;
-  
-  @JsonKey(name: 'plan_type')
-  final String planType;
-  
-  final String status; // 'trial', 'active', 'past_due', 'cancelled', 'suspended'
-  
-  @JsonKey(name: 'billing_cycle')
-  final String billingCycle; // 'monthly', 'annual'
-  
-  final int amount; // in kobo
-  final String currency;
-  
-  @JsonKey(name: 'current_period_start')
-  final DateTime currentPeriodStart;
-  
-  @JsonKey(name: 'current_period_end')
-  final DateTime currentPeriodEnd;
-  
-  @JsonKey(name: 'auto_renew')
-  final bool autoRenew;
-  
-  @JsonKey(name: 'trial_ends_at')
-  final DateTime? trialEndsAt;
-  
-  @JsonKey(name: 'cancelled_at')
-  final DateTime? cancelledAt;
-  
-  @JsonKey(name: 'ends_at')
-  final DateTime? endsAt;
-  
-  @JsonKey(name: 'created_at')
-  final DateTime createdAt;
-  
-  @JsonKey(name: 'updated_at')
-  final DateTime updatedAt;
+  final String name;
+  final String slug;
+  final String? description;
+  final String billingCycle; // 'monthly' | 'annual'
+  final Map<String, double> prices; // {usd, eur, cad, ngn}
+  final Map<String, dynamic> limits; // {max_facilities, max_staff, max_patients}
+  final List<String> features;
+  final bool isActive;
+  final bool isPublic;
 
-  SubscriptionModel({
+  const SubscriptionPlanModel({
     required this.id,
-    required this.organizationId,
-    required this.planType,
-    required this.status,
+    required this.name,
+    required this.slug,
+    this.description,
     required this.billingCycle,
-    required this.amount,
-    required this.currency,
-    required this.currentPeriodStart,
-    required this.currentPeriodEnd,
-    required this.autoRenew,
-    this.trialEndsAt,
-    this.cancelledAt,
-    this.endsAt,
-    required this.createdAt,
-    required this.updatedAt,
+    required this.prices,
+    required this.limits,
+    required this.features,
+    required this.isActive,
+    required this.isPublic,
   });
 
-  factory SubscriptionModel.fromJson(Map<String, dynamic> json) =>
-      _$SubscriptionModelFromJson(json);
+  factory SubscriptionPlanModel.fromJson(Map<String, dynamic> json) {
+    final rawPrices = json['prices'] as Map<String, dynamic>? ?? {};
+    return SubscriptionPlanModel(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      slug: json['slug'] as String,
+      description: json['description'] as String?,
+      billingCycle: json['billing_cycle'] as String? ?? 'monthly',
+      prices: rawPrices.map((k, v) => MapEntry(k, (v as num).toDouble())),
+      limits: Map<String, dynamic>.from(json['limits'] as Map? ?? {}),
+      features: (json['features'] as List? ?? []).map((e) => e.toString()).toList(),
+      isActive: json['is_active'] as bool? ?? true,
+      isPublic: json['is_public'] as bool? ?? true,
+    );
+  }
+}
 
-  Map<String, dynamic> toJson() => _$SubscriptionModelToJson(this);
+// ── Subscription ──────────────────────────────────────────────────────────────
+
+class SubscriptionModel {
+  final String id;
+  final String organizationId;
+  final String planId;
+  final SubscriptionPlanModel? plan;
+  final String status; // 'trial' | 'active' | 'past_due' | 'cancelled' | 'suspended'
+  final String currency;
+  final int amount; // in smallest currency unit (kobo / cents)
+  final String billingCycle; // 'monthly' | 'annual'
+  final DateTime? currentPeriodStart;
+  final DateTime? currentPeriodEnd;
+  final DateTime? trialEndsAt;
+  final bool cancelAtPeriodEnd;
+  final DateTime? cancelledAt;
+  final DateTime? endsAt;
+  final DateTime? createdAt;
+
+  const SubscriptionModel({
+    required this.id,
+    required this.organizationId,
+    required this.planId,
+    this.plan,
+    required this.status,
+    required this.currency,
+    required this.amount,
+    required this.billingCycle,
+    this.currentPeriodStart,
+    this.currentPeriodEnd,
+    this.trialEndsAt,
+    required this.cancelAtPeriodEnd,
+    this.cancelledAt,
+    this.endsAt,
+    this.createdAt,
+  });
+
+  factory SubscriptionModel.fromJson(Map<String, dynamic> json) {
+    return SubscriptionModel(
+      id: json['id'] as String,
+      organizationId: json['organization_id'] as String,
+      planId: json['plan_id'] as String,
+      plan: json['plan'] != null
+          ? SubscriptionPlanModel.fromJson(
+              Map<String, dynamic>.from(json['plan'] as Map))
+          : null,
+      status: json['status'] as String? ?? 'active',
+      currency: json['currency'] as String? ?? 'NGN',
+      amount: (json['amount'] as num?)?.toInt() ?? 0,
+      billingCycle: json['billing_cycle'] as String? ?? 'monthly',
+      currentPeriodStart: json['current_period_start'] != null
+          ? DateTime.tryParse(json['current_period_start'] as String)
+          : null,
+      currentPeriodEnd: json['current_period_end'] != null
+          ? DateTime.tryParse(json['current_period_end'] as String)
+          : null,
+      trialEndsAt: json['trial_ends_at'] != null
+          ? DateTime.tryParse(json['trial_ends_at'] as String)
+          : null,
+      cancelAtPeriodEnd: json['cancel_at_period_end'] as bool? ?? false,
+      cancelledAt: json['cancelled_at'] != null
+          ? DateTime.tryParse(json['cancelled_at'] as String)
+          : null,
+      endsAt: json['ends_at'] != null
+          ? DateTime.tryParse(json['ends_at'] as String)
+          : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'] as String)
+          : null,
+    );
+  }
 
   bool get isActive => status == 'active' || status == 'trial';
   bool get isTrial => status == 'trial';
   bool get isPastDue => status == 'past_due';
   bool get isCancelled => status == 'cancelled';
-  
-  int? get daysRemaining {
-    if (status == 'trial' && trialEndsAt != null) {
-      return trialEndsAt!.difference(DateTime.now()).inDays;
+
+  int? get trialDaysRemaining {
+    if (isTrial && trialEndsAt != null) {
+      final days = trialEndsAt!.difference(DateTime.now()).inDays;
+      return days < 0 ? 0 : days;
     }
     return null;
   }
-  
+
+  /// Display the amount in a human-readable format.
+  /// Assumes NGN amounts are in kobo (divide by 100); USD/EUR in cents.
   String get formattedAmount {
-    final naira = amount / 100;
-    return '₦${naira.toStringAsFixed(2).replaceAllMapped(
+    final major = amount / 100;
+    final symbol = currency == 'NGN' ? '₦' : (currency == 'USD' ? '\$' : currency);
+    return '$symbol${major.toStringAsFixed(2).replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
+      (m) => '${m[1]},',
     )}';
   }
 }
 
-// Trial Status Model
-@JsonSerializable()
-class TrialStatusModel {
-  @JsonKey(name: 'subscription_status')
-  final String subscriptionStatus;
-  
-  @JsonKey(name: 'is_active')
-  final bool isActive;
-  
-  @JsonKey(name: 'on_trial')
-  final bool onTrial;
-  
-  @JsonKey(name: 'trial_ends_at')
-  final DateTime? trialEndsAt;
-  
-  @JsonKey(name: 'trial_days_remaining')
-  final int trialDaysRemaining;
-  
-  @JsonKey(name: 'max_facilities')
-  final int maxFacilities;
-  
-  @JsonKey(name: 'max_providers')
-  final int maxProviders;
-  
-  @JsonKey(name: 'current_facilities')
-  final int currentFacilities;
-  
-  @JsonKey(name: 'current_providers')
-  final int currentProviders;
-  
-  @JsonKey(name: 'can_add_facility')
-  final bool canAddFacility;
-  
-  @JsonKey(name: 'can_add_provider')
-  final bool canAddProvider;
+// ── Invoice ───────────────────────────────────────────────────────────────────
 
-  TrialStatusModel({
-    required this.subscriptionStatus,
-    required this.isActive,
-    required this.onTrial,
-    this.trialEndsAt,
-    required this.trialDaysRemaining,
-    required this.maxFacilities,
-    required this.maxProviders,
-    required this.currentFacilities,
-    required this.currentProviders,
-    required this.canAddFacility,
-    required this.canAddProvider,
-  });
-
-  factory TrialStatusModel.fromJson(Map<String, dynamic> json) =>
-      _$TrialStatusModelFromJson(json);
-
-  Map<String, dynamic> toJson() => _$TrialStatusModelToJson(this);
-}
-
-// Pricing Tier Model
-@JsonSerializable()
-class PricingTierModel {
-  final String name;
-  
-  @JsonKey(name: 'organization_fee')
-  final String organizationFee;
-  
-  @JsonKey(name: 'facility_fee')
-  final String facilityFee;
-  
-  @JsonKey(name: 'provider_fee')
-  final String providerFee;
-  
-  @JsonKey(name: 'max_providers')
-  final dynamic maxProviders; // can be int or string like "50+"
-
-  PricingTierModel({
-    required this.name,
-    required this.organizationFee,
-    required this.facilityFee,
-    required this.providerFee,
-    required this.maxProviders,
-  });
-
-  factory PricingTierModel.fromJson(Map<String, dynamic> json) =>
-      _$PricingTierModelFromJson(json);
-
-  Map<String, dynamic> toJson() => _$PricingTierModelToJson(this);
-}
-
-// Pricing Display Model
-@JsonSerializable()
-class PricingDisplayModel {
-  final PricingTierModel small;
-  final PricingTierModel medium;
-  final PricingTierModel large;
-
-  PricingDisplayModel({
-    required this.small,
-    required this.medium,
-    required this.large,
-  });
-
-  factory PricingDisplayModel.fromJson(Map<String, dynamic> json) =>
-      _$PricingDisplayModelFromJson(json);
-
-  Map<String, dynamic> toJson() => _$PricingDisplayModelToJson(this);
-}
-
-// Quote Model
-@JsonSerializable()
-class QuoteModel {
-  final String tier;
+class InvoiceItemModel {
+  final String id;
+  final String itemType;
+  final String description;
+  final int quantity;
+  final int unitPrice;
+  final int lineTotal;
   final String currency;
-  
-  final Map<String, int> breakdown;
-  
-  @JsonKey(name: 'total_annual_kobo')
-  final int totalAnnualKobo;
-  
-  @JsonKey(name: 'total_annual_naira')
-  final double totalAnnualNaira;
-  
-  @JsonKey(name: 'total_monthly_kobo')
-  final int totalMonthlyKobo;
-  
-  @JsonKey(name: 'total_monthly_naira')
-  final double totalMonthlyNaira;
-  
-  @JsonKey(name: 'num_facilities')
-  final int numFacilities;
-  
-  @JsonKey(name: 'num_providers')
-  final int numProviders;
-  
-  @JsonKey(name: 'billing_cycle')
-  final String? billingCycle;
-  
-  @JsonKey(name: 'trial_days')
-  final int? trialDays;
 
-  QuoteModel({
-    required this.tier,
+  const InvoiceItemModel({
+    required this.id,
+    required this.itemType,
+    required this.description,
+    required this.quantity,
+    required this.unitPrice,
+    required this.lineTotal,
     required this.currency,
-    required this.breakdown,
-    required this.totalAnnualKobo,
-    required this.totalAnnualNaira,
-    required this.totalMonthlyKobo,
-    required this.totalMonthlyNaira,
-    required this.numFacilities,
-    required this.numProviders,
-    this.billingCycle,
-    this.trialDays,
   });
 
-  factory QuoteModel.fromJson(Map<String, dynamic> json) =>
-      _$QuoteModelFromJson(json);
-
-  Map<String, dynamic> toJson() => _$QuoteModelToJson(this);
-  
-  String get formattedTotal {
-    final amount = billingCycle == 'annual' ? totalAnnualNaira : totalMonthlyNaira;
-    return '₦${amount.toStringAsFixed(2).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    )}';
+  factory InvoiceItemModel.fromJson(Map<String, dynamic> json) {
+    return InvoiceItemModel(
+      id: json['id'] as String,
+      itemType: json['item_type'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      quantity: (json['quantity'] as num?)?.toInt() ?? 1,
+      unitPrice: (json['unit_price'] as num?)?.toInt() ?? 0,
+      lineTotal: (json['line_total'] as num?)?.toInt() ?? 0,
+      currency: json['currency'] as String? ?? 'NGN',
+    );
   }
 }
 
-// Organization Registration Response Model
-@JsonSerializable()
-class OrganizationRegistrationResponseModel {
-  final OrganizationEnhancedModel organization;
-  
-  @JsonKey(name: 'admin_user')
-  final Map<String, dynamic> adminUser;
-  
-  final String token;
-  
-  @JsonKey(name: 'token_type')
-  final String tokenType;
-  
-  @JsonKey(name: 'trial_ends_at')
-  final DateTime trialEndsAt;
-  
-  @JsonKey(name: 'trial_days_remaining')
-  final int trialDaysRemaining;
-  
-  final QuoteModel pricing;
-  
-  @JsonKey(name: 'next_step')
-  final String nextStep;
-
-  OrganizationRegistrationResponseModel({
-    required this.organization,
-    required this.adminUser,
-    required this.token,
-    required this.tokenType,
-    required this.trialEndsAt,
-    required this.trialDaysRemaining,
-    required this.pricing,
-    required this.nextStep,
-  });
-
-  factory OrganizationRegistrationResponseModel.fromJson(
-          Map<String, dynamic> json) =>
-      _$OrganizationRegistrationResponseModelFromJson(json);
-
-  Map<String, dynamic> toJson() =>
-      _$OrganizationRegistrationResponseModelToJson(this);
-}
-
-// Invoice Model
-@JsonSerializable()
 class InvoiceModel {
   final String id;
-  
-  @JsonKey(name: 'organization_id')
   final String organizationId;
-  
-  @JsonKey(name: 'invoice_number')
+  final String? subscriptionId;
   final String invoiceNumber;
-  
-  final int amount;
   final String currency;
-  final String status; // 'pending', 'paid', 'overdue', 'cancelled'
-  
-  @JsonKey(name: 'due_date')
-  final DateTime dueDate;
-  
-  @JsonKey(name: 'paid_at')
+  final int subtotal;
+  final int taxAmount;
+  final int discountAmount;
+  final int totalAmount;
+  final int amountPaid;
+  final int balanceDue;
+  final String status; // 'draft'|'sent'|'viewed'|'partially_paid'|'paid'|'overdue'|'cancelled'|'refunded'
+  final DateTime? invoiceDate;
+  final DateTime? dueDate;
+  final DateTime? servicePeriodStart;
+  final DateTime? servicePeriodEnd;
+  final bool isOverdue;
+  final DateTime? sentAt;
   final DateTime? paidAt;
-  
-  @JsonKey(name: 'created_at')
-  final DateTime createdAt;
+  final List<InvoiceItemModel> items;
 
-  InvoiceModel({
+  const InvoiceModel({
     required this.id,
     required this.organizationId,
+    this.subscriptionId,
     required this.invoiceNumber,
-    required this.amount,
     required this.currency,
+    required this.subtotal,
+    required this.taxAmount,
+    required this.discountAmount,
+    required this.totalAmount,
+    required this.amountPaid,
+    required this.balanceDue,
     required this.status,
-    required this.dueDate,
+    this.invoiceDate,
+    this.dueDate,
+    this.servicePeriodStart,
+    this.servicePeriodEnd,
+    required this.isOverdue,
+    this.sentAt,
     this.paidAt,
-    required this.createdAt,
+    this.items = const [],
   });
 
-  factory InvoiceModel.fromJson(Map<String, dynamic> json) =>
-      _$InvoiceModelFromJson(json);
+  factory InvoiceModel.fromJson(Map<String, dynamic> json) {
+    final rawItems = json['items'] as List? ?? [];
+    return InvoiceModel(
+      id: json['id'] as String,
+      organizationId: json['organization_id'] as String,
+      subscriptionId: json['subscription_id'] as String?,
+      invoiceNumber: json['invoice_number'] as String? ?? '',
+      currency: json['currency'] as String? ?? 'NGN',
+      subtotal: (json['subtotal'] as num?)?.toInt() ?? 0,
+      taxAmount: (json['tax_amount'] as num?)?.toInt() ?? 0,
+      discountAmount: (json['discount_amount'] as num?)?.toInt() ?? 0,
+      totalAmount: (json['total_amount'] as num?)?.toInt() ?? 0,
+      amountPaid: (json['amount_paid'] as num?)?.toInt() ?? 0,
+      balanceDue: (json['balance_due'] as num?)?.toInt() ?? 0,
+      status: json['status'] as String? ?? 'draft',
+      invoiceDate: json['invoice_date'] != null
+          ? DateTime.tryParse(json['invoice_date'] as String)
+          : null,
+      dueDate: json['due_date'] != null
+          ? DateTime.tryParse(json['due_date'] as String)
+          : null,
+      servicePeriodStart: json['service_period_start'] != null
+          ? DateTime.tryParse(json['service_period_start'] as String)
+          : null,
+      servicePeriodEnd: json['service_period_end'] != null
+          ? DateTime.tryParse(json['service_period_end'] as String)
+          : null,
+      isOverdue: json['is_overdue'] as bool? ?? false,
+      sentAt: json['sent_at'] != null
+          ? DateTime.tryParse(json['sent_at'] as String)
+          : null,
+      paidAt: json['paid_at'] != null
+          ? DateTime.tryParse(json['paid_at'] as String)
+          : null,
+      items: rawItems
+          .map((e) =>
+              InvoiceItemModel.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$InvoiceModelToJson(this);
-  
-  String get formattedAmount {
-    final naira = amount / 100;
-    return '₦${naira.toStringAsFixed(2).replaceAllMapped(
+  bool get isPaid => status == 'paid';
+
+  String get formattedTotal {
+    final major = totalAmount / 100;
+    final symbol = currency == 'NGN' ? '₦' : (currency == 'USD' ? '\$' : currency);
+    return '$symbol${major.toStringAsFixed(2).replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
+      (m) => '${m[1]},',
     )}';
   }
 }

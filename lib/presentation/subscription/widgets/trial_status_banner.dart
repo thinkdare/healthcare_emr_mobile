@@ -10,13 +10,13 @@ class TrialStatusBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<SubscriptionProvider>(
       builder: (context, subscriptionProvider, child) {
-        final trialStatus = subscriptionProvider.trialStatus;
+        final subscription = subscriptionProvider.subscription;
 
-        if (trialStatus == null || !trialStatus.onTrial) {
+        if (subscription == null || !subscription.isTrial) {
           return const SizedBox.shrink();
         }
 
-        final daysRemaining = trialStatus.trialDaysRemaining;
+        final daysRemaining = subscription.trialDaysRemaining ?? 0;
         final isUrgent = daysRemaining <= 7;
 
         return Container(

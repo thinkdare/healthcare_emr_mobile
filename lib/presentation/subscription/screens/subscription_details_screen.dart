@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/subscription_provider.dart';
 import '../../../config/theme.dart';
 
@@ -7,150 +8,163 @@ class SubscriptionDetailsScreen extends StatefulWidget {
   const SubscriptionDetailsScreen({super.key});
 
   @override
-  State<SubscriptionDetailsScreen> createState() => _SubscriptionDetailsScreenState();
+  State<SubscriptionDetailsScreen> createState() =>
+      _SubscriptionDetailsScreenState();
 }
 
 class _SubscriptionDetailsScreenState extends State<SubscriptionDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadData();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
   }
 
   Future<void> _loadData() async {
-    final provider = context.read<SubscriptionProvider>();
+    final orgId = context.read<AuthProvider>().organizationId;
+    if (orgId == null) return;
     await Future.wait([
-      provider.loadTrialStatus(),
-      provider.loadSubscription(),
+      context.read<SubscriptionProvider>().loadSubscription(orgId),
+      context.read<SubscriptionProvider>().loadInvoices(orgId),
     ]);
   }
 
-  Future<void> _handleCancelSubscription() async {
+  Future<void> _handleCancel() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: const Text('Cancel Subscription'),
         content: const Text(
-          'Are you sure you want to cancel your subscription? '
-          'You will still have access until the end of your billing period.',
+          'Are you sure? You will retain access until the end of your '
+          'current billing period.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Keep Subscription'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(ctx).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.errorColor,
-            ),
-            child: const Text('Cancel Subscription'),
+                backgroundColor: AppTheme.errorColor),
+            child: const Text('Cancel'),
           ),
         ],
       ),
     );
 
-    if (confirmed == true && mounted) {
-      final success = await context.read<SubscriptionProvider>().cancelSubscription();
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              success
-                  ? 'Subscription cancelled successfully'
-                  : 'Failed to cancel subscription',
-            ),
-            backgroundColor: success ? AppTheme.successColor : AppTheme.errorColor,
-          ),
-        );
-        
-        if (success) {
-          _loadData();
-        }
-      }
-    }
-  }
+    if (confirmed != true || !mounted) return;
 
-  Future<void> _handleResumeSubscription() async {
-    final success = await context.read<SubscriptionProvider>().resumeSubscription();
-    
+    final auth = context.read<AuthProvider>();
+    final sub = context.read<SubscriptionProvider>().subscription;
+    if (auth.organizationId == null || sub == null) return;
+
+    final success = await context
+        .read<SubscriptionProvider>()
+        .cancelSubscription(auth.organizationId!, sub.id);
+
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            success
-                ? 'Subscription resumed successfully'
-                : 'Failed to resume subscription',
-          ),
-          backgroundColor: success ? AppTheme.successColor : AppTheme.errorColor,
-        ),
-      );
-      
-      if (success) {
-        _loadData();
-      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(success
+            ? 'Subscription cancelled'
+            : context.read<SubscriptionProvider>().error ??
+                'Failed to cancel'),
+        backgroundColor: success ? AppTheme.successColor : AppTheme.errorColor,
+      ));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isWeb = MediaQuery.of(context).size.width > 600;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Subscription'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadData,
-            tooltip: 'Refresh',
-          ),
+              icon: const Icon(Icons.refresh),
+              onPressed: _loadData,
+              tooltip: 'Refresh'),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: _loadData,
         child: Consumer<SubscriptionProvider>(
-          builder: (context, subscriptionProvider, child) {
-            if (subscriptionProvider.isLoading) {
+          builder: (context, sp, _) {
+            if (sp.isLoading) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            final trialStatus = subscriptionProvider.trialStatus;
-            final subscription = subscriptionProvider.subscription;
+            final sub = sp.subscription;
+            if (sub == null) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.credit_card_off,
+                        size: 64, color: AppTheme.gray600),
+                    const SizedBox(height: 16),
+                    Text('No active subscription',
+                        style: TextStyle(
+                            fontSize: 18, color: AppTheme.gray600)),
+                    const SizedBox(height: 8),
+                    if (sp.error != null)
+                      Text(sp.error!,
+                          style: TextStyle(
+                              fontSize: 13, color: AppTheme.errorColor)),
+                  ],
+                ),
+              );
+            }
 
             return SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.all(isWeb ? 32 : 16),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: isWeb ? 800 : double.infinity),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Status Card
-                      if (trialStatus != null)
-                        _buildStatusCard(trialStatus, subscription, isWeb),
-                      const SizedBox(height: 24),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ── Status card ─────────────────────────────────────
+                  _StatusCard(sub: sub),
+                  const SizedBox(height: 16),
 
-                      // Subscription Details
-                      if (subscription != null)
-                        _buildSubscriptionCard(subscription, isWeb),
-                      const SizedBox(height: 24),
+                  // ── Details card ─────────────────────────────────────
+                  _DetailsCard(sub: sub),
+                  const SizedBox(height: 16),
 
-                      // Usage Card
-                      if (trialStatus != null)
-                        _buildUsageCard(trialStatus, isWeb),
-                      const SizedBox(height: 24),
+                  // ── Invoices ──────────────────────────────────────────
+                  if (sp.invoices.isNotEmpty) ...[
+                    _InvoiceList(invoices: sp.invoices),
+                    const SizedBox(height: 16),
+                  ],
 
-                      // Actions
-                      if (trialStatus != null)
-                        _buildActionsCard(trialStatus, subscription, isWeb),
-                    ],
-                  ),
-                ),
+                  // ── Actions ───────────────────────────────────────────
+                  if (sub.isActive && !sub.cancelAtPeriodEnd)
+                    OutlinedButton.icon(
+                      onPressed: _handleCancel,
+                      icon: const Icon(Icons.cancel),
+                      label: const Text('Cancel Subscription'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.errorColor,
+                        side: const BorderSide(color: AppTheme.errorColor),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+
+                  if (sub.cancelAtPeriodEnd)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.warningColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color:
+                                AppTheme.warningColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        'This subscription will cancel at the end of the '
+                        'current billing period.',
+                        style: TextStyle(color: AppTheme.warningColor),
+                      ),
+                    ),
+                ],
               ),
             );
           },
@@ -158,31 +172,41 @@ class _SubscriptionDetailsScreenState extends State<SubscriptionDetailsScreen> {
       ),
     );
   }
+}
 
-  Widget _buildStatusCard(trialStatus, subscription, bool isWeb) {
-    final onTrial = trialStatus.onTrial;
-    final isActive = trialStatus.isActive;
-    
-    Color statusColor = AppTheme.gray600;
-    IconData statusIcon = Icons.help_outline;
-    String statusText = trialStatus.subscriptionStatus;
-    
-    if (onTrial) {
-      statusColor = AppTheme.warningColor;
-      statusIcon = Icons.schedule;
-      statusText = 'Free Trial';
-    } else if (isActive) {
-      statusColor = AppTheme.successColor;
-      statusIcon = Icons.check_circle;
-      statusText = 'Active';
-    } else if (trialStatus.subscriptionStatus == 'past_due') {
-      statusColor = AppTheme.errorColor;
-      statusIcon = Icons.error;
-      statusText = 'Payment Past Due';
-    } else if (trialStatus.subscriptionStatus == 'cancelled') {
-      statusColor = AppTheme.errorColor;
-      statusIcon = Icons.cancel;
-      statusText = 'Cancelled';
+// ── Status card ───────────────────────────────────────────────────────────────
+
+class _StatusCard extends StatelessWidget {
+  final dynamic sub; // SubscriptionModel
+
+  const _StatusCard({required this.sub});
+
+  @override
+  Widget build(BuildContext context) {
+    Color color;
+    IconData icon;
+    String label;
+
+    switch (sub.status as String) {
+      case 'trial':
+        color = AppTheme.warningColor;
+        icon = Icons.schedule;
+        label = 'Free Trial';
+        break;
+      case 'active':
+        color = AppTheme.successColor;
+        icon = Icons.check_circle;
+        label = 'Active';
+        break;
+      case 'past_due':
+        color = AppTheme.errorColor;
+        icon = Icons.error;
+        label = 'Payment Past Due';
+        break;
+      default:
+        color = AppTheme.gray600;
+        icon = Icons.cancel;
+        label = (sub.status as String).replaceAll('_', ' ').toUpperCase();
     }
 
     return Card(
@@ -192,8 +216,8 @@ class _SubscriptionDetailsScreenState extends State<SubscriptionDetailsScreen> {
           borderRadius: BorderRadius.circular(12),
           gradient: LinearGradient(
             colors: [
-              statusColor.withValues(alpha: 0.1),
-              statusColor.withValues(alpha: 0.05),
+              color.withValues(alpha: 0.1),
+              color.withValues(alpha: 0.05)
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -201,44 +225,25 @@ class _SubscriptionDetailsScreenState extends State<SubscriptionDetailsScreen> {
         ),
         child: Column(
           children: [
-            Icon(statusIcon, size: 64, color: statusColor),
-            const SizedBox(height: 16),
-            Text(
-              statusText,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: statusColor,
-              ),
-            ),
-            if (onTrial) ...[
-              const SizedBox(height: 8),
-              Text(
-                '${trialStatus.trialDaysRemaining} days remaining',
+            Icon(icon, size: 56, color: color),
+            const SizedBox(height: 12),
+            Text(label,
                 style: TextStyle(
-                  fontSize: 18,
-                  color: AppTheme.gray600,
-                ),
-              ),
-              if (trialStatus.trialEndsAt != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'Trial ends on ${_formatDate(trialStatus.trialEndsAt!)}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.gray600,
-                  ),
-                ),
-              ],
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: color)),
+            if (sub.isTrial == true && sub.trialDaysRemaining != null) ...[
+              const SizedBox(height: 8),
+              Text('${sub.trialDaysRemaining} days remaining',
+                  style: TextStyle(fontSize: 16, color: AppTheme.gray600)),
             ],
-            if (!onTrial && subscription != null) ...[
-              const SizedBox(height: 8),
+            if (sub.currentPeriodEnd != null) ...[
+              const SizedBox(height: 4),
               Text(
-                'Next billing: ${_formatDate(subscription.currentPeriodEnd)}',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppTheme.gray600,
-                ),
+                sub.isTrial == true
+                    ? 'Trial ends ${_fmt(sub.trialEndsAt ?? sub.currentPeriodEnd)}'
+                    : 'Renews ${_fmt(sub.currentPeriodEnd)}',
+                style: TextStyle(fontSize: 13, color: AppTheme.gray600),
               ),
             ],
           ],
@@ -247,47 +252,46 @@ class _SubscriptionDetailsScreenState extends State<SubscriptionDetailsScreen> {
     );
   }
 
-  Widget _buildSubscriptionCard(subscription, bool isWeb) {
+  String _fmt(DateTime? dt) {
+    if (dt == null) return '—';
+    return '${dt.day}/${dt.month}/${dt.year}';
+  }
+}
+
+// ── Details card ──────────────────────────────────────────────────────────────
+
+class _DetailsCard extends StatelessWidget {
+  final dynamic sub;
+
+  const _DetailsCard({required this.sub});
+
+  @override
+  Widget build(BuildContext context) {
+    final plan = sub.plan;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(Icons.credit_card, color: AppTheme.primaryColor),
-                const SizedBox(width: 8),
-                const Text(
-                  'Subscription Details',
+            Row(children: [
+              Icon(Icons.receipt_long, color: AppTheme.primaryColor),
+              const SizedBox(width: 8),
+              const Text('Plan Details',
                   style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
+                      fontSize: 18, fontWeight: FontWeight.bold)),
+            ]),
             const Divider(height: 24),
-            _buildDetailRow('Plan', subscription.planType.toUpperCase()),
-            _buildDetailRow(
-              'Billing Cycle',
-              subscription.billingCycle == 'annual' ? 'Annual' : 'Monthly',
-            ),
-            _buildDetailRow('Amount', subscription.formattedAmount),
-            _buildDetailRow('Currency', subscription.currency),
-            _buildDetailRow(
-              'Current Period',
-              '${_formatDate(subscription.currentPeriodStart)} - ${_formatDate(subscription.currentPeriodEnd)}',
-            ),
-            _buildDetailRow(
-              'Auto Renew',
-              subscription.autoRenew ? 'Enabled' : 'Disabled',
-            ),
-            if (subscription.isCancelled && subscription.endsAt != null)
-              _buildDetailRow(
-                'Ends On',
-                _formatDate(subscription.endsAt!),
-                valueColor: AppTheme.errorColor,
+            if (plan != null) ...[
+              _Row('Plan', '${plan.name} (${plan.slug})'),
+            ],
+            _Row('Billing', sub.billingCycle == 'annual' ? 'Annual' : 'Monthly'),
+            _Row('Amount', sub.formattedAmount),
+            _Row('Currency', sub.currency as String),
+            if (sub.currentPeriodStart != null)
+              _Row(
+                'Period',
+                '${_fmt(sub.currentPeriodStart)} – ${_fmt(sub.currentPeriodEnd)}',
               ),
           ],
         ),
@@ -295,201 +299,75 @@ class _SubscriptionDetailsScreenState extends State<SubscriptionDetailsScreen> {
     );
   }
 
-  Widget _buildUsageCard(trialStatus, bool isWeb) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
+  Widget _Row(String label, String value) => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(Icons.analytics, color: AppTheme.primaryColor),
-                const SizedBox(width: 8),
-                const Text(
-                  'Usage & Limits',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const Divider(height: 24),
-            _buildUsageItem(
-              'Facilities',
-              trialStatus.currentFacilities,
-              trialStatus.maxFacilities,
-            ),
-            const SizedBox(height: 16),
-            _buildUsageItem(
-              'Providers',
-              trialStatus.currentProviders,
-              trialStatus.maxProviders,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUsageItem(String label, int current, int max) {
-    final percentage = current / max;
-    final isNearLimit = percentage > 0.8;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            Text(
-              '$current / $max',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: isNearLimit ? AppTheme.warningColor : AppTheme.gray900,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        LinearProgressIndicator(
-          value: percentage,
-          backgroundColor: AppTheme.gray100,
-          valueColor: AlwaysStoppedAnimation(
-            isNearLimit ? AppTheme.warningColor : AppTheme.primaryColor,
-          ),
-        ),
-        if (isNearLimit) ...[
-          const SizedBox(height: 4),
-          Text(
-            'You\'re approaching your $label limit',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppTheme.warningColor,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildActionsCard(trialStatus, subscription, bool isWeb) {
-    final onTrial = trialStatus.onTrial;
-    final isCancelled = subscription?.isCancelled ?? false;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Actions',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const Divider(height: 24),
-            
-            if (onTrial) ...[
-              SizedBox(
-                height: 56,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pushNamed('/subscription/upgrade');
-                  },
-                  icon: const Icon(Icons.upgrade),
-                  label: const Text('Upgrade to Paid Plan'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                  ),
-                ),
-              ),
-            ] else if (isCancelled) ...[
-              SizedBox(
-                height: 56,
-                child: ElevatedButton.icon(
-                  onPressed: _handleResumeSubscription,
-                  icon: const Icon(Icons.replay),
-                  label: const Text('Resume Subscription'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.successColor,
-                  ),
-                ),
-              ),
-            ] else ...[
-              SizedBox(
-                height: 56,
-                child: OutlinedButton.icon(
-                  onPressed: _handleCancelSubscription,
-                  icon: const Icon(Icons.cancel),
-                  label: const Text('Cancel Subscription'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.errorColor,
-                    side: const BorderSide(color: AppTheme.errorColor),
-                  ),
-                ),
-              ),
-            ],
-            
-            const SizedBox(height: 16),
             SizedBox(
-              height: 56,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).pushNamed('/subscription/invoices');
-                },
-                icon: const Icon(Icons.receipt_long),
-                label: const Text('View Invoices'),
-              ),
-            ),
+                width: 100,
+                child: Text(label,
+                    style: TextStyle(color: AppTheme.gray600))),
+            Expanded(
+                child: Text(value,
+                    style:
+                        const TextStyle(fontWeight: FontWeight.w600))),
+          ],
+        ),
+      );
+
+  String _fmt(DateTime? dt) {
+    if (dt == null) return '—';
+    return '${dt.day}/${dt.month}/${dt.year}';
+  }
+}
+
+// ── Invoice list ──────────────────────────────────────────────────────────────
+
+class _InvoiceList extends StatelessWidget {
+  final List<dynamic> invoices;
+
+  const _InvoiceList({required this.invoices});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Icon(Icons.description, color: AppTheme.primaryColor),
+              const SizedBox(width: 8),
+              const Text('Recent Invoices',
+                  style: TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
+            ]),
+            const Divider(height: 16),
+            ...invoices.take(5).map((inv) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    inv.isPaid ? Icons.check_circle : Icons.pending,
+                    color: inv.isPaid
+                        ? AppTheme.successColor
+                        : AppTheme.warningColor,
+                  ),
+                  title: Text(inv.invoiceNumber as String),
+                  subtitle: Text(
+                      '${_fmt(inv.invoiceDate)} · ${inv.status}'),
+                  trailing: Text(inv.formattedTotal as String,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold)),
+                )),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {Color? valueColor}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                color: AppTheme.gray600,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: valueColor,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+  String _fmt(DateTime? dt) {
+    if (dt == null) return '—';
+    return '${dt.day}/${dt.month}/${dt.year}';
   }
 }
