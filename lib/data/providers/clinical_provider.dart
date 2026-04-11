@@ -203,6 +203,48 @@ class ClinicalProvider extends ChangeNotifier {
     }
   }
 
+  Future<MedicalDocumentModel?> uploadDocument({
+    required String filePath,
+    required String fileName,
+    required String title,
+    required String documentType,
+    String? notes,
+    bool isConfidential = false,
+  }) async {
+    if (_patientId == null) return null;
+    try {
+      final doc = await repository.uploadDocument(
+        _patientId!,
+        filePath: filePath,
+        fileName: fileName,
+        title: title,
+        documentType: documentType,
+        notes: notes,
+        isConfidential: isConfidential,
+      );
+      _documents = [doc, ..._documents];
+      notifyListeners();
+      return doc;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
+  /// Returns a temporary signed download URL for a document, or null on error.
+  Future<String?> getDocumentDownloadUrl(String documentId) async {
+    if (_patientId == null) return null;
+    try {
+      final doc = await repository.getDocumentUrl(_patientId!, documentId);
+      return doc.temporaryUrl;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<bool> deleteDocument(String documentId) async {
     if (_patientId == null) return false;
     try {

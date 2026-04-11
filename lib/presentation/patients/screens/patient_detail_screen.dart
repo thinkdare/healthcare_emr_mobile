@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../config/theme.dart';
 import '../../../data/models/patient_models.dart';
 import '../../../data/models/clinical_models.dart';
@@ -65,6 +66,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         }
         form = const LabOrderForm();
         break;
+      case 4: // Documents
+        form = const DocumentUploadForm();
+        break;
       default:
         return;
     }
@@ -88,6 +92,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
           break;
         case 3:
           clinical.loadLabResults();
+          break;
+        case 4:
+          clinical.loadDocuments();
           break;
       }
     }
@@ -116,16 +123,17 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   Widget build(BuildContext context) {
     final p = _patient;
     return Scaffold(
-      floatingActionButton: _currentTab >= 1 && _currentTab <= 3
+      floatingActionButton: _currentTab >= 1 && _currentTab <= 4
           ? FloatingActionButton(
               onPressed: _openClinicalForm,
               tooltip: switch (_currentTab) {
                 1 => 'Book Appointment',
                 2 => 'New Prescription',
                 3 => 'Order Lab Test',
+                4 => 'Upload Document',
                 _ => 'Add',
               },
-              child: const Icon(Icons.add),
+              child: Icon(_currentTab == 4 ? Icons.upload_file : Icons.add),
             )
           : null,
       appBar: AppBar(
@@ -726,12 +734,48 @@ class _DocumentsTab extends StatelessWidget {
   }
 }
 
-class _DocumentCard extends StatelessWidget {
+class _DocumentCard extends StatefulWidget {
   final MedicalDocumentModel doc;
   const _DocumentCard({required this.doc});
 
   @override
+  State<_DocumentCard> createState() => _DocumentCardState();
+}
+
+class _DocumentCardState extends State<_DocumentCard> {
+  bool _downloading = false;
+
+  Future<void> _download() async {
+    setState(() => _downloading = true);
+    final url = await context
+        .read<ClinicalProvider>()
+        .getDocumentDownloadUrl(widget.doc.id);
+    if (!mounted) return;
+    setState(() => _downloading = false);
+
+    if (url == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not retrieve document URL')),
+      );
+      return;
+    }
+
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open document')),
+        );
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final doc = widget.doc;
+
     IconData icon;
     if (doc.isPdf) {
       icon = Icons.picture_as_pdf;
@@ -762,9 +806,30 @@ class _DocumentCard extends StatelessWidget {
           ].join(' · '),
           style: TextStyle(fontSize: 12, color: AppTheme.gray600),
         ),
-        trailing: doc.isConfidential
-            ? Icon(Icons.lock, size: 16, color: AppTheme.warningColor)
-            : null,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (doc.isConfidential)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Icon(Icons.lock, size: 16, color: AppTheme.warningColor),
+              ),
+            _downloading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.download_outlined, size: 22),
+                    color: AppTheme.primaryColor,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    tooltip: 'View / Download',
+                    onPressed: _download,
+                  ),
+          ],
+        ),
       ),
     );
   }

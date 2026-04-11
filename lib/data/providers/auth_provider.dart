@@ -65,6 +65,7 @@ class AuthProvider extends ChangeNotifier {
 
   bool get canPrescribe => _activeMembership?.canPrescribe ?? false;
   bool get canOrderLabs => _activeMembership?.canOrderLabs ?? false;
+  bool get canEmergencyAccess => _activeMembership?.canEmergencyAccess ?? false;
 
   // ── Initialisation ─────────────────────────────────────────────────────────
 
@@ -203,6 +204,89 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // ── Misc ──────────────────────────────────────────────────────────────────
+
+  // ── 2FA management ────────────────────────────────────────────────────────
+
+  /// Returns { 'secret', 'qr_code_url' } for displaying during setup.
+  Future<Map<String, dynamic>?> twoFactorSetup() async {
+    _error = null;
+    try {
+      return await repository.twoFactorSetup();
+    } on Exception catch (e) {
+      _error = _friendlyError(e.toString());
+      notifyListeners();
+      return null;
+    }
+  }
+
+  /// Confirm first TOTP code; returns backup codes on success, null on failure.
+  Future<List<String>?> twoFactorEnable(String code) async {
+    _error = null;
+    try {
+      final codes = await repository.twoFactorEnable(code);
+      // Refresh user so twoFactorEnabled flag reflects the change.
+      _currentUser = await repository.getCurrentUser();
+      notifyListeners();
+      return codes;
+    } on Exception catch (e) {
+      _error = _friendlyError(e.toString());
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<bool> twoFactorDisable(String password) async {
+    _error = null;
+    try {
+      await repository.twoFactorDisable(password);
+      _currentUser = await repository.getCurrentUser();
+      notifyListeners();
+      return true;
+    } on Exception catch (e) {
+      _error = _friendlyError(e.toString());
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<int?> twoFactorBackupCodeCount() async {
+    try {
+      return await repository.twoFactorBackupCodeCount();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<List<String>?> twoFactorRegenerateBackupCodes() async {
+    _error = null;
+    try {
+      return await repository.twoFactorRegenerateBackupCodes();
+    } on Exception catch (e) {
+      _error = _friendlyError(e.toString());
+      notifyListeners();
+      return null;
+    }
+  }
+
+  // ── Password ──────────────────────────────────────────────────────────────
+
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    _error = null;
+    try {
+      await repository.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      return true;
+    } on Exception catch (e) {
+      _error = _friendlyError(e.toString());
+      notifyListeners();
+      return false;
+    }
+  }
 
   void clearError() {
     _error = null;

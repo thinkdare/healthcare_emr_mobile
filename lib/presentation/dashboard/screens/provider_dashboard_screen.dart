@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../data/providers/access_grant_provider.dart';
 import '../../../data/providers/auth_provider.dart';
+import '../../../data/providers/emergency_access_provider.dart';
 import '../../../data/providers/patient_provider.dart';
 import '../../../data/providers/subscription_provider.dart';
 import '../../../config/app_config.dart';
 import '../../../config/theme.dart';
+import '../../access_grants/screens/access_grants_screen.dart';
 import '../../auth/screens/login_screen.dart';
+import '../../emergency_access/screens/emergency_access_screen.dart';
 import '../../patients/screens/patient_list_screen.dart';
+import '../../profile/screens/staff_profile_screen.dart';
+import '../../reporting/screens/reporting_screen.dart';
+import '../../subscription/screens/subscription_details_screen.dart';
+import '../../subscription/screens/subscription_upgrade_screen.dart';
 import '../../subscription/widgets/trial_status_banner.dart';
 
 class ProviderDashboardScreen extends StatefulWidget {
@@ -34,6 +42,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         context.read<SubscriptionProvider>().loadSubscription(orgId),
       if (userId != null)
         context.read<PatientProvider>().loadPatients(providerId: userId),
+      context.read<AccessGrantProvider>().loadGrants(),
+      context
+          .read<EmergencyAccessProvider>()
+          .loadLogs(refresh: true),
     ]);
 
     if (userId != null && mounted) {
@@ -139,6 +151,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         const SizedBox(height: 16),
                         _RecentPatientsCard(userId: auth.currentUserId ?? ''),
                         const SizedBox(height: 16),
+                        _AccessGrantsCard(),
+                        const SizedBox(height: 16),
+                        _EmergencyAccessCard(),
+                        const SizedBox(height: 16),
                         _StaffInfoCard(auth: auth),
                         const SizedBox(height: 16),
                         _FacilityCard(auth: auth),
@@ -205,12 +221,56 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               );
             },
           ),
+          Consumer<AccessGrantProvider>(
+            builder: (context, grants, _) => ListTile(
+              leading: Badge(
+                isLabelVisible: grants.pendingCount > 0,
+                label: Text('${grants.pendingCount}'),
+                child: const Icon(Icons.shield_outlined),
+              ),
+              title: const Text('Access Grants'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const AccessGrantsScreen()));
+              },
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.warning_amber_rounded,
+                color: AppTheme.errorColor),
+            title: const Text('Emergency Access'),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const EmergencyAccessScreen()));
+            },
+          ),
           ListTile(
             leading: const Icon(Icons.subscriptions),
             title: const Text('Subscription'),
             onTap: () {
               Navigator.of(context).pop();
-              Navigator.of(context).pushNamed('/subscription');
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const SubscriptionDetailsScreen()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.analytics_outlined),
+            title: const Text('Reports & Compliance'),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const ReportingScreen()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.person_outline),
+            title: const Text('My Profile'),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const StaffProfileScreen()));
             },
           ),
           const Divider(),
@@ -458,8 +518,8 @@ class _RecentPatientsCard extends StatelessWidget {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: recent.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (_, i) {
+                    separatorBuilder: (context, index) => const Divider(height: 1),
+                    itemBuilder: (context, i) {
                       final patient = recent[i];
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
@@ -562,8 +622,10 @@ class _SubscriptionCard extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => Navigator.of(context)
-                          .pushNamed('/subscription/upgrade'),
+                      onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  const SubscriptionUpgradeScreen())),
                       child: const Text('Upgrade Plan'),
                     ),
                   ),
@@ -672,6 +734,164 @@ class _FacilityCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── Access Grants Card ────────────────────────────────────────────────────────
+
+class _AccessGrantsCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AccessGrantProvider>(
+      builder: (context, grants, _) {
+        final pending = grants.pendingCount;
+        final hasActivity =
+            pending > 0 || grants.myRequests.isNotEmpty;
+
+        if (!hasActivity && !grants.isLoading) return const SizedBox.shrink();
+
+        return Card(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                    builder: (_) => const AccessGrantsScreen())),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Icon(
+                      pending > 0
+                          ? Icons.shield_outlined
+                          : Icons.lock_open_outlined,
+                      color: pending > 0
+                          ? AppTheme.warningColor
+                          : AppTheme.primaryColor,
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text('Access Grants',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
+                    const Icon(Icons.chevron_right, color: AppTheme.gray600),
+                  ]),
+                  if (pending > 0) ...[
+                    const Divider(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.warningColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(children: [
+                        Icon(Icons.pending_actions,
+                            color: AppTheme.warningColor, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          '$pending request${pending == 1 ? '' : 's'} awaiting your approval',
+                          style: TextStyle(
+                              color: AppTheme.warningColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13),
+                        ),
+                      ]),
+                    ),
+                  ] else if (grants.myRequests.isNotEmpty) ...[
+                    const Divider(height: 16),
+                    Text(
+                      '${grants.myRequests.length} request${grants.myRequests.length == 1 ? '' : 's'} sent',
+                      style: TextStyle(
+                          fontSize: 13, color: AppTheme.gray600),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ── Emergency Access Card ─────────────────────────────────────────────────────
+
+class _EmergencyAccessCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<EmergencyAccessProvider>(
+      builder: (context, em, _) {
+        final unreviewed = em.unreviewedCount;
+        final hasActivity = unreviewed > 0 || em.logs.isNotEmpty;
+
+        if (!hasActivity && !em.isLoading) return const SizedBox.shrink();
+
+        return Card(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const EmergencyAccessScreen())),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: unreviewed > 0
+                          ? AppTheme.errorColor
+                          : AppTheme.gray600,
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text('Emergency Access',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
+                    const Icon(Icons.chevron_right, color: AppTheme.gray600),
+                  ]),
+                  if (unreviewed > 0) ...[
+                    const Divider(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.errorColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(children: [
+                        const Icon(Icons.rate_review_outlined,
+                            color: AppTheme.errorColor, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          '$unreviewed event${unreviewed == 1 ? '' : 's'} awaiting your review',
+                          style: const TextStyle(
+                              color: AppTheme.errorColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13),
+                        ),
+                      ]),
+                    ),
+                  ] else if (em.logs.isNotEmpty) ...[
+                    const Divider(height: 16),
+                    Text(
+                      '${em.logs.length} event${em.logs.length == 1 ? '' : 's'} logged',
+                      style: const TextStyle(
+                          fontSize: 13, color: AppTheme.gray600),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

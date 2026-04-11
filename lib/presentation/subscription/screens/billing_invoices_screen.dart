@@ -231,7 +231,7 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
       case 'draft':
       default:
         statusColor = AppTheme.gray600;
-        statusIcon = Icons.draft_outlined;
+        statusIcon = Icons.description_outlined;
         break;
     }
 

@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../core/api/api_client.dart';
 import '../models/clinical_models.dart';
 
@@ -212,6 +214,35 @@ class ClinicalRepository {
         await apiClient.get('/patients/$patientId/documents/$documentId');
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to get document URL');
+    }
+    return MedicalDocumentModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  /// Uploads a file as a multipart POST.
+  /// [filePath] must be a valid path on disk (use file_picker with withData: false).
+  Future<MedicalDocumentModel> uploadDocument(
+    String patientId, {
+    required String filePath,
+    required String fileName,
+    required String title,
+    required String documentType,
+    String? notes,
+    bool isConfidential = false,
+  }) async {
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath, filename: fileName),
+      'title': title,
+      'document_type': documentType,
+      if (notes != null && notes.isNotEmpty) 'notes': notes,
+      'is_confidential': isConfidential ? 1 : 0,
+    });
+    final response = await apiClient.post(
+      '/patients/$patientId/documents',
+      data: formData,
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to upload document');
     }
     return MedicalDocumentModel.fromJson(
         Map<String, dynamic>.from(response['data'] as Map));

@@ -5,6 +5,7 @@
 /// LabOrderForm     — creates a new lab order (requires canOrderLabs)
 library;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
@@ -141,7 +142,7 @@ class _AppointmentFormState extends State<AppointmentForm> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _type,
+              initialValue: _type,
               decoration: const InputDecoration(labelText: 'Appointment Type *'),
               items: _types
                   .map((t) => DropdownMenuItem(value: t.$1, child: Text(t.$2)))
@@ -326,7 +327,7 @@ class _PrescriptionFormState extends State<PrescriptionForm> {
             ]),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _route,
+              initialValue: _route,
               decoration: const InputDecoration(labelText: 'Route *'),
               items: _routes
                   .map((r) => DropdownMenuItem(value: r.$1, child: Text(r.$2)))
@@ -518,7 +519,7 @@ class _LabOrderFormState extends State<LabOrderForm> {
             Row(children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _testType,
+                  initialValue: _testType,
                   decoration: const InputDecoration(labelText: 'Test Type *'),
                   items: _testTypes
                       .map((t) => DropdownMenuItem(value: t.$1, child: Text(t.$2)))
@@ -529,7 +530,7 @@ class _LabOrderFormState extends State<LabOrderForm> {
               const SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _priority,
+                  initialValue: _priority,
                   decoration: const InputDecoration(labelText: 'Priority'),
                   items: _priorities
                       .map((p) => DropdownMenuItem(value: p.$1, child: Text(p.$2)))
@@ -560,6 +561,211 @@ class _LabOrderFormState extends State<LabOrderForm> {
         ),
       ),
     );
+  }
+}
+
+// ── Document Upload Form ──────────────────────────────────────────────────────
+
+class DocumentUploadForm extends StatefulWidget {
+  const DocumentUploadForm({super.key});
+
+  @override
+  State<DocumentUploadForm> createState() => _DocumentUploadFormState();
+}
+
+class _DocumentUploadFormState extends State<DocumentUploadForm> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleCtrl = TextEditingController();
+  final _notesCtrl = TextEditingController();
+
+  String _documentType = 'clinical_note';
+  bool _isConfidential = false;
+  PlatformFile? _pickedFile;
+  bool _saving = false;
+
+  static const _types = [
+    ('lab_report', 'Lab Report'),
+    ('imaging', 'Imaging'),
+    ('referral_letter', 'Referral Letter'),
+    ('discharge_summary', 'Discharge Summary'),
+    ('consent_form', 'Consent Form'),
+    ('prescription', 'Prescription'),
+    ('clinical_note', 'Clinical Note'),
+    ('insurance', 'Insurance'),
+    ('other', 'Other'),
+  ];
+
+  @override
+  void dispose() {
+    _titleCtrl.dispose();
+    _notesCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'tiff', 'txt', 'zip'],
+      withData: false,
+    );
+    if (result != null && result.files.isNotEmpty) {
+      final file = result.files.single;
+      setState(() => _pickedFile = file);
+      if (_titleCtrl.text.isEmpty) {
+        final name = file.name;
+        final dotIdx = name.lastIndexOf('.');
+        _titleCtrl.text = dotIdx > 0 ? name.substring(0, dotIdx) : name;
+      }
+    }
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_pickedFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a file to upload')),
+      );
+      return;
+    }
+    if (_pickedFile!.path == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not read file path')),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+
+    final result = await context.read<ClinicalProvider>().uploadDocument(
+          filePath: _pickedFile!.path!,
+          fileName: _pickedFile!.name,
+          title: _titleCtrl.text.trim(),
+          documentType: _documentType,
+          notes: _notesCtrl.text.trim().isNotEmpty
+              ? _notesCtrl.text.trim()
+              : null,
+          isConfidential: _isConfidential,
+        );
+
+    if (!mounted) return;
+    setState(() => _saving = false);
+
+    if (result != null) {
+      Navigator.of(context).pop(true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.read<ClinicalProvider>().error ?? 'Upload failed'),
+        backgroundColor: AppTheme.errorColor,
+      ));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _ModalSheet(
+      title: 'Upload Document',
+      saving: _saving,
+      onSave: _submit,
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // File picker button
+            InkWell(
+              onTap: _saving ? null : _pickFile,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: _pickedFile != null
+                        ? AppTheme.primaryColor
+                        : AppTheme.gray600.withValues(alpha: 0.4),
+                    width: 1.5,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _pickedFile != null
+                          ? Icons.insert_drive_file
+                          : Icons.upload_file,
+                      color: _pickedFile != null
+                          ? AppTheme.primaryColor
+                          : AppTheme.gray600,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _pickedFile != null
+                            ? _pickedFile!.name
+                            : 'Select file  (PDF, image, ZIP, text)',
+                        style: TextStyle(
+                          color: _pickedFile != null ? null : AppTheme.gray600,
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (_pickedFile != null) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        _formatSize(_pickedFile!.size),
+                        style:
+                            TextStyle(fontSize: 12, color: AppTheme.gray600),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _titleCtrl,
+              decoration: const InputDecoration(labelText: 'Title *'),
+              validator: _req('Title'),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: _documentType,
+              decoration: const InputDecoration(labelText: 'Document Type *'),
+              items: _types
+                  .map((t) =>
+                      DropdownMenuItem(value: t.$1, child: Text(t.$2)))
+                  .toList(),
+              onChanged: (v) => setState(() => _documentType = v!),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _notesCtrl,
+              decoration: const InputDecoration(labelText: 'Notes'),
+              maxLines: 3,
+            ),
+            const SizedBox(height: 4),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Confidential', style: TextStyle(fontSize: 14)),
+              subtitle: Text(
+                'Only visible to primary provider',
+                style: TextStyle(fontSize: 12, color: AppTheme.gray600),
+              ),
+              value: _isConfidential,
+              onChanged: (v) => setState(() => _isConfidential = v),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatSize(int bytes) {
+    if (bytes < 1024) return '${bytes}B';
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)}KB';
+    }
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
   }
 }
 

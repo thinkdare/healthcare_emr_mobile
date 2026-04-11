@@ -163,6 +163,10 @@ class PatientModel {
   @JsonKey(name: 'insurance_number')
   final String? insuranceNumber;
 
+  /// Only present in detail view — used for cross-facility access grant requests.
+  @JsonKey(name: 'global_patient_id')
+  final String? globalPatientId;
+
   @JsonKey(name: 'patient_portal_enabled')
   final bool patientPortalEnabled;
 
@@ -204,6 +208,7 @@ class PatientModel {
     this.chronicConditions = const [],
     this.insuranceProvider,
     this.insuranceNumber,
+    this.globalPatientId,
     this.patientPortalEnabled = false,
     this.isActive = true,
     this.lastSyncedAt,

@@ -168,4 +168,60 @@ class AuthRepository {
     }
   }
 
+  // ── 2FA setup ────────────────────────────────────────────────────────────
+
+  /// Step 1: generate TOTP secret + QR code URI.
+  /// Returns { 'secret': '...', 'qr_code_url': '...', 'qr_code_svg': '...' }
+  Future<Map<String, dynamic>> twoFactorSetup() async {
+    final response = await apiClient.post('/auth/2fa/setup');
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? '2FA setup failed');
+    }
+    return Map<String, dynamic>.from(response['data'] as Map);
+  }
+
+  /// Step 2: confirm the first TOTP code to activate 2FA.
+  /// Returns backup codes on success.
+  Future<List<String>> twoFactorEnable(String code) async {
+    final response = await apiClient.post(
+      '/auth/2fa/enable',
+      data: {'code': code},
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Could not enable 2FA');
+    }
+    final data = Map<String, dynamic>.from(response['data'] as Map);
+    return List<String>.from(data['backup_codes'] as List? ?? []);
+  }
+
+  /// Disable 2FA (requires password confirmation).
+  Future<void> twoFactorDisable(String password) async {
+    final response = await apiClient.post(
+      '/auth/2fa/disable',
+      data: {'password': password},
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Could not disable 2FA');
+    }
+  }
+
+  /// Get the count of remaining backup codes.
+  Future<int> twoFactorBackupCodeCount() async {
+    final response = await apiClient.get('/auth/2fa/backup-codes');
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to fetch backup codes');
+    }
+    final data = Map<String, dynamic>.from(response['data'] as Map);
+    return (data['remaining'] as num?)?.toInt() ?? 0;
+  }
+
+  /// Regenerate backup codes. Returns the new list.
+  Future<List<String>> twoFactorRegenerateBackupCodes() async {
+    final response = await apiClient.post('/auth/2fa/backup-codes');
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to regenerate backup codes');
+    }
+    final data = Map<String, dynamic>.from(response['data'] as Map);
+    return List<String>.from(data['backup_codes'] as List? ?? []);
+  }
 }

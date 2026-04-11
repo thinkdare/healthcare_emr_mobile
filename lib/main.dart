@@ -4,15 +4,21 @@ import 'config/app_config.dart';
 import 'config/theme.dart';
 import 'core/api/api_client.dart';
 import 'core/database/local_database.dart';
+import 'data/repositories/access_grant_repository.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/clinical_repository.dart';
+import 'data/repositories/emergency_access_repository.dart';
 import 'data/repositories/organization_repository.dart';
 import 'data/repositories/patient_repository.dart';
+import 'data/repositories/reporting_repository.dart';
 import 'data/repositories/subscription_repository.dart';
+import 'data/providers/access_grant_provider.dart';
 import 'data/providers/auth_provider.dart';
 import 'data/providers/clinical_provider.dart';
+import 'data/providers/emergency_access_provider.dart';
 import 'data/providers/organization_provider.dart';
 import 'data/providers/patient_provider.dart';
+import 'data/providers/reporting_provider.dart';
 import 'data/providers/subscription_provider.dart';
 import 'presentation/auth/screens/login_screen.dart';
 import 'presentation/dashboard/screens/provider_dashboard_screen.dart';
@@ -49,6 +55,10 @@ class MyApp extends StatelessWidget {
     final subscriptionRepository =
         SubscriptionRepository(apiClient: apiClient);
     final clinicalRepository = ClinicalRepository(apiClient: apiClient);
+    final accessGrantRepository = AccessGrantRepository(apiClient: apiClient);
+    final emergencyAccessRepository =
+        EmergencyAccessRepository(apiClient: apiClient);
+    final reportingRepository = ReportingRepository(apiClient: apiClient);
 
     return MultiProvider(
       providers: [
@@ -70,6 +80,18 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) =>
               ClinicalProvider(repository: clinicalRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) =>
+              AccessGrantProvider(repository: accessGrantRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => EmergencyAccessProvider(
+              repository: emergencyAccessRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) =>
+              ReportingProvider(repository: reportingRepository),
         ),
       ],
       child: MaterialApp(
