@@ -24,6 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _emailChecked = false;
   bool _obscurePassword = true;
   String? _errorMessage;
+  AuthFacilityModel? _selectedFacility;
 
   @override
   void dispose() {
@@ -69,15 +70,23 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    final facilities = result.facilities;
     setState(() {
       _loading = false;
       _emailChecked = true;
+      // Pre-select the only facility; multi-facility users must choose explicitly.
+      _selectedFacility = facilities.length == 1 ? facilities.first : null;
     });
   }
 
   // ── Step 2: login with password ───────────────────────────────────────────
 
   Future<void> _login() async {
+    final facilities = context.read<OrganizationProvider>().facilities;
+    if (facilities.length > 1 && _selectedFacility == null) {
+      _showError('Please select a facility to continue.');
+      return;
+    }
     if (_passwordController.text.isEmpty) {
       _showError('Please enter your password.');
       return;
@@ -158,6 +167,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _emailChecked = false;
       _errorMessage = null;
+      _selectedFacility = null;
       _passwordController.clear();
       _twoFactorController.clear();
     });
@@ -249,12 +259,14 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
 
-        // Facility chips shown after email check (informational)
+        // Facility selector shown after email check
         if (_emailChecked) ...[
           const SizedBox(height: 12),
-          _FacilityChips(
-              facilities:
-                  context.watch<OrganizationProvider>().facilities),
+          _FacilitySelector(
+            facilities: context.watch<OrganizationProvider>().facilities,
+            selected: _selectedFacility,
+            onChanged: (f) => setState(() => _selectedFacility = f),
+          ),
         ],
 
         const SizedBox(height: 16),
@@ -362,27 +374,81 @@ class _LoginScreenState extends State<LoginScreen> {
 // Helper widgets
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _FacilityChips extends StatelessWidget {
+class _FacilitySelector extends StatelessWidget {
   final List<AuthFacilityModel> facilities;
-  const _FacilityChips({required this.facilities});
+  final AuthFacilityModel? selected;
+  final ValueChanged<AuthFacilityModel?> onChanged;
+
+  const _FacilitySelector({
+    required this.facilities,
+    required this.selected,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     if (facilities.isEmpty) return const SizedBox.shrink();
-    return Wrap(
-      spacing: 8,
-      runSpacing: 4,
-      children: facilities.map((f) {
-        return Chip(
-          avatar: const Icon(Icons.local_hospital, size: 16),
-          label: Text(
-            f.organization != null ? '${f.organization!.name} – ${f.name}' : f.name,
-            style: const TextStyle(fontSize: 12),
+
+    if (facilities.length == 1) {
+      // Single facility — display name only, no interaction needed
+      final f = facilities.first;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryColor.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.local_hospital_outlined,
+                size: 18, color: AppTheme.primaryColor),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(f.name,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 14)),
+                  if (f.organization != null)
+                    Text(f.organization!.name,
+                        style: TextStyle(
+                            fontSize: 12, color: AppTheme.gray600)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Multiple facilities — dropdown selector
+    return DropdownButtonFormField<AuthFacilityModel>(
+      value: selected,
+      decoration: const InputDecoration(
+        labelText: 'Select Facility',
+        prefixIcon: Icon(Icons.local_hospital_outlined),
+      ),
+      hint: const Text('Choose your facility'),
+      items: facilities.map((f) {
+        return DropdownMenuItem(
+          value: f,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(f.name,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w500, fontSize: 14)),
+              if (f.organization != null)
+                Text(f.organization!.name,
+                    style: TextStyle(fontSize: 12, color: AppTheme.gray600)),
+            ],
           ),
-          backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.08),
-          side: BorderSide(color: AppTheme.primaryColor.withValues(alpha: 0.2)),
         );
       }).toList(),
+      onChanged: onChanged,
     );
   }
 }

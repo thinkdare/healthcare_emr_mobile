@@ -4,17 +4,23 @@ class AppConfig {
   static const String appName = 'Healthcare EMR System';
   static const String apiVersion = 'v1';
 
-  // static const String _physicalDeviceBaseUrl = 'http://127.0.0.1:8000/api/v1';
-
   static String get baseUrl {
     if (Platform.isAndroid) {
-      // 10.0.2.2 = host loopback on Android emulator; backend runs on port 80 via Nginx
-      return 'http://10.0.2.2/api/v1';
+      // return 'http://10.0.2.2:8000/api/v1';
+      return 'http://10.0.3.2:8000/api/v1';
     } else if (Platform.isIOS) {
-      return 'http://localhost/api/v1';
+      return 'http://localhost:8000/api/v1';
     } else {
-      return 'http://localhost/api/v1';
+      return 'http://localhost:8000/api/v1';
     }
+    // if (Platform.isAndroid) {
+    //   // 10.0.2.2 = host loopback on Android emulator; Laravel serves on port 8000
+    //   return 'http://10.0.2.2:8000/api/v1';
+    // } else if (Platform.isIOS) {
+    //   return 'http://localhost:8000/api/v1';
+    // } else {
+    //   return 'http://localhost:8000/api/v1';
+    // }
   }
 
   // Timeout configurations

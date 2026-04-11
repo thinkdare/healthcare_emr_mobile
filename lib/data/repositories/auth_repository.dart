@@ -112,10 +112,11 @@ class AuthRepository {
       throw Exception(response['message'] ?? 'Failed to load facilities');
     }
 
-    final list = response['data'] as List? ?? [];
+    final data = Map<String, dynamic>.from(response['data'] as Map);
+    final list = data['facilities'] as List? ?? [];
     return list
         .map((e) =>
-            AuthFacilityModel.fromJson(e as Map<String, dynamic>))
+            AuthFacilityModel.fromMembershipJson(e as Map<String, dynamic>))
         .toList();
   }
 

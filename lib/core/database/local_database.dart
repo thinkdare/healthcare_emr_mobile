@@ -67,8 +67,10 @@ class LocalDatabase {
       version: _kVersion,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
-      // Enable WAL mode for better concurrent read performance and crash safety
-      onOpen: (db) async => await db.execute('PRAGMA journal_mode=WAL'),
+      // Enable WAL mode for better concurrent read performance and crash safety.
+      // PRAGMA journal_mode returns a result row, so rawQuery is required —
+      // execute() is rejected by sqflite on Android for statements with output.
+      onOpen: (db) async => await db.rawQuery('PRAGMA journal_mode=WAL'),
     );
   }
 

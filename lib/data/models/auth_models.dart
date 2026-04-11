@@ -53,6 +53,8 @@ class StaffMembershipModel {
   final String staffType; // doctor | nurse | pharmacist | lab_tech | …
   final bool isPrimary;
   final bool canEmergencyAccess;
+  final bool canPrescribe;
+  final bool canOrderLabs;
   final ClinicalRankModel? clinicalRank;
 
   const StaffMembershipModel({
@@ -60,15 +62,21 @@ class StaffMembershipModel {
     required this.staffType,
     required this.isPrimary,
     required this.canEmergencyAccess,
+    required this.canPrescribe,
+    required this.canOrderLabs,
     this.clinicalRank,
   });
 
+  /// Parses the membership payload returned by /auth/facilities and /auth/facility.
+  /// Field names: membership_id, is_primary_affiliation, can_prescribe, can_order_labs.
   factory StaffMembershipModel.fromJson(Map<String, dynamic> json) =>
       StaffMembershipModel(
-        id: json['id'] as String,
+        id: (json['membership_id'] ?? json['id']) as String,
         staffType: json['staff_type'] as String,
-        isPrimary: json['is_primary'] as bool? ?? false,
+        isPrimary: json['is_primary_affiliation'] as bool? ?? json['is_primary'] as bool? ?? false,
         canEmergencyAccess: json['can_emergency_access'] as bool? ?? false,
+        canPrescribe: json['can_prescribe'] as bool? ?? false,
+        canOrderLabs: json['can_order_labs'] as bool? ?? false,
         clinicalRank: json['clinical_rank'] == null
             ? null
             : ClinicalRankModel.fromJson(
@@ -89,9 +97,6 @@ class StaffMembershipModel {
     };
     return labels[staffType] ?? staffType;
   }
-
-  bool get canPrescribe => clinicalRank?.canPrescribe ?? false;
-  bool get canOrderLabs => clinicalRank?.canOrderLabs ?? false;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -144,6 +149,7 @@ class AuthFacilityModel {
     this.membership,
   });
 
+  /// For the check-email response: fields are id, name, slug (tenant fields directly).
   factory AuthFacilityModel.fromJson(Map<String, dynamic> json) =>
       AuthFacilityModel(
         id: json['id'] as String,
@@ -160,6 +166,21 @@ class AuthFacilityModel {
             ? null
             : StaffMembershipModel.fromJson(
                 json['membership'] as Map<String, dynamic>),
+      );
+
+  /// For the /auth/facilities and /auth/facility responses where tenant fields
+  /// are prefixed: tenant_id, tenant_name, tenant_slug, tenant_type.
+  factory AuthFacilityModel.fromMembershipJson(Map<String, dynamic> json) =>
+      AuthFacilityModel(
+        id: json['tenant_id'] as String,
+        name: json['tenant_name'] as String,
+        slug: json['tenant_slug'] as String? ?? '',
+        type: json['tenant_type'] as String?,
+        organization: json['organization'] == null
+            ? null
+            : AuthOrganizationLite.fromJson(
+                json['organization'] as Map<String, dynamic>),
+        membership: StaffMembershipModel.fromJson(json),
       );
 
   String get displayType {
@@ -227,7 +248,7 @@ LoginResult loginResultFromJson(Map<String, dynamic> json) {
     );
   }
   return LoginSuccess(
-    token: json['token'] as String,
+    token: (json['access_token'] ?? json['token']) as String,
     tokenType: json['token_type'] as String? ?? 'Bearer',
   );
 }
@@ -247,11 +268,12 @@ class FacilitySwitchResponse {
     required this.membership,
   });
 
-  factory FacilitySwitchResponse.fromJson(Map<String, dynamic> json) =>
-      FacilitySwitchResponse(
-        tenantId: json['tenant_id'] as String,
-        tenantName: json['tenant_name'] as String,
-        membership: StaffMembershipModel.fromJson(
-            json['membership'] as Map<String, dynamic>),
-      );
+  factory FacilitySwitchResponse.fromJson(Map<String, dynamic> json) {
+    final facility = json['active_facility'] as Map<String, dynamic>;
+    return FacilitySwitchResponse(
+      tenantId: json['tenant_id'] as String,
+      tenantName: facility['tenant_name'] as String,
+      membership: StaffMembershipModel.fromJson(facility),
+    );
+  }
 }
