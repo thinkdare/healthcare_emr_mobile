@@ -8,6 +8,8 @@ import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/clinical_provider.dart';
 import '../../../data/providers/patient_provider.dart';
 import '../widgets/clinical_forms.dart';
+import '../widgets/clinical_record_tab.dart';
+import '../widgets/clinical_record_forms.dart';
 import 'patient_form_screen.dart';
 
 class PatientDetailScreen extends StatefulWidget {
@@ -19,22 +21,40 @@ class PatientDetailScreen extends StatefulWidget {
   State<PatientDetailScreen> createState() => _PatientDetailScreenState();
 }
 
+// Tabs available to each staff type (by index into _allTabs).
+// 0=Overview 1=Appointments 2=Prescriptions 3=Lab Results 4=Documents 5=Clinical Record
+const _nurseTabIndices      = [0, 1, 5];
+const _pharmacistTabIndices = [0, 2];
+const _labTechTabIndices    = [0, 3];
+const _doctorTabIndices     = [0, 1, 2, 3, 4, 5];
+
+List<int> _tabIndicesFor(String staffType) => switch (staffType) {
+      'nurse' => _nurseTabIndices,
+      'pharmacist' => _pharmacistTabIndices,
+      'lab_technician' || 'lab_tech' => _labTechTabIndices,
+      _ => _doctorTabIndices, // doctor, admin, other
+    };
+
 class _PatientDetailScreenState extends State<PatientDetailScreen>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabs;
+  late TabController _tabs;
   late PatientModel _patient;
   int _currentTab = 0;
+  late List<int> _visibleIndices;
 
   @override
   void initState() {
     super.initState();
     _patient = widget.patient;
-    _tabs = TabController(length: 5, vsync: this);
+    final staffType = context.read<AuthProvider>().staffType;
+    _visibleIndices = _tabIndicesFor(staffType);
+    _tabs = TabController(length: _visibleIndices.length, vsync: this);
     _tabs.addListener(() {
       if (!_tabs.indexIsChanging) {
-        setState(() => _currentTab = _tabs.index);
+        setState(() => _currentTab = _visibleIndices[_tabs.index]);
       }
     });
+    _currentTab = _visibleIndices.first;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ClinicalProvider>().loadAll(_patient.id);
     });
@@ -49,6 +69,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         form = const AppointmentForm();
         break;
       case 2: // Prescriptions
+        if (auth.staffType == 'pharmacist') {
+          // Pharmacists use the fill dialog on individual cards, not the FAB.
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Tap the Fill button on a prescription to dispense it')),
+          );
+          return;
+        }
         if (!auth.canPrescribe) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('You do not have prescribing privileges')),
@@ -58,6 +86,13 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         form = const PrescriptionForm();
         break;
       case 3: // Lab Results
+        if (auth.staffType == 'lab_technician' || auth.staffType == 'lab_tech') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Tap the Record button on a lab order to enter results')),
+          );
+          return;
+        }
         if (!auth.canOrderLabs) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('You do not have lab ordering privileges')),
@@ -69,10 +104,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       case 4: // Documents
         form = const DocumentUploadForm();
         break;
+      case 5: // Clinical Record — picker selects which resource to add
+        await _showClinicalRecordFormPicker();
+        return;
       default:
         return;
     }
 
+    if (!mounted) return;
     final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -81,7 +120,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     );
 
     if (created == true && mounted) {
-      // Reload the relevant list
       final clinical = context.read<ClinicalProvider>();
       switch (_currentTab) {
         case 1:
@@ -97,6 +135,65 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
           clinical.loadDocuments();
           break;
       }
+    }
+  }
+
+  Future<void> _showClinicalRecordFormPicker() async {
+    final formType = await showModalBottomSheet<Type>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.monitor_heart),
+              title: const Text('Vital Signs'),
+              onTap: () => Navigator.pop(ctx, VitalSignForm),
+            ),
+            ListTile(
+              leading: const Icon(Icons.medical_information),
+              title: const Text('Diagnosis'),
+              onTap: () => Navigator.pop(ctx, DiagnosisForm),
+            ),
+            ListTile(
+              leading: const Icon(Icons.list_alt),
+              title: const Text('Problem'),
+              onTap: () => Navigator.pop(ctx, ProblemForm),
+            ),
+            ListTile(
+              leading: const Icon(Icons.local_hospital),
+              title: const Text('Procedure'),
+              onTap: () => Navigator.pop(ctx, ProcedureForm),
+            ),
+            ListTile(
+              leading: const Icon(Icons.vaccines),
+              title: const Text('Immunization'),
+              onTap: () => Navigator.pop(ctx, ImmunizationForm),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (formType == null || !mounted) return;
+
+    final Widget form = switch (formType) {
+      _ when formType == DiagnosisForm    => const DiagnosisForm(),
+      _ when formType == ProblemForm      => const ProblemForm(),
+      _ when formType == ProcedureForm    => const ProcedureForm(),
+      _ when formType == ImmunizationForm => const ImmunizationForm(),
+      _                                   => const VitalSignForm(),
+    };
+
+    final created = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => form,
+    );
+
+    if (created == true && mounted) {
+      context.read<ClinicalProvider>().loadAll(_patient.id);
     }
   }
 
@@ -122,14 +219,22 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   @override
   Widget build(BuildContext context) {
     final p = _patient;
+    final auth = context.read<AuthProvider>();
+    final canEdit = auth.staffType == 'doctor' || auth.staffType == 'admin' ||
+        auth.staffType == 'nurse';
     return Scaffold(
       floatingActionButton: _currentTab >= 1 && _currentTab <= 4
           ? FloatingActionButton(
               onPressed: _openClinicalForm,
               tooltip: switch (_currentTab) {
                 1 => 'Book Appointment',
-                2 => 'New Prescription',
-                3 => 'Order Lab Test',
+                2 => auth.staffType == 'pharmacist'
+                    ? 'Fill Prescription'
+                    : 'New Prescription',
+                3 => auth.staffType == 'lab_technician' ||
+                        auth.staffType == 'lab_tech'
+                    ? 'Record Results'
+                    : 'Order Lab Test',
                 4 => 'Upload Document',
                 _ => 'Add',
               },
@@ -139,11 +244,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       appBar: AppBar(
         title: Text(p.fullName),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Edit patient',
-            onPressed: _openEdit,
-          ),
+          if (canEdit)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Edit patient',
+              onPressed: _openEdit,
+            ),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
@@ -154,12 +260,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         bottom: TabBar(
           controller: _tabs,
           isScrollable: true,
-          tabs: const [
-            Tab(text: 'Overview'),
-            Tab(text: 'Appointments'),
-            Tab(text: 'Prescriptions'),
-            Tab(text: 'Lab Results'),
-            Tab(text: 'Documents'),
+          tabs: [
+            for (final i in _visibleIndices)
+              Tab(text: const ['Overview', 'Appointments', 'Prescriptions',
+                  'Lab Results', 'Documents', 'Clinical Record'][i]),
           ],
         ),
       ),
@@ -174,15 +278,17 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
               onRetry: () => clinical.loadAll(p.id),
             );
           }
+          final allTabViews = [
+            _OverviewTab(patient: _patient),
+            _AppointmentsTab(patientId: _patient.id),
+            _PrescriptionsTab(patientId: _patient.id),
+            _LabResultsTab(patientId: _patient.id),
+            _DocumentsTab(patientId: _patient.id),
+            const ClinicalRecordTab(),
+          ];
           return TabBarView(
             controller: _tabs,
-            children: [
-              _OverviewTab(patient: _patient),
-              _AppointmentsTab(patientId: _patient.id),
-              _PrescriptionsTab(patientId: _patient.id),
-              _LabResultsTab(patientId: _patient.id),
-              _DocumentsTab(patientId: _patient.id),
-            ],
+            children: [for (final i in _visibleIndices) allTabViews[i]],
           );
         },
       ),
@@ -247,6 +353,7 @@ class _OverviewTab extends StatelessWidget {
                     ],
                   ),
                   const Divider(height: 24),
+                  if (p.mrn != null) _InfoRow('MRN', p.mrn!),
                   _InfoRow('Date of Birth', p.dateOfBirth),
                   if (p.phone != null) _InfoRow('Phone', p.phone!),
                   if (p.email != null) _InfoRow('Email', p.email!),
@@ -329,6 +436,19 @@ class _OverviewTab extends StatelessWidget {
                         AppTheme.primaryColor.withValues(alpha: 0.08),
                   )).toList(),
                 ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // Medical history (free-text narrative)
+          if (p.medicalHistory != null && p.medicalHistory!.isNotEmpty) ...[
+            const _SectionHeader('Medical History'),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(p.medicalHistory!,
+                    style: const TextStyle(fontSize: 13, height: 1.5)),
               ),
             ),
             const SizedBox(height: 16),
@@ -510,13 +630,88 @@ class _PrescriptionsTab extends StatelessWidget {
   }
 }
 
-class _PrescriptionCard extends StatelessWidget {
+class _PrescriptionCard extends StatefulWidget {
   final PrescriptionModel rx;
   const _PrescriptionCard({required this.rx});
 
   @override
+  State<_PrescriptionCard> createState() => _PrescriptionCardState();
+}
+
+class _PrescriptionCardState extends State<_PrescriptionCard> {
+  bool _filling = false;
+
+  Future<void> _showFillDialog() async {
+    final qtyCtrl = TextEditingController(
+        text: widget.rx.quantity?.toString() ?? '');
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Dispense Medication'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.rx.medicationName,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text(widget.rx.doseDisplay,
+                style: TextStyle(color: AppTheme.gray600, fontSize: 13)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: qtyCtrl,
+              keyboardType: TextInputType.number,
+              decoration:
+                  const InputDecoration(labelText: 'Quantity dispensed'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Dispense'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+    final qty = int.tryParse(qtyCtrl.text.trim());
+    if (qty == null || qty <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid quantity')),
+      );
+      return;
+    }
+
+    setState(() => _filling = true);
+    final result = await context
+        .read<ClinicalProvider>()
+        .fillPrescription(widget.rx.id, qty);
+    if (!mounted) return;
+    setState(() => _filling = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(result != null
+          ? 'Dispensed successfully'
+          : context.read<ClinicalProvider>().error ?? 'Failed to dispense'),
+      backgroundColor:
+          result != null ? AppTheme.successColor : AppTheme.errorColor,
+    ));
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final rx = widget.rx;
+    final isPharmacist =
+        context.read<AuthProvider>().staffType == 'pharmacist';
+    final canFill = isPharmacist &&
+        (rx.status == 'pending' || rx.status == 'partially_filled');
     final color = rx.isActive ? AppTheme.successColor : AppTheme.gray600;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: Padding(
@@ -566,6 +761,28 @@ class _PrescriptionCard extends StatelessWidget {
                       color: AppTheme.warningColor,
                       fontStyle: FontStyle.italic)),
             ],
+            if (canFill) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _filling ? null : _showFillDialog,
+                  icon: _filling
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation(Colors.white)))
+                      : const Icon(Icons.local_pharmacy, size: 16),
+                  label:
+                      Text(_filling ? 'Dispensing…' : 'Dispense / Fill'),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -599,12 +816,135 @@ class _LabResultsTab extends StatelessWidget {
   }
 }
 
-class _LabResultCard extends StatelessWidget {
+class _LabResultCard extends StatefulWidget {
   final LabResultModel lab;
   const _LabResultCard({required this.lab});
 
   @override
+  State<_LabResultCard> createState() => _LabResultCardState();
+}
+
+class _LabResultCardState extends State<_LabResultCard> {
+  bool _recording = false;
+
+  Future<void> _showRecordDialog() async {
+    final resultsCtrl = TextEditingController();
+    final interpretationCtrl = TextEditingController();
+    final flagsCtrl = TextEditingController();
+    bool requiresFollowup = false;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: const Text('Record Lab Results'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(widget.lab.testName,
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                if (widget.lab.testType != null) ...[
+                  const SizedBox(height: 2),
+                  Text(widget.lab.testType!,
+                      style: TextStyle(
+                          color: AppTheme.gray600, fontSize: 13)),
+                ],
+                const SizedBox(height: 16),
+                TextField(
+                  controller: resultsCtrl,
+                  maxLines: 3,
+                  decoration:
+                      const InputDecoration(labelText: 'Results *'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: interpretationCtrl,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                      labelText: 'Interpretation (optional)'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: flagsCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Abnormal flags (comma-separated)',
+                    hintText: 'e.g. HIGH_GLUCOSE, LOW_HB',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Requires follow-up',
+                      style: TextStyle(fontSize: 13)),
+                  value: requiresFollowup,
+                  onChanged: (v) =>
+                      setLocal(() => requiresFollowup = v ?? false),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Submit'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+    if (resultsCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Results are required')),
+      );
+      return;
+    }
+
+    final flags = flagsCtrl.text
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+
+    setState(() => _recording = true);
+    final result = await context.read<ClinicalProvider>().recordLabResult(
+      widget.lab.id,
+      {
+        'results': resultsCtrl.text.trim(),
+        if (interpretationCtrl.text.trim().isNotEmpty)
+          'interpretation': interpretationCtrl.text.trim(),
+        'abnormal_flags': flags,
+        'requires_followup': requiresFollowup,
+        'sample_collected_at': DateTime.now().toIso8601String(),
+      },
+    );
+    if (!mounted) return;
+    setState(() => _recording = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(result != null
+          ? 'Results recorded successfully'
+          : context.read<ClinicalProvider>().error ??
+              'Failed to record results'),
+      backgroundColor:
+          result != null ? AppTheme.successColor : AppTheme.errorColor,
+    ));
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final lab = widget.lab;
+    final isLabTech = context.read<AuthProvider>().staffType == 'lab_technician' ||
+        context.read<AuthProvider>().staffType == 'lab_tech';
+    final canRecord = isLabTech && lab.isPending;
+
     Color statusColor;
     switch (lab.status) {
       case 'completed':
@@ -699,6 +1039,27 @@ class _LabResultCard extends StatelessWidget {
                       style: TextStyle(
                           fontSize: 12, color: AppTheme.warningColor)),
                 ],
+              ),
+            ],
+            if (canRecord) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _recording ? null : _showRecordDialog,
+                  icon: _recording
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation(Colors.white)))
+                      : const Icon(Icons.science, size: 16),
+                  label: Text(_recording ? 'Saving…' : 'Record Results'),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.secondaryColor),
+                ),
               ),
             ],
           ],
