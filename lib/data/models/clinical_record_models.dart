@@ -57,6 +57,11 @@ class VitalSignModel {
   });
 
   factory VitalSignModel.fromJson(Map<String, dynamic> json) {
+    DateTime? d(String k) {
+      final v = json[k];
+      return v == null ? null : DateTime.tryParse(v as String);
+    }
+
     return VitalSignModel(
       id: json['id'] as String,
       patientId: json['patient_id'] as String,
@@ -79,9 +84,7 @@ class VitalSignModel {
       bmi: (json['bmi'] as num?)?.toDouble(),
       notes: json['notes'] as String?,
       version: (json['version'] as num?)?.toInt() ?? 1,
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'] as String)
-          : null,
+      createdAt: d('created_at'),
     );
   }
 
@@ -348,7 +351,7 @@ class ImmunizationModel {
       administeredById: json['administered_by_id'] as String,
       vaccineCode: json['vaccine_code'] as String,
       vaccineName: json['vaccine_name'] as String,
-      doseNumber: (json['dose_number'] as num).toInt(),
+      doseNumber: (json['dose_number'] as num?)?.toInt() ?? 1,
       seriesTotal: (json['series_total'] as num?)?.toInt(),
       administeredAt: DateTime.parse(json['administered_at'] as String),
       lotNumber: json['lot_number'] as String?,
