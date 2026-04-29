@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/clinical_models.dart';
+import '../models/clinical_record_models.dart';
 import '../repositories/clinical_repository.dart';
 
 /// ClinicalProvider
@@ -19,6 +20,11 @@ class ClinicalProvider extends ChangeNotifier {
   List<PrescriptionModel> _prescriptions = [];
   List<LabResultModel> _labResults = [];
   List<MedicalDocumentModel> _documents = [];
+  List<VitalSignModel> _vitalSigns = [];
+  List<DiagnosisModel> _diagnoses = [];
+  List<ProblemListModel> _problems = [];
+  List<ProcedureModel> _procedures = [];
+  List<ImmunizationModel> _immunizations = [];
 
   bool _isLoading = false;
   String? _error;
@@ -30,6 +36,17 @@ class ClinicalProvider extends ChangeNotifier {
   List<PrescriptionModel> get prescriptions => _prescriptions;
   List<LabResultModel> get labResults => _labResults;
   List<MedicalDocumentModel> get documents => _documents;
+  List<VitalSignModel> get vitalSigns => _vitalSigns;
+  List<DiagnosisModel> get diagnoses => _diagnoses;
+  List<ProblemListModel> get problems => _problems;
+  List<ProcedureModel> get procedures => _procedures;
+  List<ImmunizationModel> get immunizations => _immunizations;
+
+  List<DiagnosisModel> get activeDiagnoses =>
+      _diagnoses.where((d) => d.isActive).toList();
+
+  List<ProblemListModel> get activeProblems =>
+      _problems.where((p) => p.isActive).toList();
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -60,11 +77,21 @@ class ClinicalProvider extends ChangeNotifier {
         repository.getPrescriptions(patientId),
         repository.getLabResults(patientId),
         repository.getDocuments(patientId),
+        repository.getVitalSigns(patientId),
+        repository.getDiagnoses(patientId),
+        repository.getProblems(patientId),
+        repository.getProcedures(patientId),
+        repository.getImmunizations(patientId),
       ]);
-      _appointments = results[0] as List<AppointmentModel>;
+      _appointments  = results[0] as List<AppointmentModel>;
       _prescriptions = results[1] as List<PrescriptionModel>;
-      _labResults = results[2] as List<LabResultModel>;
-      _documents = results[3] as List<MedicalDocumentModel>;
+      _labResults    = results[2] as List<LabResultModel>;
+      _documents     = results[3] as List<MedicalDocumentModel>;
+      _vitalSigns    = results[4] as List<VitalSignModel>;
+      _diagnoses     = results[5] as List<DiagnosisModel>;
+      _problems      = results[6] as List<ProblemListModel>;
+      _procedures    = results[7] as List<ProcedureModel>;
+      _immunizations = results[8] as List<ImmunizationModel>;
       _error = null;
     } catch (e) {
       _error = _friendlyError(e);
@@ -120,7 +147,204 @@ class ClinicalProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> loadVitalSigns() async {
+    if (_patientId == null) return;
+    try {
+      _vitalSigns = await repository.getVitalSigns(_patientId!);
+      notifyListeners();
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadDiagnoses({String? status}) async {
+    if (_patientId == null) return;
+    try {
+      _diagnoses = await repository.getDiagnoses(_patientId!, status: status);
+      notifyListeners();
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadProblems({String? status}) async {
+    if (_patientId == null) return;
+    try {
+      _problems = await repository.getProblems(_patientId!, status: status);
+      notifyListeners();
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadProcedures() async {
+    if (_patientId == null) return;
+    try {
+      _procedures = await repository.getProcedures(_patientId!);
+      notifyListeners();
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadImmunizations() async {
+    if (_patientId == null) return;
+    try {
+      _immunizations = await repository.getImmunizations(_patientId!);
+      notifyListeners();
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+    }
+  }
+
   // ── Write operations ───────────────────────────────────────────────────────
+
+  Future<VitalSignModel?> createVitalSign(Map<String, dynamic> data) async {
+    if (_patientId == null) return null;
+    try {
+      final v = await repository.createVitalSign(_patientId!, data);
+      _vitalSigns = [v, ..._vitalSigns];
+      notifyListeners();
+      return v;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<bool> deleteVitalSign(String vitalSignId) async {
+    if (_patientId == null) return false;
+    try {
+      await repository.deleteVitalSign(_patientId!, vitalSignId);
+      _vitalSigns = _vitalSigns.where((v) => v.id != vitalSignId).toList();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<DiagnosisModel?> createDiagnosis(Map<String, dynamic> data) async {
+    if (_patientId == null) return null;
+    try {
+      final d = await repository.createDiagnosis(_patientId!, data);
+      _diagnoses = [d, ..._diagnoses];
+      notifyListeners();
+      return d;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<bool> deleteDiagnosis(String diagnosisId) async {
+    if (_patientId == null) return false;
+    try {
+      await repository.deleteDiagnosis(_patientId!, diagnosisId);
+      _diagnoses = _diagnoses.where((d) => d.id != diagnosisId).toList();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<ProblemListModel?> createProblem(Map<String, dynamic> data) async {
+    if (_patientId == null) return null;
+    try {
+      final p = await repository.createProblem(_patientId!, data);
+      _problems = [p, ..._problems];
+      notifyListeners();
+      return p;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<bool> deleteProblem(String problemId) async {
+    if (_patientId == null) return false;
+    try {
+      await repository.deleteProblem(_patientId!, problemId);
+      _problems = _problems.where((p) => p.id != problemId).toList();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<ProcedureModel?> createProcedure(Map<String, dynamic> data) async {
+    if (_patientId == null) return null;
+    try {
+      final p = await repository.createProcedure(_patientId!, data);
+      _procedures = [p, ..._procedures];
+      notifyListeners();
+      return p;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<bool> deleteProcedure(String procedureId) async {
+    if (_patientId == null) return false;
+    try {
+      await repository.deleteProcedure(_patientId!, procedureId);
+      _procedures = _procedures.where((p) => p.id != procedureId).toList();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<ImmunizationModel?> createImmunization(
+      Map<String, dynamic> data) async {
+    if (_patientId == null) return null;
+    try {
+      final i = await repository.createImmunization(_patientId!, data);
+      _immunizations = [i, ..._immunizations];
+      notifyListeners();
+      return i;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<bool> deleteImmunization(String immunizationId) async {
+    if (_patientId == null) return false;
+    try {
+      await repository.deleteImmunization(_patientId!, immunizationId);
+      _immunizations =
+          _immunizations.where((i) => i.id != immunizationId).toList();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return false;
+    }
+  }
 
   Future<AppointmentModel?> createAppointment(
       Map<String, dynamic> data) async {
@@ -170,6 +394,25 @@ class ClinicalProvider extends ChangeNotifier {
     }
   }
 
+  Future<PrescriptionModel?> fillPrescription(
+      String prescriptionId, int quantityDispensed) async {
+    if (_patientId == null) return null;
+    try {
+      final updated = await repository.fillPrescription(
+          _patientId!, prescriptionId,
+          quantityDispensed: quantityDispensed);
+      _prescriptions = _prescriptions
+          .map((p) => p.id == prescriptionId ? updated : p)
+          .toList();
+      notifyListeners();
+      return updated;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<bool> discontinuePrescription(String prescriptionId,
       {String? reason}) async {
     if (_patientId == null) return false;
@@ -196,6 +439,24 @@ class ClinicalProvider extends ChangeNotifier {
       _labResults = [lab, ..._labResults];
       notifyListeners();
       return lab;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<LabResultModel?> recordLabResult(
+      String labResultId, Map<String, dynamic> data) async {
+    if (_patientId == null) return null;
+    try {
+      final updated =
+          await repository.recordLabResult(_patientId!, labResultId, data);
+      _labResults = _labResults
+          .map((l) => l.id == labResultId ? updated : l)
+          .toList();
+      notifyListeners();
+      return updated;
     } catch (e) {
       _error = _friendlyError(e);
       notifyListeners();
@@ -263,10 +524,15 @@ class ClinicalProvider extends ChangeNotifier {
 
   void clear() {
     _patientId = null;
-    _appointments = [];
+    _appointments  = [];
     _prescriptions = [];
-    _labResults = [];
-    _documents = [];
+    _labResults    = [];
+    _documents     = [];
+    _vitalSigns    = [];
+    _diagnoses     = [];
+    _problems      = [];
+    _procedures    = [];
+    _immunizations = [];
     _error = null;
     notifyListeners();
   }
