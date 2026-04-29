@@ -25,6 +25,7 @@ class AppointmentModel {
   final DateTime? completedAt;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String? wardId;
 
   const AppointmentModel({
     required this.id,
@@ -42,6 +43,7 @@ class AppointmentModel {
     this.completedAt,
     this.createdAt,
     this.updatedAt,
+    this.wardId,
   });
 
   factory AppointmentModel.fromJson(Map<String, dynamic> json) {
@@ -69,6 +71,7 @@ class AppointmentModel {
       updatedAt: json['updated_at'] != null
           ? DateTime.tryParse(json['updated_at'] as String)
           : null,
+      wardId: json['ward_id'] as String?,
     );
   }
 
@@ -108,6 +111,8 @@ class PrescriptionModel {
   final String? specialInstructions;
   final String? discontinuationReason;
   final bool drugInteractionsChecked;
+  final String? wardId;
+  final String? codingSystem;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -132,6 +137,8 @@ class PrescriptionModel {
     this.specialInstructions,
     this.discontinuationReason,
     required this.drugInteractionsChecked,
+    this.wardId,
+    this.codingSystem,
     this.createdAt,
     this.updatedAt,
   });
@@ -164,6 +171,8 @@ class PrescriptionModel {
       specialInstructions: json['special_instructions'] as String?,
       discontinuationReason: json['discontinuation_reason'] as String?,
       drugInteractionsChecked: json['drug_interactions_checked'] as bool? ?? false,
+      wardId: json['ward_id'] as String?,
+      codingSystem: json['coding_system'] as String?,
       createdAt: _date('created_at'),
       updatedAt: _date('updated_at'),
     );
@@ -203,6 +212,7 @@ class LabResultModel {
   final DateTime? reviewedAt;
   final String? filePath;
   final bool requiresFollowup;
+  final String? wardId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -226,6 +236,7 @@ class LabResultModel {
     this.reviewedAt,
     this.filePath,
     required this.requiresFollowup,
+    this.wardId,
     this.createdAt,
     this.updatedAt,
   });
@@ -259,6 +270,7 @@ class LabResultModel {
       reviewedAt: _dt('reviewed_at'),
       filePath: json['file_path'] as String?,
       requiresFollowup: json['requires_followup'] as bool? ?? false,
+      wardId: json['ward_id'] as String?,
       createdAt: _dt('created_at'),
       updatedAt: _dt('updated_at'),
     );
