@@ -1,7 +1,9 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../config/theme.dart';
+import '../../../core/platform.dart';
 import '../../../data/models/patient_models.dart';
 import '../../../data/models/clinical_models.dart';
 import '../../../data/providers/auth_provider.dart';
@@ -199,9 +201,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
   Future<void> _openEdit() async {
     final updated = await Navigator.of(context).push<PatientModel>(
-      MaterialPageRoute(
-        builder: (_) => PatientFormScreen(patient: _patient),
-      ),
+      kIsIOS
+          ? CupertinoPageRoute(
+              builder: (_) => PatientFormScreen(patient: _patient))
+          : MaterialPageRoute(
+              builder: (_) => PatientFormScreen(patient: _patient)),
     );
     if (updated != null && mounted) {
       setState(() => _patient = updated);
@@ -241,23 +245,44 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
               child: Icon(_currentTab == 4 ? Icons.upload_file : Icons.add),
             )
           : null,
-      appBar: AppBar(
-        title: Text(p.fullName),
-        actions: [
-          if (canEdit)
-            IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              tooltip: 'Edit patient',
-              onPressed: _openEdit,
-            ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: () =>
-                context.read<ClinicalProvider>().loadAll(p.id),
-          ),
-        ],
-        bottom: TabBar(
+      appBar: kIsIOS
+          ? CupertinoNavigationBar(
+              middle: Text(p.fullName),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (canEdit)
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      onPressed: _openEdit,
+                      child: const Icon(CupertinoIcons.pencil),
+                    ),
+                  CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: () =>
+                        context.read<ClinicalProvider>().loadAll(p.id),
+                    child: const Icon(CupertinoIcons.refresh),
+                  ),
+                ],
+              ),
+            )
+          : AppBar(
+              title: Text(p.fullName),
+              actions: [
+                if (canEdit)
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Edit patient',
+                    onPressed: _openEdit,
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'Refresh',
+                  onPressed: () =>
+                      context.read<ClinicalProvider>().loadAll(p.id),
+                ),
+              ],
+              bottom: TabBar(
           controller: _tabs,
           isScrollable: true,
           tabs: [

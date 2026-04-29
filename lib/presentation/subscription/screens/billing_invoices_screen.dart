@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/subscription_provider.dart';
@@ -31,19 +33,36 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
     final isWeb = MediaQuery.of(context).size.width > 600;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Billing & Invoices'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              if (_orgId != null) {
-                context.read<SubscriptionProvider>().loadInvoices(_orgId!);
-              }
-            },
-            tooltip: 'Refresh',
-          ),
-        ],
+      appBar: kIsIOS
+          ? CupertinoNavigationBar(
+              middle: const Text('Billing & Invoices'),
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  if (_orgId != null) {
+                    context
+                        .read<SubscriptionProvider>()
+                        .loadInvoices(_orgId!);
+                  }
+                },
+                child: const Icon(CupertinoIcons.refresh),
+              ),
+            )
+          : AppBar(
+              title: const Text('Billing & Invoices'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () {
+                    if (_orgId != null) {
+                      context
+                          .read<SubscriptionProvider>()
+                          .loadInvoices(_orgId!);
+                    }
+                  },
+                  tooltip: 'Refresh',
+                ),
+              ],
       ),
       body: Consumer<SubscriptionProvider>(
         builder: (context, subscriptionProvider, child) {

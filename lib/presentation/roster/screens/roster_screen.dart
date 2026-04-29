@@ -1,6 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
+import '../../../core/platform.dart';
 import '../../../data/models/clinical_record_models.dart';
 import '../../../data/models/patient_models.dart';
 import '../../../data/providers/auth_provider.dart';
@@ -162,25 +164,34 @@ class _RosterScreenState extends State<RosterScreen> {
     final dateStr = '${today.day}/${today.month}/${today.year}';
 
     return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(isNurse ? 'Daily Roster' : 'Today\'s Patients',
-                style: const TextStyle(fontSize: 18)),
-            Text(dateStr,
-                style:
-                    const TextStyle(fontSize: 12, color: Colors.white70)),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: _load,
-          ),
-        ],
-      ),
+      appBar: kIsIOS
+          ? CupertinoNavigationBar(
+              middle: Text(isNurse ? 'Daily Roster' : 'Today\'s Patients'),
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: _load,
+                child: const Icon(CupertinoIcons.refresh),
+              ),
+            )
+          : AppBar(
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(isNurse ? 'Daily Roster' : 'Today\'s Patients',
+                      style: const TextStyle(fontSize: 18)),
+                  Text(dateStr,
+                      style: const TextStyle(
+                          fontSize: 12, color: Colors.white70)),
+                ],
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'Refresh',
+                  onPressed: _load,
+                ),
+              ],
+            ),
       floatingActionButton: isNurse
           ? Column(
               mainAxisSize: MainAxisSize.min,
@@ -190,8 +201,11 @@ class _RosterScreenState extends State<RosterScreen> {
                   onPressed: () async {
                     final result =
                         await Navigator.of(context).push<PatientModel>(
-                      MaterialPageRoute(
-                          builder: (_) => const PatientFormScreen()),
+                      kIsIOS
+                          ? CupertinoPageRoute(
+                              builder: (_) => const PatientFormScreen())
+                          : MaterialPageRoute(
+                              builder: (_) => const PatientFormScreen()),
                     );
                     if (result != null && mounted) {
                       await _addToRoster(result);
@@ -235,9 +249,13 @@ class _RosterScreenState extends State<RosterScreen> {
                               context
                                   .read<PatientProvider>()
                                   .setSelectedPatient(patient);
-                              Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (_) =>
-                                      PatientDetailScreen(patient: patient)));
+                              Navigator.of(context).push(kIsIOS
+                                  ? CupertinoPageRoute(
+                                      builder: (_) => PatientDetailScreen(
+                                          patient: patient))
+                                  : MaterialPageRoute(
+                                      builder: (_) => PatientDetailScreen(
+                                          patient: patient)));
                             },
                             onStartConsultation: entry.isWaiting
                                 ? () => _startConsultation(patient, entry)

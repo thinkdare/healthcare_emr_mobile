@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
 import '../../../data/providers/emergency_access_provider.dart';
@@ -122,28 +124,42 @@ class _TriggerEmergencyAccessScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.errorColor.withValues(alpha: 0.04),
-      appBar: AppBar(
-        backgroundColor: AppTheme.errorColor,
-        foregroundColor: Colors.white,
-        title: const Text('Break-Glass Emergency Access'),
-        actions: [
-          TextButton(
-            onPressed: _saving ? null : _submit,
-            child: _saving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation(Colors.white)))
-                : const Text('Submit',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
+      appBar: kIsIOS
+          ? CupertinoNavigationBar(
+              backgroundColor: AppColors.error.withValues(alpha: 0.9),
+              middle: const Text('Emergency Access',
+                  style: TextStyle(color: CupertinoColors.white)),
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: _saving ? null : _submit,
+                child: _saving
+                    ? const CupertinoActivityIndicator()
+                    : const Text('Submit',
+                        style: TextStyle(color: CupertinoColors.white)),
+              ),
+            )
+          : AppBar(
+              backgroundColor: AppTheme.errorColor,
+              foregroundColor: Colors.white,
+              title: const Text('Break-Glass Emergency Access'),
+              actions: [
+                TextButton(
+                  onPressed: _saving ? null : _submit,
+                  child: _saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation(Colors.white)))
+                      : const Text('Submit',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(

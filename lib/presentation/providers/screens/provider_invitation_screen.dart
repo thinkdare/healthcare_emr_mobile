@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../core/platform.dart';
 import 'package:flutter/services.dart';
 import '../../../config/theme.dart';
 import '../../../config/app_config.dart';
@@ -90,9 +92,9 @@ class _ProviderInvitationScreenState extends State<ProviderInvitationScreen> {
     final isWeb = MediaQuery.of(context).size.width > 600;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Invite Provider'),
-      ),
+      appBar: kIsIOS
+          ? const CupertinoNavigationBar(middle: Text('Invite Provider'))
+          : AppBar(title: const Text('Invite Provider')),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(

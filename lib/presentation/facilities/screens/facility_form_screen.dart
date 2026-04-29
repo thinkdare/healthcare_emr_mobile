@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
 import '../../../data/models/organization_models_enhanced.dart';
 import '../../../data/repositories/facility_repository.dart';
@@ -122,9 +124,15 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
     final isWeb = MediaQuery.of(context).size.width > 600;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Facility' : 'Add Facility'),
-      ),
+      appBar: kIsIOS
+          ? CupertinoNavigationBar(
+              middle:
+                  Text(_isEditing ? 'Edit Facility' : 'Add Facility'),
+            )
+          : AppBar(
+              title:
+                  Text(_isEditing ? 'Edit Facility' : 'Add Facility'),
+            ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(

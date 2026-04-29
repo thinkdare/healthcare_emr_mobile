@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/platform.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/patient_provider.dart';
 import '../../../config/theme.dart';
@@ -71,8 +73,11 @@ class _PatientListScreenState extends State<PatientListScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final result = await Navigator.of(context).push(
-            MaterialPageRoute(
-                builder: (_) => const PatientFormScreen()),
+            kIsIOS
+                ? CupertinoPageRoute(
+                    builder: (_) => const PatientFormScreen())
+                : MaterialPageRoute(
+                    builder: (_) => const PatientFormScreen()),
           );
           if (result != null && mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -83,36 +88,54 @@ class _PatientListScreenState extends State<PatientListScreen> {
         tooltip: 'New Patient',
         child: const Icon(Icons.person_add),
       ),
-      appBar: AppBar(
-        title: _showSearchBar
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                style: const TextStyle(color: Colors.white),
-                cursorColor: Colors.white,
-                decoration: const InputDecoration(
-                  hintText: 'Search by name, email or phone…',
-                  hintStyle: TextStyle(color: Colors.white70),
-                  border: InputBorder.none,
-                  filled: false,
+      appBar: kIsIOS
+          ? CupertinoNavigationBar(
+              middle: const Text('Patients'),
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  setState(() => _showSearchBar = !_showSearchBar);
+                  if (!_showSearchBar) {
+                    _searchController.clear();
+                    context.read<PatientProvider>().clearSearch();
+                  }
+                },
+                child: Icon(_showSearchBar
+                    ? CupertinoIcons.xmark
+                    : CupertinoIcons.search),
+              ),
+            )
+          : AppBar(
+              title: _showSearchBar
+                  ? TextField(
+                      controller: _searchController,
+                      autofocus: true,
+                      style: const TextStyle(color: Colors.white),
+                      cursorColor: Colors.white,
+                      decoration: const InputDecoration(
+                        hintText: 'Search by name, MRN, phone or email…',
+                        hintStyle: TextStyle(color: Colors.white70),
+                        border: InputBorder.none,
+                        filled: false,
+                      ),
+                      onChanged: _onSearchChanged,
+                    )
+                  : const Text('Patients'),
+              actions: [
+                IconButton(
+                  icon:
+                      Icon(_showSearchBar ? Icons.close : Icons.search),
+                  tooltip: _showSearchBar ? 'Close search' : 'Search',
+                  onPressed: () {
+                    setState(() => _showSearchBar = !_showSearchBar);
+                    if (!_showSearchBar) {
+                      _searchController.clear();
+                      context.read<PatientProvider>().clearSearch();
+                    }
+                  },
                 ),
-                onChanged: _onSearchChanged,
-              )
-            : const Text('Patients'),
-        actions: [
-          IconButton(
-            icon: Icon(_showSearchBar ? Icons.close : Icons.search),
-            tooltip: _showSearchBar ? 'Close search' : 'Search',
-            onPressed: () {
-              setState(() => _showSearchBar = !_showSearchBar);
-              if (!_showSearchBar) {
-                _searchController.clear();
-                context.read<PatientProvider>().clearSearch();
-              }
-            },
-          ),
-        ],
-      ),
+              ],
+            ),
       body: Consumer<PatientProvider>(
         builder: (context, patientProvider, _) {
           final isLoading = patientProvider.isLoading;
@@ -307,7 +330,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               isSearching
-                  ? 'Try a different name, email, or phone number'
+                  ? 'Try a different name, MRN, phone or email'
                   : 'Add your first patient to get started',
               style: TextStyle(fontSize: 13, color: AppTheme.gray600),
               textAlign: TextAlign.center,

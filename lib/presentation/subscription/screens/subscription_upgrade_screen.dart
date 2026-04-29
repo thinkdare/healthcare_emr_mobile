@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/subscription_provider.dart';
@@ -72,7 +74,9 @@ class _SubscriptionUpgradeScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Choose a Plan')),
+      appBar: kIsIOS
+          ? const CupertinoNavigationBar(middle: Text('Choose a Plan'))
+          : AppBar(title: const Text('Choose a Plan')),
       body: Consumer<SubscriptionProvider>(
         builder: (context, sp, _) {
           if (sp.isLoading && sp.plans.isEmpty) {

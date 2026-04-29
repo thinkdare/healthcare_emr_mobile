@@ -1,6 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
+import '../../../core/platform.dart';
 import '../../../data/models/access_grant_models.dart';
 import '../../../data/providers/access_grant_provider.dart';
 import 'request_access_screen.dart';
@@ -34,17 +36,27 @@ class _AccessGrantsScreenState extends State<AccessGrantsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Access Grants'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: () =>
-                context.read<AccessGrantProvider>().loadGrants(),
-          ),
-        ],
-        bottom: TabBar(
+      appBar: kIsIOS
+          ? CupertinoNavigationBar(
+              middle: const Text('Access Grants'),
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () =>
+                    context.read<AccessGrantProvider>().loadGrants(),
+                child: const Icon(CupertinoIcons.refresh),
+              ),
+            )
+          : AppBar(
+              title: const Text('Access Grants'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'Refresh',
+                  onPressed: () =>
+                      context.read<AccessGrantProvider>().loadGrants(),
+                ),
+              ],
+              bottom: TabBar(
           controller: _tabs,
           tabs: [
             Tab(
@@ -83,8 +95,11 @@ class _AccessGrantsScreenState extends State<AccessGrantsScreen>
         onPressed: () async {
           final provider = context.read<AccessGrantProvider>();
           final created = await Navigator.of(context).push<bool>(
-            MaterialPageRoute(
-                builder: (_) => const RequestAccessScreen()),
+            kIsIOS
+                ? CupertinoPageRoute(
+                    builder: (_) => const RequestAccessScreen())
+                : MaterialPageRoute(
+                    builder: (_) => const RequestAccessScreen()),
           );
           if (created == true && mounted) {
             provider.loadGrants();

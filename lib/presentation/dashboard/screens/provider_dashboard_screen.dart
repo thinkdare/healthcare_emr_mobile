@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/platform.dart';
 import '../../../data/providers/access_grant_provider.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/emergency_access_provider.dart';
@@ -11,6 +13,7 @@ import '../../access_grants/screens/access_grants_screen.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../emergency_access/screens/emergency_access_screen.dart';
 import '../../patients/screens/patient_list_screen.dart';
+import '../../roster/screens/roster_screen.dart';
 import '../../profile/screens/staff_profile_screen.dart';
 import '../../reporting/screens/reporting_screen.dart';
 import '../../subscription/screens/subscription_details_screen.dart';
@@ -114,17 +117,26 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: () => _handleLogout(context),
-          ),
-        ],
-      ),
-      drawer: _buildDrawer(context),
+      appBar: kIsIOS
+          ? CupertinoNavigationBar(
+              middle: const Text('Dashboard'),
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () => _handleLogout(context),
+                child: const Icon(CupertinoIcons.square_arrow_left),
+              ),
+            )
+          : AppBar(
+              title: const Text('Dashboard'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.logout),
+                  tooltip: 'Logout',
+                  onPressed: () => _handleLogout(context),
+                ),
+              ],
+            ),
+      drawer: kIsIOS ? null : _buildDrawer(context),
       body: Column(
         children: [
           const TrialStatusBanner(),
@@ -134,6 +146,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 if (auth.currentUser == null) {
                   return const Center(child: Text('Loading…'));
                 }
+
+                final isAdmin = auth.staffType == 'admin';
+                final isDoctor = auth.staffType == 'doctor';
+                final showGrants = isAdmin || isDoctor ||
+                    (auth.activeMembership?.clinicalRank
+                            ?.canApproveAccessGrants ??
+                        false);
+                final showEmergency = auth.canEmergencyAccess;
 
                 return RefreshIndicator(
                   onRefresh: _handleRefresh,
@@ -145,15 +165,21 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       children: [
                         _WelcomeCard(auth: auth),
                         const SizedBox(height: 16),
-                        _SubscriptionCard(),
-                        const SizedBox(height: 16),
+                        if (isAdmin) ...[
+                          _SubscriptionCard(),
+                          const SizedBox(height: 16),
+                        ],
                         _PatientStatsCard(userId: auth.currentUserId ?? ''),
                         const SizedBox(height: 16),
                         _RecentPatientsCard(userId: auth.currentUserId ?? ''),
-                        const SizedBox(height: 16),
-                        _AccessGrantsCard(),
-                        const SizedBox(height: 16),
-                        _EmergencyAccessCard(),
+                        if (showGrants) ...[
+                          const SizedBox(height: 16),
+                          _AccessGrantsCard(),
+                        ],
+                        if (showEmergency) ...[
+                          const SizedBox(height: 16),
+                          _EmergencyAccessCard(),
+                        ],
                         const SizedBox(height: 16),
                         _StaffInfoCard(auth: auth),
                         const SizedBox(height: 16),
@@ -167,24 +193,45 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const PatientListScreen()),
-        ),
-        icon: const Icon(Icons.people),
-        label: const Text('Patients'),
-        backgroundColor: AppTheme.primaryColor,
+      floatingActionButton: Consumer<AuthProvider>(
+        builder: (context, auth, _) {
+          final useRoster = auth.staffType == 'doctor' ||
+              auth.staffType == 'nurse';
+          return FloatingActionButton.extended(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) =>
+                    useRoster ? const RosterScreen() : const PatientListScreen(),
+              ),
+            ),
+            icon: Icon(useRoster ? Icons.event_note : Icons.people),
+            label: Text(auth.staffType == 'doctor'
+                ? 'Today\'s Patients'
+                : auth.staffType == 'nurse'
+                    ? 'Daily Roster'
+                    : 'Patients'),
+            backgroundColor: AppTheme.primaryColor,
+          );
+        },
       ),
     );
   }
 
   Widget _buildDrawer(BuildContext context) {
     return Drawer(
-      child: Column(
-        children: [
-          Consumer<AuthProvider>(
-            builder: (context, auth, _) {
-              return UserAccountsDrawerHeader(
+      child: Consumer<AuthProvider>(
+        builder: (context, auth, _) {
+          final isAdmin = auth.staffType == 'admin';
+          final isDoctor = auth.staffType == 'doctor';
+          final showGrants = isAdmin || isDoctor ||
+              (auth.activeMembership?.clinicalRank?.canApproveAccessGrants ??
+                  false);
+          final showEmergency = auth.canEmergencyAccess;
+          final showAdminItems = isAdmin;
+
+          return Column(
+            children: [
+              UserAccountsDrawerHeader(
                 decoration:
                     const BoxDecoration(color: AppTheme.primaryColor),
                 accountName: Text(
@@ -203,93 +250,110 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         color: AppTheme.primaryColor),
                   ),
                 ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text('Home'),
-            onTap: () => Navigator.of(context).pop(),
-          ),
-          ListTile(
-            leading: const Icon(Icons.people),
-            title: const Text('Patients'),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const PatientListScreen()),
-              );
-            },
-          ),
-          Consumer<AccessGrantProvider>(
-            builder: (context, grants, _) => ListTile(
-              leading: Badge(
-                isLabelVisible: grants.pendingCount > 0,
-                label: Text('${grants.pendingCount}'),
-                child: const Icon(Icons.shield_outlined),
               ),
-              title: const Text('Access Grants'),
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const AccessGrantsScreen()));
-              },
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.warning_amber_rounded,
-                color: AppTheme.errorColor),
-            title: const Text('Emergency Access'),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const EmergencyAccessScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.subscriptions),
-            title: const Text('Subscription'),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const SubscriptionDetailsScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.analytics_outlined),
-            title: const Text('Reports & Compliance'),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const ReportingScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.person_outline),
-            title: const Text('My Profile'),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const StaffProfileScreen()));
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout, color: AppTheme.errorColor),
-            title: const Text('Logout',
-                style: TextStyle(color: AppTheme.errorColor)),
-            onTap: () {
-              Navigator.of(context).pop();
-              _handleLogout(context);
-            },
-          ),
-          const Spacer(),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text('${AppConfig.appName} v1.0.0',
-                style: TextStyle(fontSize: 12, color: AppTheme.gray600)),
-          ),
-        ],
+              ListTile(
+                leading: const Icon(Icons.home),
+                title: const Text('Home'),
+                onTap: () => Navigator.of(context).pop(),
+              ),
+              if (auth.staffType == 'doctor' || auth.staffType == 'nurse')
+                ListTile(
+                  leading: const Icon(Icons.event_note),
+                  title: Text(auth.staffType == 'doctor'
+                      ? 'Today\'s Patients'
+                      : 'Daily Roster'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const RosterScreen()));
+                  },
+                ),
+              ListTile(
+                leading: const Icon(Icons.people),
+                title: const Text('Patients'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (_) => const PatientListScreen()),
+                  );
+                },
+              ),
+              if (showGrants)
+                Consumer<AccessGrantProvider>(
+                  builder: (context, grants, _) => ListTile(
+                    leading: Badge(
+                      isLabelVisible: grants.pendingCount > 0,
+                      label: Text('${grants.pendingCount}'),
+                      child: const Icon(Icons.shield_outlined),
+                    ),
+                    title: const Text('Access Grants'),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => const AccessGrantsScreen()));
+                    },
+                  ),
+                ),
+              if (showEmergency)
+                ListTile(
+                  leading: const Icon(Icons.warning_amber_rounded,
+                      color: AppTheme.errorColor),
+                  title: const Text('Emergency Access'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const EmergencyAccessScreen()));
+                  },
+                ),
+              if (showAdminItems) ...[
+                ListTile(
+                  leading: const Icon(Icons.subscriptions),
+                  title: const Text('Subscription'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const SubscriptionDetailsScreen()));
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.analytics_outlined),
+                  title: const Text('Reports & Compliance'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const ReportingScreen()));
+                  },
+                ),
+              ],
+              ListTile(
+                leading: const Icon(Icons.person_outline),
+                title: const Text('My Profile'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const StaffProfileScreen()));
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.logout, color: AppTheme.errorColor),
+                title: const Text('Logout',
+                    style: TextStyle(color: AppTheme.errorColor)),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _handleLogout(context);
+                },
+              ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text('${AppConfig.appName} v1.0.0',
+                    style: TextStyle(fontSize: 12, color: AppTheme.gray600)),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -330,9 +394,12 @@ class _WelcomeCard extends StatelessWidget {
                     color: Colors.white)),
             const SizedBox(height: 8),
             if (auth.staffTypeDisplay.isNotEmpty)
-              Text(auth.staffTypeDisplay,
-                  style:
-                      const TextStyle(fontSize: 16, color: Colors.white70)),
+              Text(
+                auth.department.isNotEmpty
+                    ? '${auth.staffTypeDisplay} · ${auth.department}'
+                    : auth.staffTypeDisplay,
+                style: const TextStyle(fontSize: 16, color: Colors.white70),
+              ),
             if (auth.facilityName.isNotEmpty) ...[
               const SizedBox(height: 4),
               Row(children: [
@@ -668,6 +735,10 @@ class _StaffInfoCard extends StatelessWidget {
             if (auth.staffTypeDisplay.isNotEmpty) ...[
               const SizedBox(height: 12),
               _InfoRow('Role', auth.staffTypeDisplay),
+            ],
+            if (auth.department.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _InfoRow('Department', auth.department),
             ],
             if (rank != null) ...[
               const SizedBox(height: 12),

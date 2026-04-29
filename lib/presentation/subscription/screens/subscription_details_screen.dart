@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/subscription_provider.dart';
@@ -76,15 +78,24 @@ class _SubscriptionDetailsScreenState extends State<SubscriptionDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Subscription'),
-        actions: [
-          IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _loadData,
-              tooltip: 'Refresh'),
-        ],
-      ),
+      appBar: kIsIOS
+          ? CupertinoNavigationBar(
+              middle: const Text('Subscription'),
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: _loadData,
+                child: const Icon(CupertinoIcons.refresh),
+              ),
+            )
+          : AppBar(
+              title: const Text('Subscription'),
+              actions: [
+                IconButton(
+                    icon: const Icon(Icons.refresh),
+                    onPressed: _loadData,
+                    tooltip: 'Refresh'),
+              ],
+            ),
       body: RefreshIndicator(
         onRefresh: _loadData,
         child: Consumer<SubscriptionProvider>(

@@ -1,10 +1,13 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/platform.dart';
 import '../../../data/models/auth_models.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../config/theme.dart';
 import '../../dashboard/screens/provider_dashboard_screen.dart';
+import '../../shell/ios_shell.dart';
 
 /// Shown after a successful login when the user belongs to more than one
 /// facility, or when the app restores a session that has no stored tenant.
@@ -29,7 +32,10 @@ class _FacilityPickerScreenState extends State<FacilityPickerScreen> {
 
     if (authProvider.state == AuthState.authenticated) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const ProviderDashboardScreen()),
+        kIsIOS
+            ? CupertinoPageRoute(builder: (_) => const IOSShell())
+            : MaterialPageRoute(
+                builder: (_) => const ProviderDashboardScreen()),
       );
     }
   }
@@ -37,22 +43,40 @@ class _FacilityPickerScreenState extends State<FacilityPickerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Select Facility'),
-        automaticallyImplyLeading: false,
-        actions: [
-          TextButton.icon(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            label: const Text('Logout', style: TextStyle(color: Colors.white)),
-            onPressed: () async {
-              await context.read<AuthProvider>().logout();
-              if (mounted) {
-                Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
-              }
-            },
-          ),
-        ],
-      ),
+      appBar: kIsIOS
+          ? CupertinoNavigationBar(
+              middle: const Text('Select Facility'),
+              automaticallyImplyLeading: false,
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () async {
+                  await context.read<AuthProvider>().logout();
+                  if (mounted) {
+                    Navigator.of(context)
+                        .pushNamedAndRemoveUntil('/', (_) => false);
+                  }
+                },
+                child: const Text('Logout'),
+              ),
+            )
+          : AppBar(
+              title: const Text('Select Facility'),
+              automaticallyImplyLeading: false,
+              actions: [
+                TextButton.icon(
+                  icon: const Icon(Icons.logout, color: Colors.white),
+                  label: const Text('Logout',
+                      style: TextStyle(color: Colors.white)),
+                  onPressed: () async {
+                    await context.read<AuthProvider>().logout();
+                    if (mounted) {
+                      Navigator.of(context)
+                          .pushNamedAndRemoveUntil('/', (_) => false);
+                    }
+                  },
+                ),
+              ],
+            ),
       body: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           final facilities = auth.availableFacilities;

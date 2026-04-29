@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
 import '../../../data/providers/auth_provider.dart';
@@ -45,24 +47,33 @@ class _ReportingScreenState extends State<ReportingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reports & Compliance'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadAll,
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabs,
-          tabs: const [
-            Tab(text: 'Organisation'),
-            Tab(text: 'Facility'),
-            Tab(text: 'Audit Log'),
-          ],
-        ),
-      ),
+      appBar: kIsIOS
+          ? CupertinoNavigationBar(
+              middle: const Text('Reports & Compliance'),
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: _loadAll,
+                child: const Icon(CupertinoIcons.refresh),
+              ),
+            )
+          : AppBar(
+              title: const Text('Reports & Compliance'),
+              actions: [
+                IconButton(
+                  tooltip: 'Refresh',
+                  icon: const Icon(Icons.refresh),
+                  onPressed: _loadAll,
+                ),
+              ],
+              bottom: TabBar(
+                controller: _tabs,
+                tabs: const [
+                  Tab(text: 'Organisation'),
+                  Tab(text: 'Facility'),
+                  Tab(text: 'Audit Log'),
+                ],
+              ),
+            ),
       body: Consumer<ReportingProvider>(
         builder: (context, rp, _) {
           if (rp.error != null) {

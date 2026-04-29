@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
 import '../../../data/providers/access_grant_provider.dart';
@@ -118,24 +120,37 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Request Patient Access'),
-        actions: [
-          TextButton(
-            onPressed: _saving ? null : _submit,
-            child: _saving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(Colors.white)))
-                : const Text('Submit',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
+      appBar: kIsIOS
+          ? CupertinoNavigationBar(
+              middle: const Text('Request Patient Access'),
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: _saving ? null : _submit,
+                child: _saving
+                    ? const CupertinoActivityIndicator()
+                    : const Text('Submit'),
+              ),
+            )
+          : AppBar(
+              title: const Text('Request Patient Access'),
+              actions: [
+                TextButton(
+                  onPressed: _saving ? null : _submit,
+                  child: _saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation(Colors.white)))
+                      : const Text('Submit',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(

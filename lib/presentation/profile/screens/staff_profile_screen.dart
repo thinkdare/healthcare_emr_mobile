@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../core/platform.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
@@ -30,16 +32,20 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Profile'),
-        bottom: TabBar(
-          controller: _tabs,
-          tabs: const [
-            Tab(text: 'Profile'),
-            Tab(text: 'Security'),
-            Tab(text: '2FA'),
-          ],
-        ),
+      appBar: kIsIOS
+          ? const CupertinoNavigationBar(
+              middle: Text('My Profile'),
+            )
+          : AppBar(
+              title: const Text('My Profile'),
+              bottom: TabBar(
+                controller: _tabs,
+                tabs: const [
+                  Tab(text: 'Profile'),
+                  Tab(text: 'Security'),
+                  Tab(text: '2FA'),
+                ],
+              ),
       ),
       body: TabBarView(
         controller: _tabs,
@@ -134,6 +140,8 @@ class _ProfileTab extends StatelessWidget {
                   icon: Icons.badge_outlined,
                   children: [
                     _InfoRow('Role', membership.displayType),
+                    if (membership.department != null)
+                      _InfoRow('Department', membership.department!),
                     _InfoRow(
                         'Primary affiliation',
                         membership.isPrimary ? 'Yes' : 'No'),

@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
 import '../../../data/models/emergency_access_models.dart';
@@ -132,18 +134,29 @@ class _EmergencyAccessScreenState extends State<EmergencyAccessScreen> {
         context.select<AuthProvider, bool>((a) => a.canEmergencyAccess);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Emergency Access'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            icon: const Icon(Icons.refresh),
-            onPressed: () => context
-                .read<EmergencyAccessProvider>()
-                .loadLogs(refresh: true),
-          ),
-        ],
-      ),
+      appBar: kIsIOS
+          ? CupertinoNavigationBar(
+              middle: const Text('Emergency Access'),
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () => context
+                    .read<EmergencyAccessProvider>()
+                    .loadLogs(refresh: true),
+                child: const Icon(CupertinoIcons.refresh),
+              ),
+            )
+          : AppBar(
+              title: const Text('Emergency Access'),
+              actions: [
+                IconButton(
+                  tooltip: 'Refresh',
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () => context
+                      .read<EmergencyAccessProvider>()
+                      .loadLogs(refresh: true),
+                ),
+              ],
+            ),
       floatingActionButton: canTrigger
           ? FloatingActionButton.extended(
               backgroundColor: AppTheme.errorColor,
@@ -152,9 +165,13 @@ class _EmergencyAccessScreenState extends State<EmergencyAccessScreen> {
                 final provider =
                     context.read<EmergencyAccessProvider>();
                 final created = await Navigator.of(context).push<bool>(
-                  MaterialPageRoute(
-                      builder: (_) =>
-                          const TriggerEmergencyAccessScreen()),
+                  kIsIOS
+                      ? CupertinoPageRoute(
+                          builder: (_) =>
+                              const TriggerEmergencyAccessScreen())
+                      : MaterialPageRoute(
+                          builder: (_) =>
+                              const TriggerEmergencyAccessScreen()),
                 );
                 if (created == true && mounted) {
                   provider.loadLogs(refresh: true);

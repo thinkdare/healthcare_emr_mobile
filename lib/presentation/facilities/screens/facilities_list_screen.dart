@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
 import '../../../data/models/organization_models_enhanced.dart';
 import '../../../data/repositories/facility_repository.dart';
@@ -103,16 +105,25 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
     final isWeb = MediaQuery.of(context).size.width > 600;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Facilities'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadFacilities,
-            tooltip: 'Refresh',
-          ),
-        ],
-      ),
+      appBar: kIsIOS
+          ? CupertinoNavigationBar(
+              middle: const Text('Facilities'),
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: _loadFacilities,
+                child: const Icon(CupertinoIcons.refresh),
+              ),
+            )
+          : AppBar(
+              title: const Text('Facilities'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: _loadFacilities,
+                  tooltip: 'Refresh',
+                ),
+              ],
+            ),
       body: _buildBody(isWeb),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {

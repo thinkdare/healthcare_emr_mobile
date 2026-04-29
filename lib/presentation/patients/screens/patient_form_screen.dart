@@ -1,6 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
+import '../../../core/platform.dart';
 import '../../../data/models/patient_models.dart';
 import '../../../data/providers/patient_provider.dart';
 
@@ -46,6 +48,9 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
   late final TextEditingController _insuranceProvider;
   late final TextEditingController _insuranceNumber;
 
+  // Medical history
+  late final TextEditingController _medicalHistory;
+
   bool _saving = false;
 
   static const _genders = [
@@ -85,6 +90,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
 
     _insuranceProvider = TextEditingController(text: p?.insuranceProvider ?? '');
     _insuranceNumber   = TextEditingController(text: p?.insuranceNumber ?? '');
+    _medicalHistory    = TextEditingController(text: p?.medicalHistory ?? '');
 
     if (p != null) {
       _allergies.addAll(p.allergies.map(
@@ -100,6 +106,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
     for (final c in [
       _firstName, _lastName, _dob, _phone, _email, _address,
       _emergencyName, _emergencyPhone, _insuranceProvider, _insuranceNumber,
+      _medicalHistory,
     ]) {
       c.dispose();
     }
@@ -137,6 +144,8 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
         'insurance_provider': _insuranceProvider.text.trim(),
       if (_insuranceNumber.text.trim().isNotEmpty)
         'insurance_number': _insuranceNumber.text.trim(),
+      if (_medicalHistory.text.trim().isNotEmpty)
+        'medical_history': _medicalHistory.text.trim(),
     };
 
     final provider = context.read<PatientProvider>();
@@ -185,24 +194,38 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isEditing ? 'Edit Patient' : 'New Patient'),
-        actions: [
-          TextButton(
-            onPressed: _saving ? null : _save,
-            child: _saving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation(Colors.white)))
-                : const Text('Save',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
+      appBar: kIsIOS
+          ? CupertinoNavigationBar(
+              middle: Text(
+                  widget.isEditing ? 'Edit Patient' : 'New Patient'),
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: _saving ? null : _save,
+                child: _saving
+                    ? const CupertinoActivityIndicator()
+                    : const Text('Save'),
+              ),
+            )
+          : AppBar(
+              title: Text(
+                  widget.isEditing ? 'Edit Patient' : 'New Patient'),
+              actions: [
+                TextButton(
+                  onPressed: _saving ? null : _save,
+                  child: _saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation(Colors.white)))
+                      : const Text('Save',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
+                ),
+              ],
       ),
       body: Form(
         key: _formKey,
@@ -299,6 +322,10 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
               _field(_insuranceProvider, 'Insurance Provider'),
               const SizedBox(height: 12),
               _field(_insuranceNumber, 'Policy / Insurance Number'),
+
+              _section('Medical History'),
+              _field(_medicalHistory, 'Medical history, past surgeries, notes…',
+                  maxLines: 5),
 
               const SizedBox(height: 32),
             ],

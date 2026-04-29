@@ -57,7 +57,7 @@ class PatientCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
 
-                    // Demographic line
+                    // MRN + demographic line
                     Text(
                       _demographicLine,
                       style: TextStyle(
@@ -94,6 +94,7 @@ class PatientCard extends StatelessWidget {
 
   String get _demographicLine {
     final parts = <String>[
+      if (patient.mrn != null) patient.mrn!,
       patient.gender.capitalize(),
       patient.ageDisplay,
       if (patient.bloodType != null) patient.bloodType!,
@@ -179,34 +180,6 @@ class _AllergyBadge extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  const _InfoRow(this.label, this.value);
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 80,
-          child: Text('$label:',
-              style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.gray600,
-                  fontWeight: FontWeight.w500)),
-        ),
-        Expanded(
-          child: Text(value,
-              style: const TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w600)),
-        ),
-      ],
     );
   }
 }
