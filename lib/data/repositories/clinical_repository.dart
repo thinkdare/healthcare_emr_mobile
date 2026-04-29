@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../core/api/api_client.dart';
 import '../models/clinical_models.dart';
+import '../models/clinical_record_models.dart';
 
 /// ClinicalRepository
 ///
@@ -45,6 +46,20 @@ class ClinicalRepository {
         await apiClient.get('/patients/$patientId/appointments/$appointmentId');
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to load appointment');
+    }
+    return AppointmentModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  Future<AppointmentModel> updateAppointmentStatus(
+      String patientId, String appointmentId, String status) async {
+    final response = await apiClient.put(
+      '/patients/$patientId/appointments/$appointmentId',
+      data: {'status': status},
+    );
+    if (response['success'] != true) {
+      throw Exception(
+          response['message'] ?? 'Failed to update appointment status');
     }
     return AppointmentModel.fromJson(
         Map<String, dynamic>.from(response['data'] as Map));
@@ -121,6 +136,20 @@ class ClinicalRepository {
         Map<String, dynamic>.from(response['data'] as Map));
   }
 
+  Future<PrescriptionModel> fillPrescription(
+      String patientId, String prescriptionId,
+      {required int quantityDispensed}) async {
+    final response = await apiClient.post(
+      '/patients/$patientId/prescriptions/$prescriptionId/fill',
+      data: {'quantity_dispensed': quantityDispensed},
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to fill prescription');
+    }
+    return PrescriptionModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
   Future<PrescriptionModel> discontinuePrescription(
       String patientId, String prescriptionId,
       {String? reason}) async {
@@ -177,6 +206,19 @@ class ClinicalRepository {
         await apiClient.post('/patients/$patientId/lab-results', data: data);
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to create lab order');
+    }
+    return LabResultModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  Future<LabResultModel> recordLabResult(
+      String patientId, String labResultId, Map<String, dynamic> data) async {
+    final response = await apiClient.post(
+      '/patients/$patientId/lab-results/$labResultId/record',
+      data: data,
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to record lab result');
     }
     return LabResultModel.fromJson(
         Map<String, dynamic>.from(response['data'] as Map));
@@ -254,5 +296,259 @@ class ClinicalRepository {
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to delete document');
     }
+  }
+
+  // ── Vital Signs ───────────────────────────────────────────────────────────
+
+  Future<List<VitalSignModel>> getVitalSigns(
+    String patientId, {
+    int page = 1,
+  }) async {
+    final response = await apiClient.get(
+      '/patients/$patientId/vital-signs',
+      queryParameters: {'page': page},
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to load vital signs');
+    }
+    final rawData = response['data'];
+    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
+    return list
+        .map((e) => VitalSignModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<VitalSignModel> createVitalSign(
+      String patientId, Map<String, dynamic> data) async {
+    final response =
+        await apiClient.post('/patients/$patientId/vital-signs', data: data);
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to record vital signs');
+    }
+    return VitalSignModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  Future<void> deleteVitalSign(String patientId, String vitalSignId) async {
+    final response =
+        await apiClient.delete('/patients/$patientId/vital-signs/$vitalSignId');
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to delete vital sign');
+    }
+  }
+
+  // ── Diagnoses ─────────────────────────────────────────────────────────────
+
+  Future<List<DiagnosisModel>> getDiagnoses(
+    String patientId, {
+    String? status,
+    int page = 1,
+  }) async {
+    final response = await apiClient.get(
+      '/patients/$patientId/diagnoses',
+      queryParameters: {
+        'page': page,
+        if (status != null) 'status': status,
+      },
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to load diagnoses');
+    }
+    final rawData = response['data'];
+    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
+    return list
+        .map((e) => DiagnosisModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<DiagnosisModel> createDiagnosis(
+      String patientId, Map<String, dynamic> data) async {
+    final response =
+        await apiClient.post('/patients/$patientId/diagnoses', data: data);
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to record diagnosis');
+    }
+    return DiagnosisModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  Future<void> deleteDiagnosis(String patientId, String diagnosisId) async {
+    final response =
+        await apiClient.delete('/patients/$patientId/diagnoses/$diagnosisId');
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to delete diagnosis');
+    }
+  }
+
+  // ── Problem List ──────────────────────────────────────────────────────────
+
+  Future<List<ProblemListModel>> getProblems(
+    String patientId, {
+    String? status,
+    int page = 1,
+  }) async {
+    final response = await apiClient.get(
+      '/patients/$patientId/problems',
+      queryParameters: {
+        'page': page,
+        if (status != null) 'status': status,
+      },
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to load problem list');
+    }
+    final rawData = response['data'];
+    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
+    return list
+        .map((e) => ProblemListModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<ProblemListModel> createProblem(
+      String patientId, Map<String, dynamic> data) async {
+    final response =
+        await apiClient.post('/patients/$patientId/problems', data: data);
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to record problem');
+    }
+    return ProblemListModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  Future<void> deleteProblem(String patientId, String problemId) async {
+    final response =
+        await apiClient.delete('/patients/$patientId/problems/$problemId');
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to delete problem');
+    }
+  }
+
+  // ── Procedures ────────────────────────────────────────────────────────────
+
+  Future<List<ProcedureModel>> getProcedures(
+    String patientId, {
+    int page = 1,
+  }) async {
+    final response = await apiClient.get(
+      '/patients/$patientId/procedures',
+      queryParameters: {'page': page},
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to load procedures');
+    }
+    final rawData = response['data'];
+    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
+    return list
+        .map((e) => ProcedureModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<ProcedureModel> createProcedure(
+      String patientId, Map<String, dynamic> data) async {
+    final response =
+        await apiClient.post('/patients/$patientId/procedures', data: data);
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to record procedure');
+    }
+    return ProcedureModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  Future<void> deleteProcedure(String patientId, String procedureId) async {
+    final response =
+        await apiClient.delete('/patients/$patientId/procedures/$procedureId');
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to delete procedure');
+    }
+  }
+
+  // ── Immunizations ─────────────────────────────────────────────────────────
+
+  Future<List<ImmunizationModel>> getImmunizations(
+    String patientId, {
+    int page = 1,
+  }) async {
+    final response = await apiClient.get(
+      '/patients/$patientId/immunizations',
+      queryParameters: {'page': page},
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to load immunizations');
+    }
+    final rawData = response['data'];
+    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
+    return list
+        .map((e) => ImmunizationModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<ImmunizationModel> createImmunization(
+      String patientId, Map<String, dynamic> data) async {
+    final response =
+        await apiClient.post('/patients/$patientId/immunizations', data: data);
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to record immunization');
+    }
+    return ImmunizationModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  Future<void> deleteImmunization(
+      String patientId, String immunizationId) async {
+    final response = await apiClient
+        .delete('/patients/$patientId/immunizations/$immunizationId');
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to delete immunization');
+    }
+  }
+
+  // ── Daily Roster ──────────────────────────────────────────────────────────
+
+  Future<List<RosterEntryModel>> getRosterEntries(
+    String patientId, {
+    String? date,
+    String? status,
+    int page = 1,
+  }) async {
+    final response = await apiClient.get(
+      '/patients/$patientId/roster',
+      queryParameters: {
+        'page': page,
+        if (date != null) 'date': date,
+        if (status != null) 'status': status,
+      },
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to load roster entries');
+    }
+    final rawData = response['data'];
+    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
+    return list
+        .map((e) => RosterEntryModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<RosterEntryModel> createRosterEntry(
+      String patientId, Map<String, dynamic> data) async {
+    final response =
+        await apiClient.post('/patients/$patientId/roster', data: data);
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to add patient to roster');
+    }
+    return RosterEntryModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  Future<RosterEntryModel> updateRosterEntry(
+      String patientId, String entryId, Map<String, dynamic> data) async {
+    final response = await apiClient.put(
+      '/patients/$patientId/roster/$entryId',
+      data: data,
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to update roster entry');
+    }
+    return RosterEntryModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 }
