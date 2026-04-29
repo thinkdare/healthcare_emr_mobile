@@ -112,7 +112,7 @@ class PrescriptionModel {
   final String? discontinuationReason;
   final bool drugInteractionsChecked;
   final String? wardId;
-  final String? codingSystem;
+  final String? medicationCodingSystem;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -138,7 +138,7 @@ class PrescriptionModel {
     this.discontinuationReason,
     required this.drugInteractionsChecked,
     this.wardId,
-    this.codingSystem,
+    this.medicationCodingSystem,
     this.createdAt,
     this.updatedAt,
   });
@@ -172,7 +172,7 @@ class PrescriptionModel {
       discontinuationReason: json['discontinuation_reason'] as String?,
       drugInteractionsChecked: json['drug_interactions_checked'] as bool? ?? false,
       wardId: json['ward_id'] as String?,
-      codingSystem: json['coding_system'] as String?,
+      medicationCodingSystem: json['medication_coding_system'] as String?,
       createdAt: _date('created_at'),
       updatedAt: _date('updated_at'),
     );
