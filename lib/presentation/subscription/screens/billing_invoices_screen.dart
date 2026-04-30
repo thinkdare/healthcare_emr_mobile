@@ -469,7 +469,7 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                 SizedBox(
                   width: double.infinity,
                   height: 56,
-                  child: ElevatedButton.icon(
+                  child: AdaptiveFilledButton(
                     onPressed: () {
                       // TODO: Implement payment
                       Navigator.of(context).pop();
@@ -480,7 +480,7 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                       );
                     },
                     icon: const Icon(Icons.payment),
-                    label: const Text('Pay Now'),
+                    child: const Text('Pay Now'),
                   ),
                 ),
                 const SizedBox(height: 12),

@@ -790,7 +790,7 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
               const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
+                child: AdaptiveFilledButton(
                   onPressed: _filling ? null : _showFillDialog,
                   icon: _filling
                       ? const SizedBox(
@@ -801,10 +801,8 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
                               valueColor:
                                   AlwaysStoppedAnimation(Colors.white)))
                       : const Icon(Icons.local_pharmacy, size: 16),
-                  label:
+                  child:
                       Text(_filling ? 'Dispensing…' : 'Dispense / Fill'),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor),
                 ),
               ),
             ],
@@ -1070,7 +1068,7 @@ class _LabResultCardState extends State<_LabResultCard> {
               const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
+                child: AdaptiveFilledButton(
                   onPressed: _recording ? null : _showRecordDialog,
                   icon: _recording
                       ? const SizedBox(
@@ -1081,9 +1079,7 @@ class _LabResultCardState extends State<_LabResultCard> {
                               valueColor:
                                   AlwaysStoppedAnimation(Colors.white)))
                       : const Icon(Icons.science, size: 16),
-                  label: Text(_recording ? 'Saving…' : 'Record Results'),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.secondaryColor),
+                  child: Text(_recording ? 'Saving…' : 'Record Results'),
                 ),
               ),
             ],
@@ -1336,7 +1332,7 @@ class _ErrorView extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(color: AppTheme.gray600)),
           const SizedBox(height: 16),
-          ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
+          AdaptiveFilledButton(onPressed: onRetry, child: const Text('Retry')),
         ],
       ),
     );

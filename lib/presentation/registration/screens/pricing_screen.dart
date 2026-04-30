@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../data/providers/subscription_provider.dart';
-import '../../../data/models/subscription_models.dart';
 import '../../../config/theme.dart';
+import '../../../core/platform.dart';
+import '../../../data/models/subscription_models.dart';
+import '../../../data/providers/subscription_provider.dart';
 
 class PricingScreen extends StatefulWidget {
   const PricingScreen({super.key});
@@ -44,7 +45,7 @@ class _PricingScreenState extends State<PricingScreen> {
                         style:
                             TextStyle(color: AppTheme.errorColor, fontSize: 13)),
                     const SizedBox(height: 16),
-                    ElevatedButton(
+                    AdaptiveFilledButton(
                       onPressed: () => sp.loadPlans(),
                       child: const Text('Retry'),
                     ),
@@ -147,7 +148,7 @@ class _PlanCard extends StatelessWidget {
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: AdaptiveFilledButton(
                 onPressed: () =>
                     Navigator.of(context).pushNamed('/registration/calculator'),
                 child: const Text('Get Started'),

@@ -505,13 +505,10 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
   }
 
   Widget _addButton(String label, IconData icon, VoidCallback onTap) {
-    return TextButton.icon(
+    return AdaptiveTextButton(
       onPressed: onTap,
       icon: Icon(icon, size: 18),
-      label: Text(label),
-      style: TextButton.styleFrom(
-        foregroundColor: AppTheme.primaryColor,
-      ),
+      child: Text(label),
     );
   }
 

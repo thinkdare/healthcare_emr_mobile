@@ -431,7 +431,7 @@ class _AuditLogTabState extends State<_AuditLogTab> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: ElevatedButton(
+                  child: AdaptiveFilledButton(
                     onPressed: () {
                       Navigator.of(ctx).pop();
                       _applyFilters();
@@ -471,10 +471,10 @@ class _AuditLogTabState extends State<_AuditLogTab> {
               const Spacer(),
               Badge(
                 isLabelVisible: hasFilters,
-                child: TextButton.icon(
+                child: AdaptiveTextButton(
                   icon: const Icon(Icons.filter_list, size: 18),
-                  label: const Text('Filter'),
                   onPressed: _showFilters,
+                  child: const Text('Filter'),
                 ),
               ),
             ],
@@ -821,10 +821,10 @@ class _ErrorView extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: AppTheme.gray600)),
             const SizedBox(height: 16),
-            ElevatedButton.icon(
+            AdaptiveFilledButton(
               icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('Retry'),
               onPressed: onRetry,
+              child: const Text('Retry'),
             ),
           ],
         ),

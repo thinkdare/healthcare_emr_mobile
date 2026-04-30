@@ -1,7 +1,9 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../data/providers/subscription_provider.dart';
 import '../../../config/theme.dart';
+import '../../../core/platform.dart';
+import '../../../data/providers/subscription_provider.dart';
 
 class TrialStatusBanner extends StatelessWidget {
   const TrialStatusBanner({super.key});
@@ -69,28 +71,33 @@ class TrialStatusBanner extends StatelessWidget {
                     ],
                   ),
                 ),
-                TextButton(
-                  onPressed: () {
-                    // Navigate to subscription upgrade
-                    Navigator.of(context).pushNamed('/subscription/upgrade');
-                  },
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor:
-                        isUrgent ? AppTheme.warningColor : AppTheme.primaryColor,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+                kIsIOS
+                  ? CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      onPressed: () => Navigator.of(context)
+                          .pushNamed('/subscription/upgrade'),
+                      child: const Text('Upgrade',
+                          style: TextStyle(
+                              color: CupertinoColors.white,
+                              fontWeight: FontWeight.bold)),
+                    )
+                  : TextButton(
+                      onPressed: () => Navigator.of(context)
+                          .pushNamed('/subscription/upgrade'),
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: isUrgent
+                            ? AppTheme.warningColor
+                            : AppTheme.primaryColor,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
+                      ),
+                      child: const Text('Upgrade',
+                          style:
+                              TextStyle(fontWeight: FontWeight.bold)),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text(
-                    'Upgrade',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
               ],
             ),
           ),

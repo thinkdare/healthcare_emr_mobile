@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/platform.dart';
 import '../../../data/models/auth_models.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/organization_provider.dart';
@@ -273,7 +274,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (!_emailChecked) ...[
           // ── Step 1 ────────────────────────────────────────────────────
-          ElevatedButton(
+          AdaptiveFilledButton(
             onPressed: _loading ? null : _checkEmail,
             child: _loading
                 ? _LoadingSpinner()
@@ -301,12 +302,12 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          ElevatedButton(
+          AdaptiveFilledButton(
             onPressed: _loading ? null : _login,
             child: _loading ? _LoadingSpinner() : const Text('Login'),
           ),
           const SizedBox(height: 16),
-          TextButton(
+          AdaptiveTextButton(
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                 content: Text('Contact your administrator to reset your password.'),
@@ -356,12 +357,12 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        ElevatedButton(
+        AdaptiveFilledButton(
           onPressed: _loading ? null : _verify2FA,
           child: _loading ? _LoadingSpinner() : const Text('Verify'),
         ),
         const SizedBox(height: 16),
-        TextButton(
+        AdaptiveTextButton(
           onPressed: _resetToEmailStep,
           child: const Text('Back to login'),
         ),

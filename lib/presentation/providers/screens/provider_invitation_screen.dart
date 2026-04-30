@@ -374,7 +374,7 @@ class _ProviderInvitationScreenState extends State<ProviderInvitationScreen> {
                   // Submit Button
                   SizedBox(
                     height: 56,
-                    child: ElevatedButton.icon(
+                    child: AdaptiveFilledButton(
                       onPressed: _isLoading ? null : _handleSubmit,
                       icon: _isLoading
                           ? const SizedBox(
@@ -386,13 +386,7 @@ class _ProviderInvitationScreenState extends State<ProviderInvitationScreen> {
                               ),
                             )
                           : const Icon(Icons.send),
-                      label: Text(_isLoading ? 'Sending...' : 'Send Invitation'),
-                      style: ElevatedButton.styleFrom(
-                        textStyle: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: Text(_isLoading ? 'Sending...' : 'Send Invitation'),
                     ),
                   ),
                   const SizedBox(height: 16),

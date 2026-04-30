@@ -261,7 +261,7 @@ class _PlanCard extends StatelessWidget {
                       onPressed: null,
                       child: const Text('Current Plan'),
                     )
-                  : ElevatedButton(
+                  : AdaptiveFilledButton(
                       onPressed: onSelect,
                       child: isProcessing
                           ? const SizedBox(
