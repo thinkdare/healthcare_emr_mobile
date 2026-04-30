@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../config/theme.dart';
+import '../../../core/platform.dart';
 
 /// Placeholder — organization registration happens via the web portal.
 class TrialWelcomeScreen extends StatelessWidget {
@@ -29,7 +30,7 @@ class TrialWelcomeScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              ElevatedButton(
+              AdaptiveFilledButton(
                 onPressed: () =>
                     Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false),
                 child: const Text('Go to Login'),

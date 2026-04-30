@@ -229,13 +229,10 @@ class _PendingGrantCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: AdaptiveFilledButton(
                     icon: const Icon(Icons.check, size: 18),
-                    label: const Text('Approve'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.successColor,
-                    ),
                     onPressed: () => _showApproveDialog(context, grant.id),
+                    child: const Text('Approve'),
                   ),
                 ),
               ],

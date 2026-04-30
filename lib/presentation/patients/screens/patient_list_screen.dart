@@ -242,13 +242,8 @@ class _CacheBanner extends StatelessWidget {
                   fontSize: 12, color: AppTheme.warningColor),
             ),
           ),
-          TextButton(
+          AdaptiveTextButton(
             onPressed: onRefresh,
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
             child: const Text('Refresh',
                 style: TextStyle(fontSize: 12)),
           ),

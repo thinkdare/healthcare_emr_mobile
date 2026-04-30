@@ -293,17 +293,11 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
               ),
               if (_expiresAt != null) ...[
                 const SizedBox(height: 4),
-                TextButton.icon(
+                AdaptiveTextButton(
                   onPressed: () => setState(() => _expiresAt = null),
                   icon: const Icon(Icons.clear, size: 14),
-                  label: const Text('Clear expiry date',
+                  child: const Text('Clear expiry date',
                       style: TextStyle(fontSize: 12)),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppTheme.gray600,
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
                 ),
               ],
 

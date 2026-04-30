@@ -126,7 +126,7 @@ class _TriggerEmergencyAccessScreenState
       backgroundColor: AppTheme.errorColor.withValues(alpha: 0.04),
       appBar: kIsIOS
           ? CupertinoNavigationBar(
-              backgroundColor: AppColors.error.withValues(alpha: 0.9),
+              backgroundColor: AppTheme.errorColor.withValues(alpha: 0.9),
               middle: const Text('Emergency Access',
                   style: TextStyle(color: CupertinoColors.white)),
               trailing: CupertinoButton(

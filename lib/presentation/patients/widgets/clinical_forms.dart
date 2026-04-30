@@ -9,6 +9,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
+import '../../../core/platform.dart';
 import '../../../data/providers/clinical_provider.dart';
 
 // ── Appointment Form ──────────────────────────────────────────────────────────
@@ -836,7 +837,7 @@ class _ModalSheet extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               height: 52,
-              child: ElevatedButton(
+              child: AdaptiveFilledButton(
                 onPressed: saving ? null : onSave,
                 child: saving
                     ? const SizedBox(

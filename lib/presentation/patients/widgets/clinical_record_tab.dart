@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../../core/platform.dart';
 import '../../../data/models/clinical_record_models.dart';
 import '../../../data/providers/clinical_provider.dart';
 import 'clinical_record_forms.dart';
@@ -30,7 +31,7 @@ class ClinicalRecordTab extends StatelessWidget {
                 Text(clinical.error!,
                     style: const TextStyle(color: Colors.red)),
                 const SizedBox(height: 12),
-                ElevatedButton(
+                AdaptiveFilledButton(
                   onPressed: () =>
                       clinical.loadAll(clinical.patientId!),
                   child: const Text('Retry'),

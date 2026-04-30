@@ -500,7 +500,7 @@ class _RosterCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (!entry.isTerminal && onStartConsultation != null)
-                  TextButton(
+                  AdaptiveTextButton(
                     onPressed: onStartConsultation,
                     child: const Text('Start',
                         style: TextStyle(fontSize: 12)),
@@ -579,7 +579,7 @@ class _ErrorView extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(color: AppTheme.gray600)),
           const SizedBox(height: 16),
-          ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
+          AdaptiveFilledButton(onPressed: onRetry, child: const Text('Retry')),
         ],
       ),
     );

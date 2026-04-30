@@ -12,6 +12,7 @@ import 'package:flutter/material.dart'
     show
         AlertDialog,
         Colors,
+        ElevatedButton,
         Icon,
         Icons,
         ListTile,
@@ -22,6 +23,7 @@ import 'package:flutter/material.dart'
         SafeArea,
         ScaffoldMessenger,
         SnackBar,
+        StatelessWidget,
         TextButton,
         showDialog,
         showModalBottomSheet;
@@ -217,4 +219,79 @@ void showAdaptiveToast(
 
   overlay.insert(entry);
   Future.delayed(const Duration(seconds: 2), entry.remove);
+}
+
+// ── Adaptive buttons ──────────────────────────────────────────────────────────
+
+/// Primary button: [CupertinoButton.filled] on iOS, [ElevatedButton] on Android.
+/// Pass [icon] for icon+label variants (replaces [ElevatedButton.icon]).
+class AdaptiveFilledButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final Widget child;
+  final Widget? icon;
+
+  const AdaptiveFilledButton({
+    super.key,
+    required this.onPressed,
+    required this.child,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (kIsIOS) {
+      return CupertinoButton.filled(
+        onPressed: onPressed,
+        child: icon == null
+            ? child
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconTheme.merge(
+                    data: const IconThemeData(color: CupertinoColors.white),
+                    child: icon!,
+                  ),
+                  const SizedBox(width: 6),
+                  child,
+                ],
+              ),
+      );
+    }
+    return icon != null
+        ? ElevatedButton.icon(onPressed: onPressed, icon: icon!, label: child)
+        : ElevatedButton(onPressed: onPressed, child: child);
+  }
+}
+
+/// Secondary/text button: [CupertinoButton] on iOS, [TextButton] on Android.
+/// Pass [icon] for icon+label variants (replaces [TextButton.icon]).
+class AdaptiveTextButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final Widget child;
+  final Widget? icon;
+
+  const AdaptiveTextButton({
+    super.key,
+    required this.onPressed,
+    required this.child,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (kIsIOS) {
+      return CupertinoButton(
+        onPressed: onPressed,
+        child: icon == null
+            ? child
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [icon!, const SizedBox(width: 6), child],
+              ),
+      );
+    }
+    return icon != null
+        ? TextButton.icon(onPressed: onPressed, icon: icon!, label: child)
+        : TextButton(onPressed: onPressed, child: child);
+  }
 }

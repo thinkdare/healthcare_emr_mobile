@@ -318,7 +318,7 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
                   // Submit Button
                   SizedBox(
                     height: 56,
-                    child: ElevatedButton.icon(
+                    child: AdaptiveFilledButton(
                       onPressed: _isLoading ? null : _handleSubmit,
                       icon: _isLoading
                           ? const SizedBox(
@@ -330,18 +330,12 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
                               ),
                             )
                           : Icon(_isEditing ? Icons.save : Icons.add),
-                      label: Text(
-                        _isLoading 
-                            ? 'Saving...' 
-                            : _isEditing 
-                                ? 'Update Facility' 
+                      child: Text(
+                        _isLoading
+                            ? 'Saving...'
+                            : _isEditing
+                                ? 'Update Facility'
                                 : 'Create Facility',
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        textStyle: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
                       ),
                     ),
                   ),

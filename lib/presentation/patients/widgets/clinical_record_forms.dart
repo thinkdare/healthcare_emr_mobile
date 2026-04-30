@@ -12,6 +12,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/platform.dart';
 import '../../../data/providers/clinical_provider.dart';
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
@@ -59,7 +60,7 @@ InputDecoration _field(String label, {String? hint}) => InputDecoration(
 Widget _saveButton(bool saving, VoidCallback onPressed, String label) {
   return SizedBox(
     width: double.infinity,
-    child: ElevatedButton(
+    child: AdaptiveFilledButton(
       onPressed: saving ? null : onPressed,
       child: saving
           ? const SizedBox(

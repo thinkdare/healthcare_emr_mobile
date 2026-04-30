@@ -551,7 +551,7 @@ class _RecentPatientsCard extends StatelessWidget {
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
-                  TextButton(
+                  AdaptiveTextButton(
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(
                           builder: (_) => const PatientListScreen()),
@@ -688,7 +688,7 @@ class _SubscriptionCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
+                    child: AdaptiveFilledButton(
                       onPressed: () => Navigator.of(context).push(
                           MaterialPageRoute(
                               builder: (_) =>

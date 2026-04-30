@@ -167,7 +167,7 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
+            AdaptiveFilledButton(
               onPressed: _loadFacilities,
               child: const Text('Retry'),
             ),
@@ -197,7 +197,7 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
               style: TextStyle(color: AppTheme.gray600),
             ),
             const SizedBox(height: 24),
-            ElevatedButton.icon(
+            AdaptiveFilledButton(
               onPressed: () async {
                 final result = await Navigator.of(context).pushNamed(
                   '/facilities/add',
@@ -207,7 +207,7 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                 }
               },
               icon: const Icon(Icons.add),
-              label: const Text('Add Facility'),
+              child: const Text('Add Facility'),
             ),
           ],
         ),

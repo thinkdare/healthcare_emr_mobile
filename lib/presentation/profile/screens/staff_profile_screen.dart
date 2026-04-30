@@ -332,7 +332,7 @@ class _SecurityTabState extends State<_SecurityTab> {
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
+                      child: AdaptiveFilledButton(
                         onPressed: _saving ? null : _submit,
                         child: _saving
                             ? const SizedBox(
@@ -662,10 +662,10 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
                             ),
                             onPressed: _loading ? null : _showDisableDialog,
                           )
-                        : ElevatedButton.icon(
+                        : AdaptiveFilledButton(
                             icon: const Icon(Icons.security, size: 18),
-                            label: const Text('Set up 2FA'),
                             onPressed: _loading ? null : _startSetup,
+                            child: const Text('Set up 2FA'),
                           ),
                   ),
                   if (_loading)
@@ -845,7 +845,7 @@ class _SetupFlow extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: ElevatedButton(
+                child: AdaptiveFilledButton(
                   onPressed: loading ? null : onEnable,
                   child: loading
                       ? const SizedBox(
@@ -953,7 +953,7 @@ class _BackupCodesView extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: ElevatedButton(
+                child: AdaptiveFilledButton(
                   onPressed: onDone,
                   child: const Text('Done'),
                 ),

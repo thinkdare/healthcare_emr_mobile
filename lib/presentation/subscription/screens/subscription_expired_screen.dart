@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../data/providers/subscription_provider.dart';
 import '../../../config/theme.dart';
+import '../../../core/platform.dart';
+import '../../../data/providers/subscription_provider.dart';
 
 class SubscriptionExpiredScreen extends StatelessWidget {
   const SubscriptionExpiredScreen({super.key});
@@ -87,15 +88,11 @@ class SubscriptionExpiredScreen extends StatelessWidget {
         const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton.icon(
+          child: AdaptiveFilledButton(
             onPressed: () =>
                 Navigator.of(context).pushNamed('/subscription/upgrade'),
             icon: const Icon(Icons.upgrade),
-            label: const Text('Upgrade Now'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: AppTheme.primaryColor,
-            ),
+            child: const Text('Upgrade Now'),
           ),
         ),
       ],
