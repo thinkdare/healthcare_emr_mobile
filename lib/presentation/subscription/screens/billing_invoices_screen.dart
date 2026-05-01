@@ -473,11 +473,7 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                     onPressed: () {
                       // TODO: Implement payment
                       Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Payment feature coming soon'),
-                        ),
-                      );
+                      showAdaptiveToast(context, 'Payment feature coming soon');
                     },
                     icon: const Icon(Icons.payment),
                     child: const Text('Pay Now'),
@@ -492,11 +488,7 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () {
                     // TODO: Implement download
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Download feature coming soon'),
-                      ),
-                    );
+                    showAdaptiveToast(context, 'Download feature coming soon');
                   },
                   icon: const Icon(Icons.download),
                   label: const Text('Download PDF'),

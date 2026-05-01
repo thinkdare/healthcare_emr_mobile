@@ -163,10 +163,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
     if (result != null) {
       Navigator.of(context).pop(result);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(provider.error ?? 'Failed to save patient'),
-        backgroundColor: AppTheme.errorColor,
-      ));
+      showAdaptiveToast(context, provider.error ?? 'Failed to save patient', type: ToastType.error);
     }
   }
 

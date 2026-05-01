@@ -61,33 +61,18 @@ class _TriggerEmergencyAccessScreenState
     if (!_formKey.currentState!.validate()) return;
 
     // Confirmation dialog — break-glass is a high-stakes action
-    final confirmed = await showDialog<bool>(
+    bool confirmed = false;
+    await showAdaptiveActionSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.warning_amber_rounded,
-            color: AppTheme.errorColor, size: 36),
-        title: const Text('Trigger Emergency Access?'),
-        content: const Text(
-          'This will immediately grant you access to the patient\'s record '
+      title: 'Trigger Emergency Access?',
+      message: 'This will immediately grant you access to the patient\'s record '
           'and create a permanent, immutable audit log entry.\n\n'
           'The patient\'s primary provider will be notified.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.errorColor),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Confirm — Trigger Access'),
-          ),
-        ],
-      ),
+      destructiveLabel: 'Confirm — Trigger Access',
+      onConfirm: () => confirmed = true,
     );
 
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
 
     setState(() => _saving = true);
 
@@ -104,19 +89,10 @@ class _TriggerEmergencyAccessScreenState
     setState(() => _saving = false);
 
     if (result != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Emergency access granted. Primary provider notified.'),
-          backgroundColor: AppTheme.warningColor,
-          duration: Duration(seconds: 4),
-        ),
-      );
+      showAdaptiveToast(context, 'Emergency access granted. Primary provider notified.');
       Navigator.of(context).pop(true);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(provider.error ?? 'Request failed'),
-        backgroundColor: AppTheme.errorColor,
-      ));
+      showAdaptiveToast(context, provider.error ?? 'Request failed', type: ToastType.error);
     }
   }
 

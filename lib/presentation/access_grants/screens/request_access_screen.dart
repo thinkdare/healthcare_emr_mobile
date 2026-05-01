@@ -101,19 +101,14 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
       final msg = result.autoApproved
           ? 'Access granted automatically.'
           : 'Access request submitted. Awaiting approval.';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(msg),
-          backgroundColor: AppTheme.successColor,
-        ),
-      );
+      showAdaptiveToast(context, msg, type: ToastType.success);
       Navigator.of(context).pop(true);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-            context.read<AccessGrantProvider>().error ?? 'Request failed'),
-        backgroundColor: AppTheme.errorColor,
-      ));
+      showAdaptiveToast(
+        context,
+        context.read<AccessGrantProvider>().error ?? 'Request failed',
+        type: ToastType.error,
+      );
     }
   }
 

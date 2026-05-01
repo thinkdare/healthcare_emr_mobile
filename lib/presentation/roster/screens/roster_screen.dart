@@ -115,21 +115,11 @@ class _RosterScreenState extends State<RosterScreen> {
       });
       await _load();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${patient.fullName} added to today\'s roster'),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
+        showAdaptiveToast(context, '${patient.fullName} added to today\'s roster', type: ToastType.success);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to add patient to roster'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        showAdaptiveToast(context, 'Failed to add patient to roster', type: ToastType.error);
       }
     }
   }
@@ -146,12 +136,7 @@ class _RosterScreenState extends State<RosterScreen> {
       await _load();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to start consultation'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        showAdaptiveToast(context, 'Failed to start consultation', type: ToastType.error);
       }
     }
   }
@@ -274,10 +259,7 @@ class _RosterScreenState extends State<RosterScreen> {
         patients.where((p) => !rosteredIds.contains(p.id)).toList();
 
     if (available.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('All patients are already on today\'s roster')),
-      );
+      showAdaptiveToast(context, 'All patients are already on today\'s roster');
       return;
     }
 

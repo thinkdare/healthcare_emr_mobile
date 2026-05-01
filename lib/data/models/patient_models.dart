@@ -119,6 +119,9 @@ class PatientFacilityLite {
 class PatientModel {
   final String id;
 
+  /// Medical Record Number assigned by the facility (e.g. LGOS-2026-00042).
+  final String? mrn;
+
   @JsonKey(name: 'primary_provider_id')
   final String primaryProviderId;
 
@@ -163,6 +166,9 @@ class PatientModel {
   @JsonKey(name: 'insurance_number')
   final String? insuranceNumber;
 
+  @JsonKey(name: 'medical_history')
+  final String? medicalHistory;
+
   /// Only present in detail view — used for cross-facility access grant requests.
   @JsonKey(name: 'global_patient_id')
   final String? globalPatientId;
@@ -191,6 +197,7 @@ class PatientModel {
 
   const PatientModel({
     required this.id,
+    this.mrn,
     required this.primaryProviderId,
     this.currentFacilityId,
     required this.firstName,
@@ -208,6 +215,7 @@ class PatientModel {
     this.chronicConditions = const [],
     this.insuranceProvider,
     this.insuranceNumber,
+    this.medicalHistory,
     this.globalPatientId,
     this.patientPortalEnabled = false,
     this.isActive = true,

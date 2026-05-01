@@ -67,6 +67,7 @@ Map<String, dynamic> _$PatientFacilityLiteToJson(
 
 PatientModel _$PatientModelFromJson(Map<String, dynamic> json) => PatientModel(
   id: json['id'] as String,
+  mrn: json['mrn'] as String?,
   primaryProviderId: json['primary_provider_id'] as String,
   currentFacilityId: json['current_facility_id'] as String?,
   firstName: json['first_name'] as String,
@@ -96,6 +97,7 @@ PatientModel _$PatientModelFromJson(Map<String, dynamic> json) => PatientModel(
       const [],
   insuranceProvider: json['insurance_provider'] as String?,
   insuranceNumber: json['insurance_number'] as String?,
+  medicalHistory: json['medical_history'] as String?,
   globalPatientId: json['global_patient_id'] as String?,
   patientPortalEnabled: json['patient_portal_enabled'] as bool? ?? false,
   isActive: json['is_active'] as bool? ?? true,
@@ -123,6 +125,7 @@ PatientModel _$PatientModelFromJson(Map<String, dynamic> json) => PatientModel(
 Map<String, dynamic> _$PatientModelToJson(PatientModel instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'mrn': instance.mrn,
       'primary_provider_id': instance.primaryProviderId,
       'current_facility_id': instance.currentFacilityId,
       'first_name': instance.firstName,
@@ -142,6 +145,7 @@ Map<String, dynamic> _$PatientModelToJson(PatientModel instance) =>
       'chronic_conditions': instance.chronicConditions,
       'insurance_provider': instance.insuranceProvider,
       'insurance_number': instance.insuranceNumber,
+      'medical_history': instance.medicalHistory,
       'global_patient_id': instance.globalPatientId,
       'patient_portal_enabled': instance.patientPortalEnabled,
       'is_active': instance.isActive,

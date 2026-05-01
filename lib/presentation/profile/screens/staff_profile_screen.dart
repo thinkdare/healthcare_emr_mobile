@@ -242,16 +242,10 @@ class _SecurityTabState extends State<_SecurityTab> {
       _currentCtrl.clear();
       _newCtrl.clear();
       _confirmCtrl.clear();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Password changed successfully.'),
-        backgroundColor: AppTheme.successColor,
-      ));
+      showAdaptiveToast(context, 'Password changed successfully.', type: ToastType.success);
     } else {
       final err = context.read<AuthProvider>().error;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(err ?? 'Failed to change password.'),
-        backgroundColor: AppTheme.errorColor,
-      ));
+      showAdaptiveToast(context, err ?? 'Failed to change password.', type: ToastType.error);
     }
   }
 
@@ -430,20 +424,14 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
     });
     if (data == null) {
       final err = context.read<AuthProvider>().error;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(err ?? 'Failed to start 2FA setup'),
-        backgroundColor: AppTheme.errorColor,
-      ));
+      showAdaptiveToast(context, err ?? 'Failed to start 2FA setup', type: ToastType.error);
     }
   }
 
   Future<void> _enable() async {
     final code = _codeCtrl.text.trim();
     if (code.length != 6) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Enter the 6-digit code from your authenticator app'),
-        backgroundColor: AppTheme.warningColor,
-      ));
+      showAdaptiveToast(context, 'Enter the 6-digit code from your authenticator app');
       return;
     }
 
@@ -462,10 +450,7 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
       setState(() => _backupCodes = codes);
     } else {
       final err = context.read<AuthProvider>().error;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(err ?? 'Invalid code. Try again.'),
-        backgroundColor: AppTheme.errorColor,
-      ));
+      showAdaptiveToast(context, err ?? 'Invalid code. Try again.', type: ToastType.error);
     }
   }
 
@@ -492,13 +477,11 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
           ],
         ),
         actions: [
-          TextButton(
+          AdaptiveTextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
               child: const Text('Cancel')),
-          ElevatedButton(
+          AdaptiveFilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.errorColor),
             child: const Text('Disable'),
           ),
         ],
@@ -518,35 +501,24 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
       _backupCodeCount = null;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-          ok ? '2FA disabled.' : context.read<AuthProvider>().error ?? 'Failed'),
-      backgroundColor: ok ? AppTheme.gray600 : AppTheme.errorColor,
-    ));
+    if (ok) {
+      showAdaptiveToast(context, '2FA disabled.');
+    } else {
+      showAdaptiveToast(context, context.read<AuthProvider>().error ?? 'Failed', type: ToastType.error);
+    }
   }
 
   Future<void> _regenerateBackupCodes() async {
-    final confirmed = await showDialog<bool>(
+    bool confirmed = false;
+    await showAdaptiveActionSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Regenerate Backup Codes'),
-        content: const Text(
-          'Your old backup codes will be invalidated immediately. '
-          'Save the new codes somewhere safe.',
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Regenerate'),
-          ),
-        ],
-      ),
+      title: 'Regenerate Backup Codes',
+      message: 'Your old backup codes will be invalidated immediately. Save the new codes somewhere safe.',
+      destructiveLabel: 'Regenerate',
+      onConfirm: () => confirmed = true,
     );
 
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
 
     setState(() => _loading = true);
     final codes = await context
@@ -560,10 +532,7 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
 
     if (codes == null) {
       final err = context.read<AuthProvider>().error;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(err ?? 'Failed to regenerate codes'),
-        backgroundColor: AppTheme.errorColor,
-      ));
+      showAdaptiveToast(context, err ?? 'Failed to regenerate codes', type: ToastType.error);
     }
   }
 
@@ -806,10 +775,7 @@ class _SetupFlow extends StatelessWidget {
                   tooltip: 'Copy secret',
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: secret));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Secret copied to clipboard')),
-                    );
+                    showAdaptiveToast(context, 'Secret copied to clipboard');
                   },
                 ),
               ],
@@ -943,11 +909,7 @@ class _BackupCodesView extends StatelessWidget {
                   onPressed: () {
                     Clipboard.setData(
                         ClipboardData(text: codes.join('\n')));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content:
-                              Text('Backup codes copied to clipboard')),
-                    );
+                    showAdaptiveToast(context, 'Backup codes copied to clipboard');
                   },
                 ),
               ),

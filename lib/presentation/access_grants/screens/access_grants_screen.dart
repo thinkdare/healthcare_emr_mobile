@@ -265,13 +265,11 @@ class _PendingGrantCard extends StatelessWidget {
           ],
         ),
         actions: [
-          TextButton(
+          AdaptiveTextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
               child: const Text('Cancel')),
-          ElevatedButton(
+          AdaptiveFilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.successColor),
             child: const Text('Approve'),
           ),
         ],
@@ -283,12 +281,11 @@ class _PendingGrantCard extends StatelessWidget {
           .read<AccessGrantProvider>()
           .approve(id, notes: notesCtrl.text.trim());
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(ok
-              ? 'Access granted.'
-              : context.read<AccessGrantProvider>().error ?? 'Failed'),
-          backgroundColor: ok ? AppTheme.successColor : AppTheme.errorColor,
-        ));
+        if (ok) {
+          showAdaptiveToast(context, 'Access granted.', type: ToastType.success);
+        } else {
+          showAdaptiveToast(context, context.read<AccessGrantProvider>().error ?? 'Failed', type: ToastType.error);
+        }
       }
     }
     notesCtrl.dispose();
@@ -316,17 +313,15 @@ class _PendingGrantCard extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(
+          AdaptiveTextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
               child: const Text('Cancel')),
-          ElevatedButton(
+          AdaptiveFilledButton(
             onPressed: () {
               if (formKey.currentState!.validate()) {
                 Navigator.of(ctx).pop(true);
               }
             },
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.errorColor),
             child: const Text('Deny'),
           ),
         ],
@@ -338,12 +333,11 @@ class _PendingGrantCard extends StatelessWidget {
           .read<AccessGrantProvider>()
           .deny(id, reasonCtrl.text.trim());
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(ok
-              ? 'Access denied.'
-              : context.read<AccessGrantProvider>().error ?? 'Failed'),
-          backgroundColor: ok ? AppTheme.gray600 : AppTheme.errorColor,
-        ));
+        showAdaptiveToast(
+          context,
+          ok ? 'Access denied.' : context.read<AccessGrantProvider>().error ?? 'Failed',
+          type: ok ? ToastType.info : ToastType.error,
+        );
       }
     }
     reasonCtrl.dispose();
@@ -479,17 +473,15 @@ class _MyGrantCard extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(
+          AdaptiveTextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
               child: const Text('Cancel')),
-          ElevatedButton(
+          AdaptiveFilledButton(
             onPressed: () {
               if (formKey.currentState!.validate()) {
                 Navigator.of(ctx).pop(true);
               }
             },
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.errorColor),
             child: const Text('Confirm'),
           ),
         ],
@@ -501,12 +493,13 @@ class _MyGrantCard extends StatelessWidget {
           .read<AccessGrantProvider>()
           .revoke(id, reasonCtrl.text.trim());
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(ok
+        showAdaptiveToast(
+          context,
+          ok
               ? (isPending ? 'Request cancelled.' : 'Access revoked.')
-              : context.read<AccessGrantProvider>().error ?? 'Failed'),
-          backgroundColor: ok ? AppTheme.gray600 : AppTheme.errorColor,
-        ));
+              : context.read<AccessGrantProvider>().error ?? 'Failed',
+          type: ok ? ToastType.info : ToastType.error,
+        );
       }
     }
     reasonCtrl.dispose();

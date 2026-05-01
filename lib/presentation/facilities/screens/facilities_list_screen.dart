@@ -51,50 +51,26 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
   }
 
   Future<void> _deleteFacility(FacilityModel facility) async {
-    final confirmed = await showDialog<bool>(
+    bool confirmed = false;
+    await showAdaptiveActionSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Facility'),
-        content: Text(
-          'Are you sure you want to delete "${facility.name}"? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.errorColor,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+      title: 'Delete Facility',
+      message: 'Are you sure you want to delete "${facility.name}"? This action cannot be undone.',
+      destructiveLabel: 'Delete',
+      onConfirm: () => confirmed = true,
     );
 
-    if (confirmed == true) {
+    if (confirmed) {
       try {
         await _repository.deleteFacility(facility.id);
-        
+
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Facility deleted successfully'),
-              backgroundColor: AppTheme.successColor,
-            ),
-          );
+          showAdaptiveToast(context, 'Facility deleted successfully', type: ToastType.success);
           _loadFacilities();
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to delete facility: $e'),
-              backgroundColor: AppTheme.errorColor,
-            ),
-          );
+          showAdaptiveToast(context, 'Failed to delete facility: $e', type: ToastType.error);
         }
       }
     }

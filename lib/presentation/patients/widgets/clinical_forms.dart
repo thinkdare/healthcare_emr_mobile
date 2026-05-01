@@ -70,9 +70,7 @@ class _AppointmentFormState extends State<AppointmentForm> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_appointmentDate == null || _appointmentTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select date and time')),
-      );
+      showAdaptiveToast(context, 'Please select date and time');
       return;
     }
 
@@ -98,10 +96,7 @@ class _AppointmentFormState extends State<AppointmentForm> {
     if (result != null) {
       Navigator.of(context).pop(true);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.read<ClinicalProvider>().error ?? 'Failed to book appointment'),
-        backgroundColor: AppTheme.errorColor,
-      ));
+      showAdaptiveToast(context, context.read<ClinicalProvider>().error ?? 'Failed to book appointment', type: ToastType.error);
     }
   }
 
@@ -255,9 +250,7 @@ class _PrescriptionFormState extends State<PrescriptionForm> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_prescribedDate == null || _expiresDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select prescribed and expiry dates')),
-      );
+      showAdaptiveToast(context, 'Please select prescribed and expiry dates');
       return;
     }
 
@@ -284,10 +277,7 @@ class _PrescriptionFormState extends State<PrescriptionForm> {
     if (result != null) {
       Navigator.of(context).pop(true);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.read<ClinicalProvider>().error ?? 'Failed to create prescription'),
-        backgroundColor: AppTheme.errorColor,
-      ));
+      showAdaptiveToast(context, context.read<ClinicalProvider>().error ?? 'Failed to create prescription', type: ToastType.error);
     }
   }
 
@@ -468,9 +458,7 @@ class _LabOrderFormState extends State<LabOrderForm> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_orderedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select an ordered date')),
-      );
+      showAdaptiveToast(context, 'Please select an ordered date');
       return;
     }
 
@@ -494,10 +482,7 @@ class _LabOrderFormState extends State<LabOrderForm> {
     if (result != null) {
       Navigator.of(context).pop(true);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.read<ClinicalProvider>().error ?? 'Failed to create lab order'),
-        backgroundColor: AppTheme.errorColor,
-      ));
+      showAdaptiveToast(context, context.read<ClinicalProvider>().error ?? 'Failed to create lab order', type: ToastType.error);
     }
   }
 
@@ -623,15 +608,11 @@ class _DocumentUploadFormState extends State<DocumentUploadForm> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_pickedFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a file to upload')),
-      );
+      showAdaptiveToast(context, 'Please select a file to upload');
       return;
     }
     if (_pickedFile!.path == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not read file path')),
-      );
+      showAdaptiveToast(context, 'Could not read file path');
       return;
     }
 
@@ -654,10 +635,7 @@ class _DocumentUploadFormState extends State<DocumentUploadForm> {
     if (result != null) {
       Navigator.of(context).pop(true);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.read<ClinicalProvider>().error ?? 'Upload failed'),
-        backgroundColor: AppTheme.errorColor,
-      ));
+      showAdaptiveToast(context, context.read<ClinicalProvider>().error ?? 'Upload failed', type: ToastType.error);
     }
   }
 

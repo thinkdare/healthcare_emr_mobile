@@ -91,26 +91,16 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _isEditing 
-                  ? 'Facility updated successfully' 
-                  : 'Facility created successfully',
-            ),
-            backgroundColor: AppTheme.successColor,
-          ),
+        showAdaptiveToast(
+          context,
+          _isEditing ? 'Facility updated successfully' : 'Facility created successfully',
+          type: ToastType.success,
         );
         Navigator.of(context).pop(true); // Return true to indicate success
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to ${_isEditing ? 'update' : 'create'} facility: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        showAdaptiveToast(context, 'Failed to ${_isEditing ? 'update' : 'create'} facility: $e', type: ToastType.error);
       }
     } finally {
       if (mounted) {

@@ -77,26 +77,16 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   Future<void> _handleLogout(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
+    bool confirmed = false;
+    await showAdaptiveActionSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style:
-                ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor),
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
+      title: 'Logout',
+      message: 'Are you sure you want to logout?',
+      destructiveLabel: 'Logout',
+      onConfirm: () => confirmed = true,
     );
 
-    if (confirmed == true && context.mounted) {
+    if (confirmed && context.mounted) {
       final auth = context.read<AuthProvider>();
       final userId = auth.currentUserId;
 

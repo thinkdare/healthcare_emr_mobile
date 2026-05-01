@@ -73,32 +73,22 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       case 2: // Prescriptions
         if (auth.staffType == 'pharmacist') {
           // Pharmacists use the fill dialog on individual cards, not the FAB.
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Tap the Fill button on a prescription to dispense it')),
-          );
+          showAdaptiveToast(context, 'Tap the Fill button on a prescription to dispense it');
           return;
         }
         if (!auth.canPrescribe) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('You do not have prescribing privileges')),
-          );
+          showAdaptiveToast(context, 'You do not have prescribing privileges');
           return;
         }
         form = const PrescriptionForm();
         break;
       case 3: // Lab Results
         if (auth.staffType == 'lab_technician' || auth.staffType == 'lab_tech') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Tap the Record button on a lab order to enter results')),
-          );
+          showAdaptiveToast(context, 'Tap the Record button on a lab order to enter results');
           return;
         }
         if (!auth.canOrderLabs) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('You do not have lab ordering privileges')),
-          );
+          showAdaptiveToast(context, 'You do not have lab ordering privileges');
           return;
         }
         form = const LabOrderForm();
@@ -692,10 +682,10 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
           ],
         ),
         actions: [
-          TextButton(
+          AdaptiveTextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
               child: const Text('Cancel')),
-          ElevatedButton(
+          AdaptiveFilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Dispense'),
           ),
@@ -706,9 +696,7 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
     if (confirmed != true || !mounted) return;
     final qty = int.tryParse(qtyCtrl.text.trim());
     if (qty == null || qty <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid quantity')),
-      );
+      showAdaptiveToast(context, 'Enter a valid quantity', type: ToastType.error);
       return;
     }
 
@@ -719,13 +707,13 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
     if (!mounted) return;
     setState(() => _filling = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(result != null
+    showAdaptiveToast(
+      context,
+      result != null
           ? 'Dispensed successfully'
-          : context.read<ClinicalProvider>().error ?? 'Failed to dispense'),
-      backgroundColor:
-          result != null ? AppTheme.successColor : AppTheme.errorColor,
-    ));
+          : context.read<ClinicalProvider>().error ?? 'Failed to dispense',
+      type: result != null ? ToastType.success : ToastType.error,
+    );
   }
 
   @override
@@ -910,10 +898,10 @@ class _LabResultCardState extends State<_LabResultCard> {
             ),
           ),
           actions: [
-            TextButton(
+            AdaptiveTextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
                 child: const Text('Cancel')),
-            ElevatedButton(
+            AdaptiveFilledButton(
               onPressed: () => Navigator.of(ctx).pop(true),
               child: const Text('Submit'),
             ),
@@ -924,9 +912,7 @@ class _LabResultCardState extends State<_LabResultCard> {
 
     if (confirmed != true || !mounted) return;
     if (resultsCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Results are required')),
-      );
+      showAdaptiveToast(context, 'Results are required', type: ToastType.error);
       return;
     }
 
@@ -951,14 +937,13 @@ class _LabResultCardState extends State<_LabResultCard> {
     if (!mounted) return;
     setState(() => _recording = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(result != null
+    showAdaptiveToast(
+      context,
+      result != null
           ? 'Results recorded successfully'
-          : context.read<ClinicalProvider>().error ??
-              'Failed to record results'),
-      backgroundColor:
-          result != null ? AppTheme.successColor : AppTheme.errorColor,
-    ));
+          : context.read<ClinicalProvider>().error ?? 'Failed to record results',
+      type: result != null ? ToastType.success : ToastType.error,
+    );
   }
 
   @override
@@ -1136,9 +1121,7 @@ class _DocumentCardState extends State<_DocumentCard> {
     setState(() => _downloading = false);
 
     if (url == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not retrieve document URL')),
-      );
+      showAdaptiveToast(context, 'Could not retrieve document URL', type: ToastType.error);
       return;
     }
 
@@ -1147,9 +1130,7 @@ class _DocumentCardState extends State<_DocumentCard> {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open document')),
-        );
+        showAdaptiveToast(context, 'Could not open document', type: ToastType.error);
       }
     }
   }

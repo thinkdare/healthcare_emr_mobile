@@ -31,30 +31,17 @@ class _SubscriptionDetailsScreenState extends State<SubscriptionDetailsScreen> {
   }
 
   Future<void> _handleCancel() async {
-    final confirmed = await showDialog<bool>(
+    bool confirmed = false;
+    await showAdaptiveActionSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Cancel Subscription'),
-        content: const Text(
-          'Are you sure? You will retain access until the end of your '
+      title: 'Cancel Subscription',
+      message: 'Are you sure? You will retain access until the end of your '
           'current billing period.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Keep Subscription'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.errorColor),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
+      destructiveLabel: 'Cancel Subscription',
+      onConfirm: () => confirmed = true,
     );
 
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
 
     final auth = context.read<AuthProvider>();
     final sub = context.read<SubscriptionProvider>().subscription;
@@ -65,13 +52,15 @@ class _SubscriptionDetailsScreenState extends State<SubscriptionDetailsScreen> {
         .cancelSubscription(auth.organizationId!, sub.id);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(success
-            ? 'Subscription cancelled'
-            : context.read<SubscriptionProvider>().error ??
-                'Failed to cancel'),
-        backgroundColor: success ? AppTheme.successColor : AppTheme.errorColor,
-      ));
+      if (success) {
+        showAdaptiveToast(context, 'Subscription cancelled', type: ToastType.success);
+      } else {
+        showAdaptiveToast(
+          context,
+          context.read<SubscriptionProvider>().error ?? 'Failed to cancel',
+          type: ToastType.error,
+        );
+      }
     }
   }
 

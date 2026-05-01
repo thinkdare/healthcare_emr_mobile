@@ -66,6 +66,8 @@ class AuthProvider extends ChangeNotifier {
   bool get canPrescribe => _activeMembership?.canPrescribe ?? false;
   bool get canOrderLabs => _activeMembership?.canOrderLabs ?? false;
   bool get canEmergencyAccess => _activeMembership?.canEmergencyAccess ?? false;
+  String get department => _activeMembership?.department ?? '';
+  String get staffType => _activeMembership?.staffType ?? '';
 
   // ── Initialisation ─────────────────────────────────────────────────────────
 
