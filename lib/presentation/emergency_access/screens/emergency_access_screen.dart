@@ -93,11 +93,11 @@ class _EmergencyAccessScreenState extends State<EmergencyAccessScreen> {
           ),
         ),
         actions: [
-          TextButton(
+          AdaptiveTextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Cancel'),
           ),
-          FilledButton(
+          AdaptiveFilledButton(
             onPressed: () {
               if (formKey.currentState!.validate()) {
                 Navigator.of(ctx).pop(true);
@@ -116,15 +116,9 @@ class _EmergencyAccessScreenState extends State<EmergencyAccessScreen> {
 
     if (!mounted) return;
     if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Emergency access event marked as reviewed.'),
-        backgroundColor: AppTheme.successColor,
-      ));
+      showAdaptiveToast(context, 'Emergency access event marked as reviewed.', type: ToastType.success);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(provider.error ?? 'Failed to mark reviewed'),
-        backgroundColor: AppTheme.errorColor,
-      ));
+      showAdaptiveToast(context, provider.error ?? 'Failed to mark reviewed', type: ToastType.error);
     }
   }
 

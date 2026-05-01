@@ -309,9 +309,7 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 16),
           AdaptiveTextButton(
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text('Contact your administrator to reset your password.'),
-              ));
+              showAdaptiveToast(context, 'Contact your administrator to reset your password.');
             },
             child: const Text('Forgot Password?'),
           ),

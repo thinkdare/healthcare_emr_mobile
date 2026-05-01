@@ -80,9 +80,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
                     builder: (_) => const PatientFormScreen()),
           );
           if (result != null && mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Patient registered')),
-            );
+            showAdaptiveToast(context, 'Patient registered', type: ToastType.success);
           }
         },
         tooltip: 'New Patient',

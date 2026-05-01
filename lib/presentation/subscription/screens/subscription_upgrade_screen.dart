@@ -35,10 +35,7 @@ class _SubscriptionUpgradeScreenState
     final sub = sp.subscription;
 
     if (orgId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('No organization found. Contact your administrator.'),
-        backgroundColor: AppTheme.errorColor,
-      ));
+      showAdaptiveToast(context, 'No organization found. Contact your administrator.', type: ToastType.error);
       return;
     }
 
@@ -57,16 +54,10 @@ class _SubscriptionUpgradeScreenState
 
     if (mounted) {
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Plan updated successfully'),
-          backgroundColor: AppTheme.successColor,
-        ));
+        showAdaptiveToast(context, 'Plan updated successfully', type: ToastType.success);
         Navigator.of(context).pop();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(sp.error ?? 'Failed to update plan'),
-          backgroundColor: AppTheme.errorColor,
-        ));
+        showAdaptiveToast(context, sp.error ?? 'Failed to update plan', type: ToastType.error);
       }
     }
   }

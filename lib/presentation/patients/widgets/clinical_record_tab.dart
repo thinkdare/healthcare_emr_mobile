@@ -125,25 +125,12 @@ class _Section extends StatelessWidget {
 
 Future<void> _confirmDelete(
     BuildContext context, String label, VoidCallback onConfirm) {
-  return showDialog(
+  return showAdaptiveActionSheet(
     context: context,
-    builder: (ctx) => AlertDialog(
-      title: const Text('Delete Record'),
-      content: Text('Delete this $label? This cannot be undone.'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.pop(ctx);
-            onConfirm();
-          },
-          child: const Text('Delete', style: TextStyle(color: Colors.red)),
-        ),
-      ],
-    ),
+    title: 'Delete Record',
+    message: 'Delete this $label? This cannot be undone.',
+    destructiveLabel: 'Delete',
+    onConfirm: onConfirm,
   );
 }
 

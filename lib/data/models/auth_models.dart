@@ -51,6 +51,7 @@ class ClinicalRankModel {
 class StaffMembershipModel {
   final String id;
   final String staffType; // doctor | nurse | pharmacist | lab_tech | …
+  final String? department;
   final bool isPrimary;
   final bool canEmergencyAccess;
   final bool canPrescribe;
@@ -60,6 +61,7 @@ class StaffMembershipModel {
   const StaffMembershipModel({
     required this.id,
     required this.staffType,
+    this.department,
     required this.isPrimary,
     required this.canEmergencyAccess,
     required this.canPrescribe,
@@ -73,6 +75,7 @@ class StaffMembershipModel {
       StaffMembershipModel(
         id: (json['membership_id'] ?? json['id']) as String,
         staffType: json['staff_type'] as String,
+        department: json['department'] as String?,
         isPrimary: json['is_primary_affiliation'] as bool? ?? json['is_primary'] as bool? ?? false,
         canEmergencyAccess: json['can_emergency_access'] as bool? ?? false,
         canPrescribe: json['can_prescribe'] as bool? ?? false,

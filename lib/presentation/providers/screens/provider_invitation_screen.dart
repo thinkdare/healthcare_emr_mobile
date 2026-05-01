@@ -51,12 +51,7 @@ class _ProviderInvitationScreenState extends State<ProviderInvitationScreen> {
       await Future.delayed(const Duration(seconds: 2)); // Simulate API call
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invitation sent successfully'),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
+        showAdaptiveToast(context, 'Invitation sent successfully', type: ToastType.success);
         
         // Clear form
         _formKey.currentState!.reset();
@@ -73,12 +68,7 @@ class _ProviderInvitationScreenState extends State<ProviderInvitationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to send invitation: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        showAdaptiveToast(context, 'Failed to send invitation: $e', type: ToastType.error);
       }
     } finally {
       if (mounted) {
