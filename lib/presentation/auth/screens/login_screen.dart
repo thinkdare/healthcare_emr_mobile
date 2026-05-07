@@ -423,13 +423,13 @@ class _FacilitySelector extends StatelessWidget {
     }
 
     // Multiple facilities — dropdown selector
-    return DropdownButtonFormField<AuthFacilityModel>(
+    return AdaptiveDropdown<AuthFacilityModel>(
       value: selected,
       decoration: const InputDecoration(
         labelText: 'Select Facility',
         prefixIcon: Icon(Icons.local_hospital_outlined),
+        hintText: 'Choose your facility',
       ),
-      hint: const Text('Choose your facility'),
       items: facilities.map((f) {
         return DropdownMenuItem(
           value: f,
@@ -448,6 +448,7 @@ class _FacilitySelector extends StatelessWidget {
         );
       }).toList(),
       onChanged: onChanged,
+      labelBuilder: (f) => f.name,
     );
   }
 }
