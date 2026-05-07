@@ -5,9 +5,11 @@
 // Shows five collapsible sections (one per new clinical resource).
 // Each section header has a "+" icon that opens the matching write form.
 // Individual records show a delete icon with a confirmation dialog.
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../../config/app_colors.dart';
 import '../../../core/platform.dart';
 import '../../../data/models/clinical_record_models.dart';
 import '../../../data/providers/clinical_provider.dart';
@@ -21,7 +23,11 @@ class ClinicalRecordTab extends StatelessWidget {
     return Consumer<ClinicalProvider>(
       builder: (context, clinical, _) {
         if (clinical.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: kIsIOS
+                ? const CupertinoActivityIndicator()
+                : const CircularProgressIndicator(),
+          );
         }
         if (clinical.error != null) {
           return Center(
@@ -40,17 +46,34 @@ class ClinicalRecordTab extends StatelessWidget {
             ),
           );
         }
+
+        final sections = [
+          _VitalSignsSection(clinical.vitalSigns),
+          _DiagnosesSection(clinical.diagnoses),
+          _ProblemsSection(clinical.problems),
+          _ProceduresSection(clinical.procedures),
+          _ImmunizationsSection(clinical.immunizations),
+        ];
+
+        if (kIsIOS) {
+          return CustomScrollView(
+            slivers: [
+              CupertinoSliverRefreshControl(
+                onRefresh: () => clinical.loadAll(clinical.patientId!),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                sliver: SliverList.list(children: sections),
+              ),
+            ],
+          );
+        }
+
         return RefreshIndicator(
           onRefresh: () => clinical.loadAll(clinical.patientId!),
           child: ListView(
             padding: const EdgeInsets.symmetric(vertical: 8),
-            children: [
-              _VitalSignsSection(clinical.vitalSigns),
-              _DiagnosesSection(clinical.diagnoses),
-              _ProblemsSection(clinical.problems),
-              _ProceduresSection(clinical.procedures),
-              _ImmunizationsSection(clinical.immunizations),
-            ],
+            children: sections,
           ),
         );
       },
@@ -159,23 +182,52 @@ class _VitalSignTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final date =
         DateFormat('dd MMM yyyy HH:mm').format(v.recordedAt.toLocal());
+    final subtitle = Wrap(
+      spacing: 12,
+      children: [
+        if (v.bloodPressureSystolic != null) Text('BP: ${v.bpDisplay}'),
+        if (v.heartRate != null) Text('HR: ${v.heartRate} bpm'),
+        if (v.oxygenSaturation != null) Text('SpO₂: ${v.spo2Display}'),
+        if (v.temperature != null) Text('Temp: ${v.tempDisplay}'),
+      ],
+    );
+
+    if (kIsIOS) {
+      return Dismissible(
+        key: ValueKey(v.id),
+        direction: DismissDirection.endToStart,
+        confirmDismiss: (_) async {
+          bool confirmed = false;
+          await _confirmDelete(
+              context, 'vital sign reading', () => confirmed = true);
+          return confirmed;
+        },
+        onDismissed: (_) =>
+            context.read<ClinicalProvider>().deleteVitalSign(v.id),
+        background: Container(
+          color: AppColors.error,
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          child: const Icon(CupertinoIcons.delete,
+              color: CupertinoColors.white),
+        ),
+        child: CupertinoListTile(
+          title: Text(date,
+              style: const TextStyle(fontWeight: FontWeight.w500)),
+          subtitle: subtitle,
+        ),
+      );
+    }
+
     return ListTile(
       dense: true,
-      title:
-          Text(date, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Wrap(
-        spacing: 12,
-        children: [
-          if (v.bloodPressureSystolic != null)
-            Text('BP: ${v.bpDisplay}'),
-          if (v.heartRate != null) Text('HR: ${v.heartRate} bpm'),
-          if (v.oxygenSaturation != null) Text('SpO₂: ${v.spo2Display}'),
-          if (v.temperature != null) Text('Temp: ${v.tempDisplay}'),
-        ],
-      ),
+      title: Text(date,
+          style: const TextStyle(fontWeight: FontWeight.w500)),
+      subtitle: subtitle,
       trailing: IconButton(
         icon: const Icon(Icons.delete_outline, color: Colors.red),
-        onPressed: () => _confirmDelete(context, 'vital sign reading', () {
+        onPressed: () =>
+            _confirmDelete(context, 'vital sign reading', () {
           context.read<ClinicalProvider>().deleteVitalSign(v.id);
         }),
       ),
@@ -213,30 +265,55 @@ class _DiagnosisTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final subtitle = Row(children: [
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: _statusColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(d.status,
+            style: TextStyle(color: _statusColor, fontSize: 11)),
+      ),
+      if (d.icdCode != null) ...[
+        const SizedBox(width: 8),
+        Text(d.icdCode!,
+            style: const TextStyle(fontSize: 11, color: Colors.grey)),
+      ],
+    ]);
+
+    if (kIsIOS) {
+      return Dismissible(
+        key: ValueKey(d.id),
+        direction: DismissDirection.endToStart,
+        confirmDismiss: (_) async {
+          bool confirmed = false;
+          await _confirmDelete(
+              context, 'diagnosis', () => confirmed = true);
+          return confirmed;
+        },
+        onDismissed: (_) =>
+            context.read<ClinicalProvider>().deleteDiagnosis(d.id),
+        background: Container(
+          color: AppColors.error,
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          child: const Icon(CupertinoIcons.delete,
+              color: CupertinoColors.white),
+        ),
+        child: CupertinoListTile(
+          title: Text(d.description,
+              style: const TextStyle(fontWeight: FontWeight.w500)),
+          subtitle: subtitle,
+        ),
+      );
+    }
+
     return ListTile(
       dense: true,
       title: Text(d.description,
           style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Row(children: [
-        Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(
-            color: _statusColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            d.status,
-            style: TextStyle(color: _statusColor, fontSize: 11),
-          ),
-        ),
-        if (d.icdCode != null) ...[
-          const SizedBox(width: 8),
-          Text(d.icdCode!,
-              style:
-                  const TextStyle(fontSize: 11, color: Colors.grey)),
-        ],
-      ]),
+      subtitle: subtitle,
       trailing: IconButton(
         icon: const Icon(Icons.delete_outline, color: Colors.red),
         onPressed: () => _confirmDelete(context, 'diagnosis', () {
@@ -270,17 +347,46 @@ class _ProblemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final subtitle = Text(
+      p.status,
+      style: TextStyle(
+        color: p.isActive ? Colors.orange : Colors.green,
+        fontSize: 11,
+      ),
+    );
+
+    if (kIsIOS) {
+      return Dismissible(
+        key: ValueKey(p.id),
+        direction: DismissDirection.endToStart,
+        confirmDismiss: (_) async {
+          bool confirmed = false;
+          await _confirmDelete(
+              context, 'problem', () => confirmed = true);
+          return confirmed;
+        },
+        onDismissed: (_) =>
+            context.read<ClinicalProvider>().deleteProblem(p.id),
+        background: Container(
+          color: AppColors.error,
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          child: const Icon(CupertinoIcons.delete,
+              color: CupertinoColors.white),
+        ),
+        child: CupertinoListTile(
+          title: Text(p.description,
+              style: const TextStyle(fontWeight: FontWeight.w500)),
+          subtitle: subtitle,
+        ),
+      );
+    }
+
     return ListTile(
       dense: true,
       title: Text(p.description,
           style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Text(
-        p.status,
-        style: TextStyle(
-          color: p.isActive ? Colors.orange : Colors.green,
-          fontSize: 11,
-        ),
-      ),
+      subtitle: subtitle,
       trailing: IconButton(
         icon: const Icon(Icons.delete_outline, color: Colors.red),
         onPressed: () => _confirmDelete(context, 'problem', () {
@@ -317,14 +423,41 @@ class _ProcedureTile extends StatelessWidget {
     final date = p.performedAt != null
         ? DateFormat('dd MMM yyyy').format(p.performedAt!.toLocal())
         : 'Date unknown';
+    final subtitle = Text('$date · ${p.status}',
+        style: const TextStyle(fontSize: 11));
+
+    if (kIsIOS) {
+      return Dismissible(
+        key: ValueKey(p.id),
+        direction: DismissDirection.endToStart,
+        confirmDismiss: (_) async {
+          bool confirmed = false;
+          await _confirmDelete(
+              context, 'procedure', () => confirmed = true);
+          return confirmed;
+        },
+        onDismissed: (_) =>
+            context.read<ClinicalProvider>().deleteProcedure(p.id),
+        background: Container(
+          color: AppColors.error,
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          child: const Icon(CupertinoIcons.delete,
+              color: CupertinoColors.white),
+        ),
+        child: CupertinoListTile(
+          title: Text(p.description,
+              style: const TextStyle(fontWeight: FontWeight.w500)),
+          subtitle: subtitle,
+        ),
+      );
+    }
+
     return ListTile(
       dense: true,
       title: Text(p.description,
           style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Text(
-        '$date · ${p.status}',
-        style: const TextStyle(fontSize: 11),
-      ),
+      subtitle: subtitle,
       trailing: IconButton(
         icon: const Icon(Icons.delete_outline, color: Colors.red),
         onPressed: () => _confirmDelete(context, 'procedure', () {
@@ -360,14 +493,41 @@ class _ImmunizationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final date = DateFormat('dd MMM yyyy')
         .format(i.administeredAt.toLocal());
+    final subtitle = Text('$date · ${i.doseDisplay} · ${i.route}',
+        style: const TextStyle(fontSize: 11));
+
+    if (kIsIOS) {
+      return Dismissible(
+        key: ValueKey(i.id),
+        direction: DismissDirection.endToStart,
+        confirmDismiss: (_) async {
+          bool confirmed = false;
+          await _confirmDelete(
+              context, 'immunization record', () => confirmed = true);
+          return confirmed;
+        },
+        onDismissed: (_) =>
+            context.read<ClinicalProvider>().deleteImmunization(i.id),
+        background: Container(
+          color: AppColors.error,
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          child: const Icon(CupertinoIcons.delete,
+              color: CupertinoColors.white),
+        ),
+        child: CupertinoListTile(
+          title: Text(i.vaccineName,
+              style: const TextStyle(fontWeight: FontWeight.w500)),
+          subtitle: subtitle,
+        ),
+      );
+    }
+
     return ListTile(
       dense: true,
       title: Text(i.vaccineName,
           style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Text(
-        '$date · ${i.doseDisplay} · ${i.route}',
-        style: const TextStyle(fontSize: 11),
-      ),
+      subtitle: subtitle,
       trailing: IconButton(
         icon: const Icon(Icons.delete_outline, color: Colors.red),
         onPressed: () =>
