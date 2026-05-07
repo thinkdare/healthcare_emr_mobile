@@ -374,7 +374,7 @@ class _AuditLogTabState extends State<_AuditLogTab> {
                   style: TextStyle(
                       fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              DropdownButtonFormField<String?>(
+              AdaptiveDropdown<String?>(
                 value: _actionFilter,
                 decoration: const InputDecoration(labelText: 'Action'),
                 items: _actions.map((a) => DropdownMenuItem(
@@ -385,7 +385,7 @@ class _AuditLogTabState extends State<_AuditLogTab> {
                     setLocal(() => _actionFilter = v),
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String?>(
+              AdaptiveDropdown<String?>(
                 value: _authorityFilter,
                 decoration:
                     const InputDecoration(labelText: 'Access authority'),
@@ -399,7 +399,7 @@ class _AuditLogTabState extends State<_AuditLogTab> {
                     setLocal(() => _authorityFilter = v),
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<bool?>(
+              AdaptiveDropdown<bool?>(
                 value: _emergencyFilter,
                 decoration:
                     const InputDecoration(labelText: 'Emergency events'),
