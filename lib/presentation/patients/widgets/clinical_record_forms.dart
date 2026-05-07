@@ -356,8 +356,8 @@ class _DiagnosisFormState extends State<DiagnosisForm> {
                 decoration: _field('ICD Code', hint: 'e.g. E11.9'),
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _type,
+              AdaptiveDropdown<String>(
+                value: _type,
                 decoration: _field('Diagnosis Type'),
                 items: _types
                     .map((t) => DropdownMenuItem(
@@ -366,8 +366,8 @@ class _DiagnosisFormState extends State<DiagnosisForm> {
                 onChanged: (v) => setState(() => _type = v!),
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _status,
+              AdaptiveDropdown<String>(
+                value: _status,
                 decoration: _field('Status'),
                 items: _statuses
                     .map((s) => DropdownMenuItem(
@@ -456,8 +456,8 @@ class _ProblemFormState extends State<ProblemForm> {
                     (v == null || v.trim().isEmpty) ? 'Required' : null,
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _status,
+              AdaptiveDropdown<String>(
+                value: _status,
                 decoration: _field('Status'),
                 items: _statuses
                     .map((s) => DropdownMenuItem(
@@ -551,8 +551,8 @@ class _ProcedureFormState extends State<ProcedureForm> {
                     (v == null || v.trim().isEmpty) ? 'Required' : null,
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _status,
+              AdaptiveDropdown<String>(
+                value: _status,
                 decoration: _field('Status'),
                 items: _statuses
                     .map((s) => DropdownMenuItem(
@@ -686,8 +686,8 @@ class _ImmunizationFormState extends State<ImmunizationForm> {
                 ),
               ]),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _route,
+              AdaptiveDropdown<String>(
+                value: _route,
                 decoration: _field('Route'),
                 items: _routes
                     .map((r) => DropdownMenuItem(
