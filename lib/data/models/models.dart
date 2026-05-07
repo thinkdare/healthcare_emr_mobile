@@ -12,6 +12,7 @@ class UserModel {
   final String email;
 
   /// Full name as stored on the User record.
+  @JsonKey(name: 'full_name')
   final String name;
 
   @JsonKey(name: 'user_type')

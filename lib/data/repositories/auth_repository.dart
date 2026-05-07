@@ -195,11 +195,11 @@ class AuthRepository {
     return List<String>.from(data['backup_codes'] as List? ?? []);
   }
 
-  /// Disable 2FA (requires password confirmation).
-  Future<void> twoFactorDisable(String password) async {
-    final response = await apiClient.post(
-      '/auth/2fa/disable',
-      data: {'password': password},
+  /// Disable 2FA. Requires the current TOTP code (or a backup code).
+  Future<void> twoFactorDisable(String code) async {
+    final response = await apiClient.delete(
+      '/auth/2fa',
+      data: {'code': code},
     );
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Could not disable 2FA');
