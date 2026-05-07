@@ -137,8 +137,8 @@ class _AppointmentFormState extends State<AppointmentForm> {
               ],
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              initialValue: _type,
+            AdaptiveDropdown<String>(
+              value: _type,
               decoration: const InputDecoration(labelText: 'Appointment Type *'),
               items: _types
                   .map((t) => DropdownMenuItem(value: t.$1, child: Text(t.$2)))
@@ -317,8 +317,8 @@ class _PrescriptionFormState extends State<PrescriptionForm> {
               ),
             ]),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: _route,
+            AdaptiveDropdown<String>(
+              value: _route,
               decoration: const InputDecoration(labelText: 'Route *'),
               items: _routes
                   .map((r) => DropdownMenuItem(value: r.$1, child: Text(r.$2)))
@@ -504,8 +504,8 @@ class _LabOrderFormState extends State<LabOrderForm> {
             const SizedBox(height: 12),
             Row(children: [
               Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: _testType,
+                child: AdaptiveDropdown<String>(
+                  value: _testType,
                   decoration: const InputDecoration(labelText: 'Test Type *'),
                   items: _testTypes
                       .map((t) => DropdownMenuItem(value: t.$1, child: Text(t.$2)))
@@ -515,8 +515,8 @@ class _LabOrderFormState extends State<LabOrderForm> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: _priority,
+                child: AdaptiveDropdown<String>(
+                  value: _priority,
                   decoration: const InputDecoration(labelText: 'Priority'),
                   items: _priorities
                       .map((p) => DropdownMenuItem(value: p.$1, child: Text(p.$2)))
@@ -707,8 +707,8 @@ class _DocumentUploadFormState extends State<DocumentUploadForm> {
               validator: _req('Title'),
             ),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: _documentType,
+            AdaptiveDropdown<String>(
+              value: _documentType,
               decoration: const InputDecoration(labelText: 'Document Type *'),
               items: _types
                   .map((t) =>
