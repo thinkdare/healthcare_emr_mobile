@@ -189,7 +189,7 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
                           const SizedBox(height: 20),
 
                           // Type
-                          DropdownButtonFormField<String>(
+                          AdaptiveDropdown<String>(
                             value: _selectedType,
                             decoration: const InputDecoration(
                               labelText: 'Facility Type *',
@@ -290,12 +290,19 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
                                     ],
                                   ),
                                 ),
-                                Switch(
-                                  value: _supportsEmergencyAccess,
-                                  onChanged: (value) {
-                                    setState(() => _supportsEmergencyAccess = value);
-                                  },
-                                ),
+                                kIsIOS
+                                    ? CupertinoSwitch(
+                                        value: _supportsEmergencyAccess,
+                                        onChanged: (value) {
+                                          setState(() => _supportsEmergencyAccess = value);
+                                        },
+                                      )
+                                    : Switch(
+                                        value: _supportsEmergencyAccess,
+                                        onChanged: (value) {
+                                          setState(() => _supportsEmergencyAccess = value);
+                                        },
+                                      ),
                               ],
                             ),
                           ),
