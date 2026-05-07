@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../core/platform.dart';
-import 'package:flutter/services.dart';
 import '../../../config/theme.dart';
 import '../../../config/app_config.dart';
 
@@ -250,7 +249,7 @@ class _ProviderInvitationScreenState extends State<ProviderInvitationScreen> {
                           ),
                           const Divider(height: 24),
                           
-                          DropdownButtonFormField<String>(
+                          AdaptiveDropdown<String>(
                             value: _selectedProviderType,
                             decoration: const InputDecoration(
                               labelText: 'Provider Type *',
@@ -294,7 +293,7 @@ class _ProviderInvitationScreenState extends State<ProviderInvitationScreen> {
                           ),
                           const SizedBox(height: 20),
 
-                          DropdownButtonFormField<String>(
+                          AdaptiveDropdown<String>(
                             value: _selectedFacility,
                             decoration: const InputDecoration(
                               labelText: 'Assign to Facility *',
