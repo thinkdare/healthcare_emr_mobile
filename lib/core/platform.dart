@@ -12,9 +12,12 @@ import 'package:flutter/material.dart'
     show
         AlertDialog,
         Colors,
+        DropdownButtonFormField,
+        DropdownMenuItem,
         ElevatedButton,
         Icon,
         Icons,
+        InputDecoration,
         ListTile,
         Material,
         Navigator,
@@ -293,5 +296,155 @@ class AdaptiveTextButton extends StatelessWidget {
     return icon != null
         ? TextButton.icon(onPressed: onPressed, icon: icon!, label: child)
         : TextButton(onPressed: onPressed, child: child);
+  }
+}
+
+// ── Adaptive dropdown ─────────────────────────────────────────────────────────
+
+/// Form dropdown: [DropdownButtonFormField] on Android; a tappable row backed
+/// by [CupertinoActionSheet] on iOS.
+///
+/// The iOS row displays the selected item's label. Labels are extracted by
+/// casting the matching [DropdownMenuItem.child] to [Text]. For items whose
+/// child is not [Text] (e.g. a multi-line [Column]), pass [labelBuilder] to
+/// provide the display string explicitly.
+///
+/// Both [state.didChange] and [onChanged] are called on selection so that
+/// [Form.validate()] sees the correct value and the parent widget's
+/// [setState] also fires.
+class AdaptiveDropdown<T> extends StatelessWidget {
+  final T? value;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?>? onChanged;
+  final InputDecoration decoration;
+  final String? Function(T?)? validator;
+
+  /// Optional: provide when [DropdownMenuItem.child] is not a [Text] widget.
+  final String Function(T value)? labelBuilder;
+
+  const AdaptiveDropdown({
+    super.key,
+    this.value,
+    required this.items,
+    this.onChanged,
+    required this.decoration,
+    this.validator,
+    this.labelBuilder,
+  });
+
+  String _labelFor(T? val) {
+    if (labelBuilder != null && val != null) return labelBuilder!(val as T);
+    final match = items.where((item) => item.value == val).firstOrNull;
+    if (match == null) return val?.toString() ?? '';
+    final child = match.child;
+    if (child is Text) return child.data ?? val?.toString() ?? '';
+    return val?.toString() ?? '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!kIsIOS) {
+      // key: ValueKey(value) forces recreation when the parent value changes,
+      // required because DropdownButtonFormField.value was deprecated in 3.33
+      // and initialValue only sets the initial state (not subsequent updates).
+      return DropdownButtonFormField<T>(
+        key: ValueKey(value),
+        initialValue: value,
+        items: items,
+        onChanged: onChanged,
+        decoration: decoration,
+        validator: validator,
+      );
+    }
+
+    // iOS: FormField + CupertinoActionSheet
+    // key: ValueKey(value) keeps iOS and Android consistent on external resets.
+    return FormField<T>(
+      key: ValueKey(value),
+      initialValue: value,
+      validator: validator,
+      builder: (state) {
+        final currentLabel = _labelFor(state.value);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (decoration.labelText != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  decoration.labelText!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: CupertinoColors.secondaryLabel,
+                  ),
+                ),
+              ),
+            GestureDetector(
+              onTap: () => showCupertinoModalPopup<void>(
+                context: context,
+                builder: (_) => CupertinoActionSheet(
+                  actions: items.map((item) {
+                    return CupertinoActionSheetAction(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        state.didChange(item.value);
+                        onChanged?.call(item.value);
+                      },
+                      child: item.child,
+                    );
+                  }).toList(),
+                  cancelButton: CupertinoActionSheetAction(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+              ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: state.hasError
+                          ? CupertinoColors.systemRed
+                          : CupertinoColors.separator,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: currentLabel.isEmpty
+                          ? Text(
+                              decoration.hintText ?? '',
+                              style: const TextStyle(
+                                  color: CupertinoColors.placeholderText),
+                            )
+                          : Text(currentLabel),
+                    ),
+                    const Icon(
+                      CupertinoIcons.chevron_down,
+                      size: 16,
+                      color: CupertinoColors.secondaryLabel,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (state.hasError)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  state.errorText!,
+                  style: const TextStyle(
+                    color: CupertinoColors.systemRed,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
   }
 }
