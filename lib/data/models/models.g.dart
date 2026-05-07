@@ -9,7 +9,7 @@ part of 'models.dart';
 UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
   id: json['id'] as String,
   email: json['email'] as String,
-  name: json['name'] as String,
+  name: json['full_name'] as String,
   userType: json['user_type'] as String,
   twoFactorEnabled: json['two_factor_enabled'] as bool,
   createdAt: DateTime.parse(json['created_at'] as String),
@@ -19,7 +19,7 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
 Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
   'id': instance.id,
   'email': instance.email,
-  'name': instance.name,
+  'full_name': instance.name,
   'user_type': instance.userType,
   'two_factor_enabled': instance.twoFactorEnabled,
   'created_at': instance.createdAt.toIso8601String(),
