@@ -145,6 +145,18 @@ class _PatientListScreenState extends State<PatientListScreen> {
 
           return Column(
             children: [
+              // ── iOS search field ───────────────────────────────────────────
+              if (kIsIOS && _showSearchBar)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 8),
+                  child: CupertinoSearchTextField(
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    placeholder: 'Search by name, MRN, phone or email…',
+                  ),
+                ),
+
               // ── Offline/cache indicator ────────────────────────────────────
               if (fromCache && !isLoading)
                 _CacheBanner(
@@ -162,9 +174,17 @@ class _PatientListScreenState extends State<PatientListScreen> {
               // ── Body ───────────────────────────────────────────────────────
               Expanded(
                 child: isLoading && patients.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
+                    ? Center(
+                        child: kIsIOS
+                            ? const CupertinoActivityIndicator()
+                            : const CircularProgressIndicator(),
+                      )
                     : isSearching
-                        ? const Center(child: CircularProgressIndicator())
+                        ? Center(
+                            child: kIsIOS
+                                ? const CupertinoActivityIndicator()
+                                : const CircularProgressIndicator(),
+                          )
                         : patients.isEmpty
                             ? _EmptyState(
                                 isSearching: _showSearchBar &&
@@ -183,11 +203,13 @@ class _PatientListScreenState extends State<PatientListScreen> {
                                           : 0),
                                   itemBuilder: (_, index) {
                                     if (index == patients.length) {
-                                      return const Padding(
-                                        padding: EdgeInsets.all(16),
+                                      return Padding(
+                                        padding: const EdgeInsets.all(16),
                                         child: Center(
-                                            child:
-                                                CircularProgressIndicator()),
+                                          child: kIsIOS
+                                              ? const CupertinoActivityIndicator()
+                                              : const CircularProgressIndicator(),
+                                        ),
                                       );
                                     }
                                     return PatientCard(
