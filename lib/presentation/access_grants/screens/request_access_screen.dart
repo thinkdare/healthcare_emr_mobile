@@ -205,8 +205,8 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
               ),
 
               _sectionHeader('Access Level'),
-              DropdownButtonFormField<String>(
-                initialValue: _accessLevel,
+              AdaptiveDropdown<String>(
+                value: _accessLevel,
                 decoration:
                     const InputDecoration(labelText: 'Access Level *'),
                 items: _accessLevels

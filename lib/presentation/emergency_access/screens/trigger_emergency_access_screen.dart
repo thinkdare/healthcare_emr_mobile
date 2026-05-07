@@ -205,8 +205,8 @@ class _TriggerEmergencyAccessScreenState
               ),
 
               _sectionHeader('Emergency Type'),
-              DropdownButtonFormField<String>(
-                initialValue: _emergencyType,
+              AdaptiveDropdown<String>(
+                value: _emergencyType,
                 decoration:
                     const InputDecoration(labelText: 'Emergency Type *'),
                 items: _types
