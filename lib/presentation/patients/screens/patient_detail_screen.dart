@@ -42,6 +42,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   late TabController _tabs;
   late PatientModel _patient;
   int _currentTab = 0;
+  int _iosSegment = 0;
   late List<int> _visibleIndices;
 
   @override
@@ -65,8 +66,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   Future<void> _openClinicalForm() async {
     final auth = context.read<AuthProvider>();
     Widget? form;
+    final tabIndex = kIsIOS ? _visibleIndices[_iosSegment] : _currentTab;
 
-    switch (_currentTab) {
+    switch (tabIndex) {
       case 1: // Appointments
         form = const AppointmentForm();
         break;
@@ -113,7 +115,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
     if (created == true && mounted) {
       final clinical = context.read<ClinicalProvider>();
-      switch (_currentTab) {
+      switch (tabIndex) {
         case 1:
           clinical.loadAppointments();
           break;
@@ -131,41 +133,93 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   }
 
   Future<void> _showClinicalRecordFormPicker() async {
-    final formType = await showModalBottomSheet<Type>(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.monitor_heart),
-              title: const Text('Vital Signs'),
-              onTap: () => Navigator.pop(ctx, VitalSignForm),
+    Type? formType;
+
+    if (kIsIOS) {
+      await showCupertinoModalPopup<void>(
+        context: context,
+        builder: (ctx) => CupertinoActionSheet(
+          title: const Text('Add Clinical Record'),
+          actions: [
+            CupertinoActionSheetAction(
+              onPressed: () {
+                formType = VitalSignForm;
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Vital Signs'),
             ),
-            ListTile(
-              leading: const Icon(Icons.medical_information),
-              title: const Text('Diagnosis'),
-              onTap: () => Navigator.pop(ctx, DiagnosisForm),
+            CupertinoActionSheetAction(
+              onPressed: () {
+                formType = DiagnosisForm;
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Diagnosis'),
             ),
-            ListTile(
-              leading: const Icon(Icons.list_alt),
-              title: const Text('Problem'),
-              onTap: () => Navigator.pop(ctx, ProblemForm),
+            CupertinoActionSheetAction(
+              onPressed: () {
+                formType = ProblemForm;
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Problem'),
             ),
-            ListTile(
-              leading: const Icon(Icons.local_hospital),
-              title: const Text('Procedure'),
-              onTap: () => Navigator.pop(ctx, ProcedureForm),
+            CupertinoActionSheetAction(
+              onPressed: () {
+                formType = ProcedureForm;
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Procedure'),
             ),
-            ListTile(
-              leading: const Icon(Icons.vaccines),
-              title: const Text('Immunization'),
-              onTap: () => Navigator.pop(ctx, ImmunizationForm),
+            CupertinoActionSheetAction(
+              onPressed: () {
+                formType = ImmunizationForm;
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Immunization'),
             ),
           ],
+          cancelButton: CupertinoActionSheetAction(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      formType = await showModalBottomSheet<Type>(
+        context: context,
+        builder: (ctx) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.monitor_heart),
+                title: const Text('Vital Signs'),
+                onTap: () => Navigator.pop(ctx, VitalSignForm),
+              ),
+              ListTile(
+                leading: const Icon(Icons.medical_information),
+                title: const Text('Diagnosis'),
+                onTap: () => Navigator.pop(ctx, DiagnosisForm),
+              ),
+              ListTile(
+                leading: const Icon(Icons.list_alt),
+                title: const Text('Problem'),
+                onTap: () => Navigator.pop(ctx, ProblemForm),
+              ),
+              ListTile(
+                leading: const Icon(Icons.local_hospital),
+                title: const Text('Procedure'),
+                onTap: () => Navigator.pop(ctx, ProcedureForm),
+              ),
+              ListTile(
+                leading: const Icon(Icons.vaccines),
+                title: const Text('Immunization'),
+                onTap: () => Navigator.pop(ctx, ImmunizationForm),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     if (formType == null || !mounted) return;
 
@@ -216,6 +270,103 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     final auth = context.read<AuthProvider>();
     final canEdit = auth.staffType == 'doctor' || auth.staffType == 'admin' ||
         auth.staffType == 'nurse';
+
+    if (kIsIOS) {
+      final iosTabIndex = _visibleIndices[_iosSegment];
+      final showAdd = iosTabIndex >= 1;
+      return CupertinoPageScaffold(
+        navigationBar: CupertinoNavigationBar(
+          middle: Text(p.fullName),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (showAdd)
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: _openClinicalForm,
+                  child: const Icon(CupertinoIcons.add),
+                ),
+              if (canEdit)
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: _openEdit,
+                  child: const Icon(CupertinoIcons.pencil),
+                ),
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () =>
+                    context.read<ClinicalProvider>().loadAll(p.id),
+                child: const Icon(CupertinoIcons.refresh),
+              ),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Consumer<ClinicalProvider>(
+            builder: (context, clinical, _) {
+              if (clinical.isLoading) {
+                return const Center(child: CupertinoActivityIndicator());
+              }
+              if (clinical.error != null) {
+                return _ErrorView(
+                  message: clinical.error!,
+                  onRetry: () => clinical.loadAll(p.id),
+                );
+              }
+              final allTabViews = [
+                _OverviewTab(patient: _patient),
+                _AppointmentsTab(patientId: _patient.id),
+                _PrescriptionsTab(patientId: _patient.id),
+                _LabResultsTab(patientId: _patient.id),
+                _DocumentsTab(patientId: _patient.id),
+                const ClinicalRecordTab(),
+              ];
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 8),
+                    child: CupertinoSlidingSegmentedControl<int>(
+                      groupValue: _iosSegment,
+                      onValueChanged: (v) =>
+                          setState(() => _iosSegment = v ?? 0),
+                      children: {
+                        for (int i = 0; i < _visibleIndices.length; i++)
+                          i: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4),
+                            child: Text(
+                              const [
+                                'Overview',
+                                'Appts',
+                                'Rx',
+                                'Labs',
+                                'Docs',
+                                'Clinical'
+                              ][_visibleIndices[i]],
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    child: IndexedStack(
+                      index: _iosSegment,
+                      children: [
+                        for (final i in _visibleIndices) allTabViews[i],
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    // Android path
     return Scaffold(
       floatingActionButton: _currentTab >= 1 && _currentTab <= 4
           ? FloatingActionButton(
@@ -235,50 +386,36 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
               child: Icon(_currentTab == 4 ? Icons.upload_file : Icons.add),
             )
           : null,
-      appBar: kIsIOS
-          ? CupertinoNavigationBar(
-              middle: Text(p.fullName),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (canEdit)
-                    CupertinoButton(
-                      padding: EdgeInsets.zero,
-                      onPressed: _openEdit,
-                      child: const Icon(CupertinoIcons.pencil),
-                    ),
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () =>
-                        context.read<ClinicalProvider>().loadAll(p.id),
-                    child: const Icon(CupertinoIcons.refresh),
-                  ),
-                ],
-              ),
-            )
-          : AppBar(
-              title: Text(p.fullName),
-              actions: [
-                if (canEdit)
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined),
-                    tooltip: 'Edit patient',
-                    onPressed: _openEdit,
-                  ),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  tooltip: 'Refresh',
-                  onPressed: () =>
-                      context.read<ClinicalProvider>().loadAll(p.id),
-                ),
-              ],
-              bottom: TabBar(
+      appBar: AppBar(
+        title: Text(p.fullName),
+        actions: [
+          if (canEdit)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Edit patient',
+              onPressed: _openEdit,
+            ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh',
+            onPressed: () =>
+                context.read<ClinicalProvider>().loadAll(p.id),
+          ),
+        ],
+        bottom: TabBar(
           controller: _tabs,
           isScrollable: true,
           tabs: [
             for (final i in _visibleIndices)
-              Tab(text: const ['Overview', 'Appointments', 'Prescriptions',
-                  'Lab Results', 'Documents', 'Clinical Record'][i]),
+              Tab(
+                  text: const [
+                'Overview',
+                'Appointments',
+                'Prescriptions',
+                'Lab Results',
+                'Documents',
+                'Clinical Record'
+              ][i]),
           ],
         ),
       ),
