@@ -379,7 +379,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
     required List<DropdownMenuItem<T>> items,
     required ValueChanged<T?> onChanged,
   }) {
-    return DropdownButtonFormField<T>(
+    return AdaptiveDropdown<T>(
       value: value,
       items: items,
       onChanged: onChanged,
@@ -409,7 +409,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
             const SizedBox(width: 8),
             Expanded(
               flex: 2,
-              child: DropdownButtonFormField<String>(
+              child: AdaptiveDropdown<String>(
                 value: allergy['severity'],
                 decoration: const InputDecoration(
                     labelText: 'Severity', isDense: true),
