@@ -142,7 +142,7 @@ class _FacilityPickerScreenState extends State<FacilityPickerScreen> {
                 Expanded(
                   child: ListView.separated(
                     itemCount: facilities.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
                     itemBuilder: (_, i) =>
                         _FacilityTile(
                       facility: facilities[i],

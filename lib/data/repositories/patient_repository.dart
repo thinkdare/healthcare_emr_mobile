@@ -82,7 +82,7 @@ class PatientRepository {
                   .toList(),
               currentPage: 1,
               perPage: perPage,
-              total: (rawData as List? ?? []).length,
+              total: (rawData ?? []).length,
               lastPage: 1,
             );
 
@@ -145,7 +145,7 @@ class PatientRepository {
                   .toList(),
               currentPage: 1,
               perPage: perPage,
-              total: (rawData as List? ?? []).length,
+              total: (rawData ?? []).length,
               lastPage: 1,
             );
 

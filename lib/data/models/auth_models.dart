@@ -3,6 +3,7 @@
 /// All serialisation is hand-written to avoid a build_runner dependency.
 /// These models replace the old ProviderModel / LoginResponseModel which
 /// were built against a single-tenant architecture that no longer exists.
+library;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ClinicalRankModel
@@ -75,7 +76,9 @@ class StaffMembershipModel {
       StaffMembershipModel(
         id: (json['membership_id'] ?? json['id']) as String,
         staffType: json['staff_type'] as String,
-        department: json['department'] as String?,
+        department: json['department'] is Map
+            ? (json['department'] as Map<String, dynamic>)['name'] as String?
+            : json['department'] as String?,
         isPrimary: json['is_primary_affiliation'] as bool? ?? json['is_primary'] as bool? ?? false,
         canEmergencyAccess: json['can_emergency_access'] as bool? ?? false,
         canPrescribe: json['can_prescribe'] as bool? ?? false,

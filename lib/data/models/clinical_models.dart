@@ -144,7 +144,7 @@ class PrescriptionModel {
   });
 
   factory PrescriptionModel.fromJson(Map<String, dynamic> json) {
-    DateTime? _date(String key) {
+    DateTime? date(String key) {
       final v = json[key];
       if (v == null) return null;
       return DateTime.tryParse(v as String);
@@ -163,18 +163,18 @@ class PrescriptionModel {
       quantity: (json['quantity'] as num?)?.toInt(),
       refillsAllowed: (json['refills_allowed'] as num?)?.toInt() ?? 0,
       refillsRemaining: (json['refills_remaining'] as num?)?.toInt() ?? 0,
-      prescribedDate: _date('prescribed_date'),
-      startDate: _date('start_date'),
-      endDate: _date('end_date'),
-      expiresDate: _date('expires_date'),
+      prescribedDate: date('prescribed_date'),
+      startDate: date('start_date'),
+      endDate: date('end_date'),
+      expiresDate: date('expires_date'),
       status: json['status'] as String? ?? 'active',
       specialInstructions: json['special_instructions'] as String?,
       discontinuationReason: json['discontinuation_reason'] as String?,
       drugInteractionsChecked: json['drug_interactions_checked'] as bool? ?? false,
       wardId: json['ward_id'] as String?,
       medicationCodingSystem: json['medication_coding_system'] as String?,
-      createdAt: _date('created_at'),
-      updatedAt: _date('updated_at'),
+      createdAt: date('created_at'),
+      updatedAt: date('updated_at'),
     );
   }
 
@@ -242,7 +242,7 @@ class LabResultModel {
   });
 
   factory LabResultModel.fromJson(Map<String, dynamic> json) {
-    DateTime? _dt(String key) {
+    DateTime? dt(String key) {
       final v = json[key];
       if (v == null) return null;
       return DateTime.tryParse(v as String);
@@ -264,15 +264,15 @@ class LabResultModel {
           .map((e) => e.toString())
           .toList(),
       status: json['status'] as String? ?? 'pending',
-      orderedDate: _dt('ordered_date'),
-      sampleCollectedAt: _dt('sample_collected_at'),
-      completedAt: _dt('completed_at'),
-      reviewedAt: _dt('reviewed_at'),
+      orderedDate: dt('ordered_date'),
+      sampleCollectedAt: dt('sample_collected_at'),
+      completedAt: dt('completed_at'),
+      reviewedAt: dt('reviewed_at'),
       filePath: json['file_path'] as String?,
       requiresFollowup: json['requires_followup'] as bool? ?? false,
       wardId: json['ward_id'] as String?,
-      createdAt: _dt('created_at'),
-      updatedAt: _dt('updated_at'),
+      createdAt: dt('created_at'),
+      updatedAt: dt('updated_at'),
     );
   }
 
@@ -317,7 +317,7 @@ class MedicalDocumentModel {
   });
 
   factory MedicalDocumentModel.fromJson(Map<String, dynamic> json) {
-    DateTime? _dt(String key) {
+    DateTime? dt(String key) {
       final v = json[key];
       if (v == null) return null;
       return DateTime.tryParse(v as String);
@@ -334,8 +334,8 @@ class MedicalDocumentModel {
       fileSize: (json['file_size'] as num?)?.toInt(),
       notes: json['notes'] as String?,
       isConfidential: json['is_confidential'] as bool? ?? false,
-      createdAt: _dt('created_at'),
-      updatedAt: _dt('updated_at'),
+      createdAt: dt('created_at'),
+      updatedAt: dt('updated_at'),
       temporaryUrl: json['temporary_url'] as String?,
     );
   }

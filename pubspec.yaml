@@ -31,6 +31,7 @@ dependencies:
   
   # Local SQLite database for offline caching
   sqflite: ^2.3.3+1
+  sqflite_common_ffi: ^2.3.4+4
 
   # Path helper (required by sqflite to locate the DB file)
   path: ^1.9.0

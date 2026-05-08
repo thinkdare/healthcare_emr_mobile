@@ -7,11 +7,11 @@ class AppConfig {
   static String get baseUrl {
     if (Platform.isAndroid) {
       // 10.0.3.2 = host loopback on Genymotion; use 10.0.2.2 for standard AVD
-      return 'http://10.0.3.2:8180/api/v1';
+      return 'http://10.0.3.2:8000/api/v1';
     } else if (Platform.isIOS) {
-      return 'http://localhost:8180/api/v1';
+      return 'http://localhost:8000/api/v1';
     } else {
-      return 'http://localhost:8180/api/v1';
+      return 'http://localhost:8000/api/v1';
     }
   }
 
