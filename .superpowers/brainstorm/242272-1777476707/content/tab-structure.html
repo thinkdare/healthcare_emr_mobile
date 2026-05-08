@@ -1,0 +1,64 @@
+<h2>iOS Tab Bar Structure</h2>
+<p class="subtitle">The drawer has 8 destinations. Tab bars fit 4–5. How should the top-level tabs be organised?</p>
+
+<div class="cards" style="margin-bottom:24px">
+
+  <!-- Option A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f2f2f7;padding:12px 8px">
+      <div style="display:flex;justify-content:space-around;background:white;border-radius:10px;padding:10px 4px;border:1px solid #c7c7cc">
+        <div style="text-align:center;font-size:10px;color:#007AFF">👤<br><b>Patients</b></div>
+        <div style="text-align:center;font-size:10px;color:#8e8e93">📋<br>Roster</div>
+        <div style="text-align:center;font-size:10px;color:#8e8e93">🔑<br>Access</div>
+        <div style="text-align:center;font-size:10px;color:#8e8e93">⋯<br>More</div>
+      </div>
+      <div style="font-size:10px;color:#8e8e93;text-align:center;margin-top:6px">"More" opens a list: Dashboard · Profile · Billing · Reporting · Emergency</div>
+    </div>
+    <div class="card-body">
+      <h3>A — Clinical-first (4 tabs)</h3>
+      <p>Patients, Roster, Access Grants, More. Puts the two daily-use clinical screens front and centre. Administrative items buried in More.</p>
+    </div>
+  </div>
+
+  <!-- Option B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f2f2f7;padding:12px 8px">
+      <div style="display:flex;justify-content:space-around;background:white;border-radius:10px;padding:10px 4px;border:1px solid #c7c7cc">
+        <div style="text-align:center;font-size:10px;color:#007AFF">🏥<br><b>Patients</b></div>
+        <div style="text-align:center;font-size:10px;color:#8e8e93">📋<br>Roster</div>
+        <div style="text-align:center;font-size:10px;color:#8e8e93">🔑<br>Access</div>
+        <div style="text-align:center;font-size:10px;color:#8e8e93">📊<br>Reports</div>
+        <div style="text-align:center;font-size:10px;color:#8e8e93">👤<br>Profile</div>
+      </div>
+      <div style="font-size:10px;color:#8e8e93;text-align:center;margin-top:6px">Billing, Emergency Access in profile or contextual menus</div>
+    </div>
+    <div class="card-body">
+      <h3>B — 5 tabs (no More menu)</h3>
+      <p>Patients, Roster, Access Grants, Reports, Profile. Everything reachable in one tap. Nothing hidden — but tight on small iPhones.</p>
+    </div>
+  </div>
+
+  <!-- Option C -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f2f2f7;padding:12px 8px">
+      <div style="display:flex;justify-content:space-around;background:white;border-radius:10px;padding:10px 4px;border:1px solid #c7c7cc">
+        <div style="text-align:center;font-size:10px;color:#007AFF">🏥<br><b>Patients</b></div>
+        <div style="text-align:center;font-size:10px;color:#8e8e93">📋<br>Roster</div>
+        <div style="text-align:center;font-size:10px;color:#8e8e93">🔑<br>Access</div>
+        <div style="text-align:center;font-size:10px;color:#8e8e93">⋯<br>More</div>
+      </div>
+      <div style="font-size:10px;color:#8e8e93;text-align:center;margin-top:6px">More = full-screen settings-style list (like iOS Settings app)</div>
+    </div>
+    <div class="card-body">
+      <h3>C — 4 tabs + iOS-style "More" screen</h3>
+      <p>Like Option A, but "More" opens a full dedicated screen (not a sheet) with icons for Profile, Reports, Billing, Emergency Access — mirroring the iOS Settings pattern.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="background:#fff8e1;border:1px solid #f59e0b;border-radius:8px;padding:12px;font-size:12px">
+  <b>Current drawer destinations:</b> Dashboard · Patients · Roster · Access Grants · Emergency Access · Subscription · Staff Profile · Reporting
+  <br><br>
+  <b>Note:</b> Emergency Access is a break-glass feature — it shouldn't be a tab. It works better as a contextual action from inside a patient record or a button on the Access tab.
+</div>

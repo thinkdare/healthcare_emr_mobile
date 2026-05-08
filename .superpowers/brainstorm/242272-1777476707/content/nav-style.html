@@ -1,0 +1,123 @@
+<h2>iOS Navigation Bar Style</h2>
+<p class="subtitle">How should the top chrome look on iOS? This sets the overall visual tone for every screen.</p>
+
+<div class="cards">
+
+  <!-- Option A: Frosted/white — fully native -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f2f2f7;padding:0;border-radius:8px;overflow:hidden">
+      <!-- Status bar -->
+      <div style="background:#f2f2f7;padding:4px 16px;font-size:10px;color:#3c3c43;display:flex;justify-content:space-between">
+        <span>9:41</span><span>●●● WiFi 🔋</span>
+      </div>
+      <!-- Large title nav bar (iOS style) -->
+      <div style="background:rgba(242,242,247,0.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(60,60,67,0.12);padding:0 16px 8px">
+        <div style="font-size:11px;color:#007AFF;text-align:right;padding-top:6px">Edit</div>
+        <div style="font-size:28px;font-weight:700;color:#000;margin-top:2px">Patients</div>
+      </div>
+      <!-- Search bar -->
+      <div style="background:rgba(118,118,128,0.12);margin:8px 16px;padding:7px 12px;border-radius:10px;font-size:12px;color:#8e8e93;display:flex;align-items:center;gap:6px">
+        <span>🔍</span> Search
+      </div>
+      <!-- List items -->
+      <div style="background:white;border-radius:10px;margin:0 16px 16px">
+        <div style="padding:12px 14px;border-bottom:1px solid #f2f2f7">
+          <div style="font-weight:600;font-size:13px">Amaka Obi</div>
+          <div style="font-size:11px;color:#8e8e93">MRN 00123 · F · 34y</div>
+        </div>
+        <div style="padding:12px 14px">
+          <div style="font-weight:600;font-size:13px">Chidi Nwosu</div>
+          <div style="font-size:11px;color:#8e8e93">MRN 00124 · M · 58y</div>
+        </div>
+      </div>
+      <!-- Tab bar -->
+      <div style="background:rgba(249,249,249,0.94);border-top:1px solid rgba(0,0,0,0.08);padding:6px 0 2px;display:flex;justify-content:space-around;text-align:center">
+        <div style="font-size:10px;color:#007AFF">👤<br><b>Patients</b></div>
+        <div style="font-size:10px;color:#8e8e93">📋<br>Roster</div>
+        <div style="font-size:10px;color:#8e8e93">🔑<br>Access</div>
+        <div style="font-size:10px;color:#8e8e93">⋯<br>More</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Fully Native (white + large title)</h3>
+      <p>iOS frosted glass nav bar, large collapsing title, SF-style typography. Brand blue used only for interactive elements. Looks and feels exactly like a first-party Apple app.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Tinted — branded but still iOS -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f2f2f7;padding:0;border-radius:8px;overflow:hidden">
+      <div style="background:#f2f2f7;padding:4px 16px;font-size:10px;color:#3c3c43;display:flex;justify-content:space-between">
+        <span>9:41</span><span>●●● WiFi 🔋</span>
+      </div>
+      <!-- Tinted nav bar — brand blue, but iOS proportions -->
+      <div style="background:#2563EB;padding:6px 16px 10px">
+        <div style="font-size:11px;color:rgba(255,255,255,0.7);text-align:right">Edit</div>
+        <div style="font-size:22px;font-weight:700;color:white;margin-top:2px">Patients</div>
+      </div>
+      <!-- Search bar -->
+      <div style="background:rgba(118,118,128,0.12);margin:8px 16px;padding:7px 12px;border-radius:10px;font-size:12px;color:#8e8e93;display:flex;align-items:center;gap:6px">
+        <span>🔍</span> Search
+      </div>
+      <!-- List items -->
+      <div style="background:white;border-radius:10px;margin:0 16px 16px">
+        <div style="padding:12px 14px;border-bottom:1px solid #f2f2f7">
+          <div style="font-weight:600;font-size:13px">Amaka Obi</div>
+          <div style="font-size:11px;color:#8e8e93">MRN 00123 · F · 34y</div>
+        </div>
+        <div style="padding:12px 14px">
+          <div style="font-weight:600;font-size:13px">Chidi Nwosu</div>
+          <div style="font-size:11px;color:#8e8e93">MRN 00124 · M · 58y</div>
+        </div>
+      </div>
+      <!-- Tab bar -->
+      <div style="background:rgba(249,249,249,0.94);border-top:1px solid rgba(0,0,0,0.08);padding:6px 0 2px;display:flex;justify-content:space-around;text-align:center">
+        <div style="font-size:10px;color:#2563EB">👤<br><b>Patients</b></div>
+        <div style="font-size:10px;color:#8e8e93">📋<br>Roster</div>
+        <div style="font-size:10px;color:#8e8e93">🔑<br>Access</div>
+        <div style="font-size:10px;color:#8e8e93">⋯<br>More</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Branded (blue header, iOS structure)</h3>
+      <p>Keeps the brand blue header but uses iOS proportions, tab bar, and list styles. Familiar to existing users. Less "pure iOS" but maintains brand identity.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Dark / midnight -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#1c1c1e;padding:0;border-radius:8px;overflow:hidden">
+      <div style="background:#1c1c1e;padding:4px 16px;font-size:10px;color:#ebebf5;display:flex;justify-content:space-between;opacity:0.6">
+        <span>9:41</span><span>●●● WiFi 🔋</span>
+      </div>
+      <div style="background:#1c1c1e;border-bottom:1px solid rgba(255,255,255,0.08);padding:6px 16px 10px">
+        <div style="font-size:11px;color:#007AFF;text-align:right">Edit</div>
+        <div style="font-size:28px;font-weight:700;color:white;margin-top:2px">Patients</div>
+      </div>
+      <div style="background:rgba(118,118,128,0.24);margin:8px 16px;padding:7px 12px;border-radius:10px;font-size:12px;color:#8e8e93;display:flex;align-items:center;gap:6px">
+        <span>🔍</span> <span style="color:#636366">Search</span>
+      </div>
+      <div style="background:#2c2c2e;border-radius:10px;margin:0 16px 16px">
+        <div style="padding:12px 14px;border-bottom:1px solid #3a3a3c">
+          <div style="font-weight:600;font-size:13px;color:white">Amaka Obi</div>
+          <div style="font-size:11px;color:#8e8e93">MRN 00123 · F · 34y</div>
+        </div>
+        <div style="padding:12px 14px">
+          <div style="font-weight:600;font-size:13px;color:white">Chidi Nwosu</div>
+          <div style="font-size:11px;color:#8e8e93">MRN 00124 · M · 58y</div>
+        </div>
+      </div>
+      <div style="background:#1c1c1e;border-top:1px solid rgba(255,255,255,0.1);padding:6px 0 2px;display:flex;justify-content:space-around;text-align:center">
+        <div style="font-size:10px;color:#007AFF">👤<br><b>Patients</b></div>
+        <div style="font-size:10px;color:#636366">📋<br>Roster</div>
+        <div style="font-size:10px;color:#636366">🔑<br>Access</div>
+        <div style="font-size:10px;color:#636366">⋯<br>More</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Dark Mode First</h3>
+      <p>iOS dark mode with midnight background. Medical context — often used in low-light clinical environments (night shifts, operating theatres). iOS blue accent, white text on dark surfaces.</p>
+    </div>
+  </div>
+
+</div>

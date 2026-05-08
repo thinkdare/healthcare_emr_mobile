@@ -18,23 +18,23 @@ class UserModel {
   @JsonKey(name: 'user_type')
   final String userType; // 'staff' | 'super_admin' | 'org_admin'
 
-  @JsonKey(name: 'two_factor_enabled')
+  @JsonKey(name: 'two_factor_enabled', defaultValue: false)
   final bool twoFactorEnabled;
 
   @JsonKey(name: 'created_at')
-  final DateTime createdAt;
+  final DateTime? createdAt;
 
   @JsonKey(name: 'updated_at')
-  final DateTime updatedAt;
+  final DateTime? updatedAt;
 
   UserModel({
     required this.id,
     required this.email,
     required this.name,
     required this.userType,
-    required this.twoFactorEnabled,
-    required this.createdAt,
-    required this.updatedAt,
+    this.twoFactorEnabled = false,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) =>
