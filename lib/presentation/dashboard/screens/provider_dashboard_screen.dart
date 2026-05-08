@@ -119,10 +119,49 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           : AppBar(
               title: const Text('Dashboard'),
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.logout),
-                  tooltip: 'Logout',
-                  onPressed: () => _handleLogout(context),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.account_circle_outlined),
+                  tooltip: 'Account',
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'profile':
+                        Navigator.of(context).push(MaterialPageRoute(
+                            builder: (_) => const StaffProfileScreen()));
+                      case 'settings':
+                        Navigator.of(context).push(MaterialPageRoute(
+                            builder: (_) =>
+                                const StaffProfileScreen(initialTab: 1)));
+                      case 'logout':
+                        _handleLogout(context);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'profile',
+                      child: ListTile(
+                        leading: Icon(Icons.person_outline),
+                        title: Text('Profile'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'settings',
+                      child: ListTile(
+                        leading: Icon(Icons.settings_outlined),
+                        title: Text('Settings'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'logout',
+                      child: ListTile(
+                        leading: Icon(Icons.logout, color: AppTheme.errorColor),
+                        title: Text('Logout',
+                            style: TextStyle(color: AppTheme.errorColor)),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
