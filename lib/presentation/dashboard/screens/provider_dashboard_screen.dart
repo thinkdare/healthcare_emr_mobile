@@ -170,10 +170,6 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                           const SizedBox(height: 16),
                           _EmergencyAccessCard(),
                         ],
-                        const SizedBox(height: 16),
-                        _StaffInfoCard(auth: auth),
-                        const SizedBox(height: 16),
-                        _FacilityCard(auth: auth),
                       ],
                     ),
                   ),
@@ -696,109 +692,6 @@ class _SubscriptionCard extends StatelessWidget {
   }
 }
 
-// ── Staff Info Card ───────────────────────────────────────────────────────────
-
-class _StaffInfoCard extends StatelessWidget {
-  final AuthProvider auth;
-  const _StaffInfoCard({required this.auth});
-
-  @override
-  Widget build(BuildContext context) {
-    final membership = auth.activeMembership;
-    final rank = membership?.clinicalRank;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              const Icon(Icons.person, color: AppTheme.primaryColor),
-              const SizedBox(width: 8),
-              const Text('Staff Profile',
-                  style:
-                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ]),
-            const Divider(height: 24),
-            _InfoRow('Name', auth.displayName),
-            if (auth.staffTypeDisplay.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              _InfoRow('Role', auth.staffTypeDisplay),
-            ],
-            if (auth.department.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              _InfoRow('Department', auth.department),
-            ],
-            if (rank != null) ...[
-              const SizedBox(height: 12),
-              _InfoRow('Clinical Rank', rank.name),
-              const SizedBox(height: 12),
-              Wrap(spacing: 8, runSpacing: 4, children: [
-                if (rank.canPrescribe)
-                  _CapabilityChip('Prescribe', Icons.medication),
-                if (rank.canOrderLabs)
-                  _CapabilityChip('Order Labs', Icons.science),
-                if (rank.canPerformEmergencyAccess)
-                  _CapabilityChip('Emergency Access', Icons.emergency),
-              ]),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Facility Card ─────────────────────────────────────────────────────────────
-
-class _FacilityCard extends StatelessWidget {
-  final AuthProvider auth;
-  const _FacilityCard({required this.auth});
-
-  @override
-  Widget build(BuildContext context) {
-    final facility = auth.activeFacility;
-    if (facility == null) return const SizedBox.shrink();
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              const Icon(Icons.business, color: AppTheme.primaryColor),
-              const SizedBox(width: 8),
-              const Text('Active Facility',
-                  style:
-                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ]),
-            const Divider(height: 24),
-            _InfoRow('Facility', facility.name),
-            if (facility.organization != null) ...[
-              const SizedBox(height: 12),
-              _InfoRow('Organization', facility.organization!.name),
-            ],
-            if (facility.type != null) ...[
-              const SizedBox(height: 12),
-              _InfoRow('Type', facility.displayType),
-            ],
-            if (facility.address != null) ...[
-              const SizedBox(height: 12),
-              _InfoRow('Address', facility.address!),
-            ],
-            if (facility.phone != null) ...[
-              const SizedBox(height: 12),
-              _InfoRow('Phone', facility.phone!),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // ── Access Grants Card ────────────────────────────────────────────────────────
 
 class _AccessGrantsCard extends StatelessWidget {
@@ -1038,23 +931,6 @@ class _InfoRow extends StatelessWidget {
                   fontWeight: FontWeight.w600, color: valueColor)),
         ),
       ],
-    );
-  }
-}
-
-class _CapabilityChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  const _CapabilityChip(this.label, this.icon);
-
-  @override
-  Widget build(BuildContext context) {
-    return Chip(
-      avatar: Icon(icon, size: 14, color: AppTheme.successColor),
-      label: Text(label, style: const TextStyle(fontSize: 11)),
-      backgroundColor: AppTheme.successColor.withValues(alpha: 0.08),
-      side: BorderSide(color: AppTheme.successColor.withValues(alpha: 0.3)),
-      padding: const EdgeInsets.symmetric(horizontal: 4),
     );
   }
 }
