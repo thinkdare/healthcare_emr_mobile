@@ -76,6 +76,44 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     }
   }
 
+  Future<void> _showAccountMenu(BuildContext context) async {
+    await showCupertinoModalPopup<void>(
+      context: context,
+      builder: (_) => CupertinoActionSheet(
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(CupertinoPageRoute(
+                  builder: (_) => const StaffProfileScreen()));
+            },
+            child: const Text('Profile'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(CupertinoPageRoute(
+                  builder: (_) => const StaffProfileScreen(initialTab: 1)));
+            },
+            child: const Text('Settings'),
+          ),
+          CupertinoActionSheetAction(
+            isDestructiveAction: true,
+            onPressed: () {
+              Navigator.of(context).pop();
+              _handleLogout(context);
+            },
+            child: const Text('Logout'),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+      ),
+    );
+  }
+
   Future<void> _handleLogout(BuildContext context) async {
     bool confirmed = false;
     await showAdaptiveActionSheet(
@@ -112,8 +150,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               middle: const Text('Dashboard'),
               trailing: CupertinoButton(
                 padding: EdgeInsets.zero,
-                onPressed: () => _handleLogout(context),
-                child: const Icon(CupertinoIcons.square_arrow_left),
+                onPressed: () => _showAccountMenu(context),
+                child: const Icon(CupertinoIcons.person_circle),
               ),
             )
           : AppBar(
