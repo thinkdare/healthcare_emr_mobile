@@ -7,7 +7,8 @@ import '../../../config/theme.dart';
 import '../../../data/providers/auth_provider.dart';
 
 class StaffProfileScreen extends StatefulWidget {
-  const StaffProfileScreen({super.key});
+  final int initialTab;
+  const StaffProfileScreen({super.key, this.initialTab = 0});
 
   @override
   State<StaffProfileScreen> createState() => _StaffProfileScreenState();
@@ -20,7 +21,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 3, vsync: this);
+    _tabs = TabController(length: 3, vsync: this, initialIndex: widget.initialTab);
   }
 
   @override
