@@ -38,7 +38,7 @@ import '../../data/models/patient_models.dart';
 ///
 class LocalDatabase {
   static const String _kDatabaseName = 'emr_cache.db';
-  static const int _kVersion = 1;
+  static const int _kVersion = 2;
 
   // Singleton
   static LocalDatabase? _instance;
@@ -79,8 +79,21 @@ class LocalDatabase {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Future migrations go here:
-    // if (oldVersion < 2) { await _migrateV1toV2(db); }
+    if (oldVersion < 2) await _migrateV1toV2(db);
+  }
+
+  Future<void> _migrateV1toV2(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS pending_sync (
+        id             TEXT PRIMARY KEY,
+        resource_type  TEXT NOT NULL,
+        resource_id    TEXT,
+        operation      TEXT NOT NULL,
+        payload        TEXT NOT NULL,
+        client_version INTEGER NOT NULL DEFAULT 0,
+        queued_at      TEXT NOT NULL
+      )
+    ''');
   }
 
   Future<void> _createV1Tables(Database db) async {
@@ -141,6 +154,9 @@ class LocalDatabase {
         updated_at TEXT NOT NULL
       )
     ''');
+
+    // Fresh installs also get the v2 table
+    await _migrateV1toV2(db);
   }
 
   // ── PATIENT DAO ────────────────────────────────────────────────────────────
@@ -484,5 +500,58 @@ class LocalDatabase {
     } catch (_) {
       return null;
     }
+  }
+
+  // ── PENDING SYNC DAO ───────────────────────────────────────────────────────
+
+  Future<void> queuePendingSync({
+    required String id,
+    required String resourceType,
+    String? resourceId,
+    required String operation,
+    required Map<String, dynamic> payload,
+    int clientVersion = 0,
+  }) async {
+    final db = await database;
+    await db.insert(
+      'pending_sync',
+      {
+        'id': id,
+        'resource_type': resourceType,
+        'resource_id': resourceId,
+        'operation': operation,
+        'payload': jsonEncode(payload),
+        'client_version': clientVersion,
+        'queued_at': DateTime.now().toIso8601String(),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getPendingSyncItems() async {
+    final db = await database;
+    final rows = await db.query('pending_sync', orderBy: 'queued_at ASC');
+    return rows.map((r) {
+      final copy = Map<String, dynamic>.from(r);
+      copy['payload'] = jsonDecode(r['payload'] as String);
+      return copy;
+    }).toList();
+  }
+
+  Future<void> removePendingSyncItem(String id) async {
+    final db = await database;
+    await db.delete('pending_sync', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> getPendingSyncCount() async {
+    final db = await database;
+    final result =
+        await db.rawQuery('SELECT COUNT(*) as count FROM pending_sync');
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  Future<void> clearPendingSync() async {
+    final db = await database;
+    await db.delete('pending_sync');
   }
 }
