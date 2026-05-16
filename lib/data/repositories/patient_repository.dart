@@ -1,3 +1,4 @@
+import 'package:uuid/uuid.dart';
 import '../../core/api/api_client.dart';
 import '../../core/database/local_database.dart';
 import '../models/patient_models.dart';
@@ -197,28 +198,48 @@ class PatientRepository {
   // ── WRITE ──────────────────────────────────────────────────────────────────
 
   Future<PatientModel> createPatient(Map<String, dynamic> data) async {
-    final response = await apiClient.post('/patients', data: data);
-    if (response['success'] != true) {
-      throw Exception(response['message'] ?? 'Failed to create patient');
+    try {
+      final response = await apiClient.post('/patients', data: data);
+      if (response['success'] != true) {
+        throw Exception(response['message'] ?? 'Failed to create patient');
+      }
+      final patient = PatientModel.fromJson(
+          Map<String, dynamic>.from(response['data'] as Map));
+      await _db.upsertPatient(patient);
+      return patient;
+    } catch (e) {
+      if (_isNetworkError(e)) {
+        await _queueOfflineWrite(operation: 'create', payload: data);
+        throw Exception(
+            'Offline — patient will be created when you reconnect.');
+      }
+      rethrow;
     }
-    final patient =
-        PatientModel.fromJson(Map<String, dynamic>.from(response['data'] as Map));
-    await _db.upsertPatient(patient);
-    return patient;
   }
 
   Future<PatientModel> updatePatient(
     String patientId,
     Map<String, dynamic> data,
   ) async {
-    final response = await apiClient.put('/patients/$patientId', data: data);
-    if (response['success'] != true) {
-      throw Exception(response['message'] ?? 'Failed to update patient');
+    try {
+      final response =
+          await apiClient.put('/patients/$patientId', data: data);
+      if (response['success'] != true) {
+        throw Exception(response['message'] ?? 'Failed to update patient');
+      }
+      final patient = PatientModel.fromJson(
+          Map<String, dynamic>.from(response['data'] as Map));
+      await _db.upsertPatient(patient);
+      return patient;
+    } catch (e) {
+      if (_isNetworkError(e)) {
+        await _queueOfflineWrite(
+            operation: 'update', resourceId: patientId, payload: data);
+        throw Exception(
+            'Offline — changes will sync when you reconnect.');
+      }
+      rethrow;
     }
-    final patient =
-        PatientModel.fromJson(Map<String, dynamic>.from(response['data'] as Map));
-    await _db.upsertPatient(patient);
-    return patient;
   }
 
   Future<void> deletePatient(String patientId) async {
@@ -252,6 +273,31 @@ class PatientRepository {
   /// Clear cache for a specific provider — call on logout.
   Future<void> clearCache(String providerId) async {
     await _db.clearProviderData(providerId);
+  }
+
+  // ── OFFLINE WRITE HELPERS ─────────────────────────────────────────────────
+
+  Future<void> _queueOfflineWrite({
+    required String operation,
+    String? resourceId,
+    required Map<String, dynamic> payload,
+  }) async {
+    await _db.queuePendingSync(
+      id: const Uuid().v4(),
+      resourceType: 'patients',
+      resourceId: resourceId,
+      operation: operation,
+      payload: payload,
+    );
+  }
+
+  bool _isNetworkError(Object e) {
+    final msg = e.toString();
+    return msg.contains('SocketException') ||
+        msg.contains('Connection refused') ||
+        msg.contains('Connection reset') ||
+        msg.contains('Network is unreachable') ||
+        msg.contains('HandshakeException');
   }
 }
 
