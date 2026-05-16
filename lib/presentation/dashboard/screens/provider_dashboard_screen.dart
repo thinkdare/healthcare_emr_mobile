@@ -19,6 +19,7 @@ import '../../reporting/screens/reporting_screen.dart';
 import '../../subscription/screens/subscription_details_screen.dart';
 import '../../subscription/screens/subscription_upgrade_screen.dart';
 import '../../subscription/widgets/trial_status_banner.dart';
+import '../../sync/widgets/sync_banner.dart';
 
 class ProviderDashboardScreen extends StatefulWidget {
   const ProviderDashboardScreen({super.key});
@@ -207,6 +208,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
       body: Column(
         children: [
           const TrialStatusBanner(),
+          const SyncBanner(),
           Expanded(
             child: Consumer<AuthProvider>(
               builder: (context, auth, _) {
@@ -226,7 +228,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   onRefresh: _handleRefresh,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -628,6 +630,32 @@ class _RecentPatientsCard extends StatelessWidget {
                       child: Padding(
                           padding: EdgeInsets.all(24),
                           child: CircularProgressIndicator()))
+                else if (p.error != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          const Icon(Icons.error_outline,
+                              size: 18, color: AppTheme.errorColor),
+                          const SizedBox(width: 8),
+                          const Text('Failed to load patients',
+                              style: TextStyle(
+                                  color: AppTheme.errorColor,
+                                  fontWeight: FontWeight.w600)),
+                        ]),
+                        const SizedBox(height: 8),
+                        SelectableText(
+                          p.error!,
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.gray600,
+                              fontFamily: 'monospace'),
+                        ),
+                      ],
+                    ),
+                  )
                 else if (recent.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),
