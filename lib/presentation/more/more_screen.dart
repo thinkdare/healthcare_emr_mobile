@@ -7,12 +7,14 @@ import 'package:provider/provider.dart';
 
 import '../../config/app_colors.dart';
 import '../../data/providers/auth_provider.dart';
+import '../../data/providers/sync_provider.dart';
 import '../auth/screens/login_screen.dart';
 import '../dashboard/screens/provider_dashboard_screen.dart';
 import '../emergency_access/screens/emergency_access_screen.dart';
 import '../profile/screens/staff_profile_screen.dart';
 import '../reporting/screens/reporting_screen.dart';
 import '../subscription/screens/subscription_details_screen.dart';
+import '../sync/screens/sync_screen.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -20,6 +22,7 @@ class MoreScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final sync = context.watch<SyncProvider>();
     final showEmergency = auth.canEmergencyAccess;
 
     return CupertinoPageScaffold(
@@ -84,6 +87,38 @@ class MoreScreen extends StatelessWidget {
                   trailing: const CupertinoListTileChevron(),
                   onTap: () =>
                       _push(context, const SubscriptionDetailsScreen()),
+                ),
+                CupertinoListTile(
+                  leading: const Icon(
+                    CupertinoIcons.arrow_2_circlepath,
+                    color: AppColors.primary,
+                  ),
+                  title: const Text('Sync Status'),
+                  trailing: sync.hasPendingConflicts
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.error,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '${sync.pendingConflicts}',
+                                style: const TextStyle(
+                                    color: CupertinoColors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const CupertinoListTileChevron(),
+                          ],
+                        )
+                      : const CupertinoListTileChevron(),
+                  onTap: () => _push(context, const SyncScreen()),
                 ),
               ],
             ),

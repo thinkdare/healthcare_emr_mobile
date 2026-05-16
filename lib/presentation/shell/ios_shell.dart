@@ -12,6 +12,7 @@ import '../auth/screens/login_screen.dart';
 import '../more/more_screen.dart';
 import '../patients/screens/patient_list_screen.dart';
 import '../roster/screens/roster_screen.dart';
+import '../sync/widgets/sync_banner.dart';
 
 /// CupertinoApp root for iOS.
 /// Four tabs: Patients · Roster · Access · More
@@ -56,8 +57,13 @@ class _IOSTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoTabScaffold(
-      tabBar: CupertinoTabBar(
+    return CupertinoPageScaffold(
+      child: Column(
+        children: [
+          const SyncBanner(),
+          Expanded(
+            child: CupertinoTabScaffold(
+              tabBar: CupertinoTabBar(
         activeColor: AppColors.primary,
         items: const [
           BottomNavigationBarItem(
@@ -78,16 +84,20 @@ class _IOSTabs extends StatelessWidget {
           ),
         ],
       ),
-      tabBuilder: (context, index) {
-        return CupertinoTabView(
-          builder: (_) => switch (index) {
-            0 => const PatientListScreen(),
-            1 => const RosterScreen(),
-            2 => const AccessGrantsScreen(),
-            _ => const MoreScreen(),
-          },
-        );
-      },
+              tabBuilder: (context, index) {
+                return CupertinoTabView(
+                  builder: (_) => switch (index) {
+                    0 => const PatientListScreen(),
+                    1 => const RosterScreen(),
+                    2 => const AccessGrantsScreen(),
+                    _ => const MoreScreen(),
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
