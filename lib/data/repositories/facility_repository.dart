@@ -117,4 +117,44 @@ class FacilityRepository {
       throw Exception(response['message'] ?? 'Failed to delete facility');
     }
   }
+
+  /// List all active tenants — used as destination picker in referral form.
+  Future<List<Map<String, dynamic>>> listTenants() async {
+    final response = await apiClient.get(
+      '/tenants',
+      queryParameters: {'per_page': 100, 'is_active': true},
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to load facilities');
+    }
+    final data = response['data'];
+    final raw =
+        data is Map ? (data['data'] as List? ?? []) : (data as List? ?? []);
+    return raw
+        .map((e) => {'id': e['id'], 'name': e['name']})
+        .toList()
+        .cast<Map<String, dynamic>>();
+  }
+
+  /// List active staff at a specific tenant — used as provider picker in referral form.
+  Future<List<Map<String, dynamic>>> listStaffAtTenant(
+      String tenantId) async {
+    final response = await apiClient.get(
+      '/staff/memberships',
+      queryParameters: {'tenant_id': tenantId, 'per_page': 100},
+    );
+    if (response['success'] != true) return [];
+    final data = response['data'];
+    final raw =
+        data is Map ? (data['data'] as List? ?? []) : (data as List? ?? []);
+    return raw.map((e) {
+      final user = e['user'] as Map?;
+      return {
+        'id': user?['id'] ?? e['user_id'],
+        'name': user != null
+            ? '${user['first_name']} ${user['last_name']}'
+            : 'Provider',
+      };
+    }).toList().cast<Map<String, dynamic>>();
+  }
 }
