@@ -9,6 +9,8 @@ import '../../../data/models/clinical_models.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/clinical_provider.dart';
 import '../../../data/providers/patient_provider.dart';
+import '../../../data/providers/referral_provider.dart';
+import '../../referrals/widgets/create_referral_sheet.dart';
 import '../widgets/clinical_forms.dart';
 import '../widgets/clinical_record_tab.dart';
 import '../widgets/clinical_record_forms.dart';
@@ -258,6 +260,26 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     }
   }
 
+  Future<void> _openReferralSheet() async {
+    if (_patient.globalPatientId == null) {
+      showAdaptiveToast(context, 'Patient global ID not available');
+      return;
+    }
+    await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => CreateReferralSheet(patient: _patient),
+    );
+    if (mounted) {
+      final tenantId =
+          context.read<AuthProvider>().activeTenantId ?? '';
+      context
+          .read<ReferralProvider>()
+          .loadReferrals(currentTenantId: tenantId);
+    }
+  }
+
   @override
   void dispose() {
     _tabs.dispose();
@@ -285,6 +307,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                   padding: EdgeInsets.zero,
                   onPressed: _openClinicalForm,
                   child: const Icon(CupertinoIcons.add),
+                ),
+              if (auth.isStaff)
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: _openReferralSheet,
+                  child: const Icon(CupertinoIcons.arrow_right_arrow_left_circle),
                 ),
               if (canEdit)
                 CupertinoButton(
@@ -389,6 +417,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       appBar: AppBar(
         title: Text(p.fullName),
         actions: [
+          if (auth.isStaff)
+            IconButton(
+              icon: const Icon(Icons.send_outlined),
+              tooltip: 'Refer patient',
+              onPressed: _openReferralSheet,
+            ),
           if (canEdit)
             IconButton(
               icon: const Icon(Icons.edit_outlined),
@@ -458,7 +492,7 @@ class _OverviewTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = patient;
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

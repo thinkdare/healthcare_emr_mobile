@@ -17,6 +17,7 @@ import 'data/repositories/patient_repository.dart';
 import 'data/repositories/reporting_repository.dart';
 import 'data/repositories/subscription_repository.dart';
 import 'data/repositories/sync_repository.dart';
+import 'data/repositories/referral_repository.dart';
 import 'data/providers/access_grant_provider.dart';
 import 'data/providers/auth_provider.dart';
 import 'data/providers/clinical_provider.dart';
@@ -26,6 +27,7 @@ import 'data/providers/patient_provider.dart';
 import 'data/providers/reporting_provider.dart';
 import 'data/providers/subscription_provider.dart';
 import 'data/providers/sync_provider.dart';
+import 'data/providers/referral_provider.dart';
 import 'presentation/shell/android_shell.dart';
 import 'presentation/shell/ios_shell.dart';
 
@@ -97,6 +99,7 @@ class _MyAppState extends State<MyApp> {
     final emergencyAccessRepository = EmergencyAccessRepository(apiClient: apiClient);
     final reportingRepository       = ReportingRepository(apiClient: apiClient);
     final syncRepository            = SyncRepository(apiClient: apiClient);
+    final referralRepository        = ReferralRepository(apiClient: apiClient);
 
     return MultiProvider(
       providers: [
@@ -132,6 +135,9 @@ class _MyAppState extends State<MyApp> {
         ),
         ChangeNotifierProvider(
           create: (_) => SyncProvider(repository: syncRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ReferralProvider(repository: referralRepository),
         ),
       ],
       // Platform branch: CupertinoApp on iOS, MaterialApp on Android.
