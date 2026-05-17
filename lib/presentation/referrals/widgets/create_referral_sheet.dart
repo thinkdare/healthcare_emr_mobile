@@ -191,26 +191,32 @@ class _CreateReferralSheetState extends State<CreateReferralSheet> {
                           color: Colors.black87)),
                   const SizedBox(height: 6),
                   _loadingFacilities
-                      ? const Center(
-                          child: CircularProgressIndicator())
-                      : DropdownButtonFormField<Map<String, dynamic>>(
-                          value: _selectedFacility,
-                          hint: const Text('Select facility'),
+                      ? const Center(child: CircularProgressIndicator())
+                      : InputDecorator(
                           decoration: const InputDecoration(
-                              border: OutlineInputBorder()),
-                          items: _facilities
-                              .map((f) => DropdownMenuItem(
-                                    value: f,
-                                    child: Text(
-                                        f['name'] as String? ?? ''),
-                                  ))
-                              .toList(),
-                          onChanged: (f) {
-                            setState(() => _selectedFacility = f);
-                            if (f != null) {
-                              _loadProviders(f['id'] as String);
-                            }
-                          },
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 4)),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<Map<String, dynamic>>(
+                              value: _selectedFacility,
+                              isExpanded: true,
+                              hint: const Text('Select facility'),
+                              items: _facilities
+                                  .map((f) => DropdownMenuItem(
+                                        value: f,
+                                        child: Text(
+                                            f['name'] as String? ?? ''),
+                                      ))
+                                  .toList(),
+                              onChanged: (f) {
+                                setState(() => _selectedFacility = f);
+                                if (f != null) {
+                                  _loadProviders(f['id'] as String);
+                                }
+                              },
+                            ),
+                          ),
                         ),
                   const SizedBox(height: 14),
                   // Optional provider
@@ -222,25 +228,33 @@ class _CreateReferralSheetState extends State<CreateReferralSheet> {
                   const SizedBox(height: 6),
                   _loadingProviders
                       ? const LinearProgressIndicator()
-                      : DropdownButtonFormField<Map<String, dynamic>>(
-                          value: _selectedProvider,
-                          hint: const Text('Any available provider'),
+                      : InputDecorator(
                           decoration: const InputDecoration(
-                              border: OutlineInputBorder()),
-                          items: [
-                            const DropdownMenuItem<Map<String, dynamic>>(
-                              child: Text('Any available provider'),
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 4)),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<Map<String, dynamic>>(
+                              value: _selectedProvider,
+                              isExpanded: true,
+                              hint: const Text('Any available provider'),
+                              items: [
+                                const DropdownMenuItem<Map<String, dynamic>>(
+                                  value: null,
+                                  child: Text('Any available provider'),
+                                ),
+                                ..._facilityProviders.map(
+                                  (p) => DropdownMenuItem(
+                                    value: p,
+                                    child: Text(
+                                        p['name'] as String? ?? ''),
+                                  ),
+                                ),
+                              ],
+                              onChanged: (p) =>
+                                  setState(() => _selectedProvider = p),
                             ),
-                            ..._facilityProviders.map(
-                              (p) => DropdownMenuItem(
-                                value: p,
-                                child: Text(
-                                    p['name'] as String? ?? ''),
-                              ),
-                            ),
-                          ],
-                          onChanged: (p) =>
-                              setState(() => _selectedProvider = p),
+                          ),
                         ),
                   const SizedBox(height: 14),
                   // Specialty
