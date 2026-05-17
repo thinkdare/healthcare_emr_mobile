@@ -63,6 +63,9 @@ class AuthProvider extends ChangeNotifier {
   String get organizationName => _activeFacility?.organization?.name ?? '';
   String? get organizationId => _activeFacility?.organization?.id;
 
+  String? get activeTenantId => _activeMembership?.tenantId;
+  bool get isStaff => _activeMembership != null;
+
   bool get canPrescribe => _activeMembership?.canPrescribe ?? false;
   bool get canOrderLabs => _activeMembership?.canOrderLabs ?? false;
   bool get canEmergencyAccess => _activeMembership?.canEmergencyAccess ?? false;
