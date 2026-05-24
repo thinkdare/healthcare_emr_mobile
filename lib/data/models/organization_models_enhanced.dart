@@ -119,3 +119,61 @@ class FacilityModel {
 
   Map<String, dynamic> toJson() => _$FacilityModelToJson(this);
 }
+
+// ─── OrgStatsModel ─────────────────────────────────────────────────────────
+
+@JsonSerializable()
+class OrgStatsModel {
+  @JsonKey(name: 'total_facilities') final int totalFacilities;
+  @JsonKey(name: 'total_staff')      final int totalStaff;
+  @JsonKey(name: 'total_patients')   final int totalPatients;
+  @JsonKey(name: 'active_subscriptions') final int activeSubscriptions;
+
+  const OrgStatsModel({
+    required this.totalFacilities,
+    required this.totalStaff,
+    required this.totalPatients,
+    required this.activeSubscriptions,
+  });
+
+  factory OrgStatsModel.fromJson(Map<String, dynamic> json) =>
+      _$OrgStatsModelFromJson(json);
+
+  Map<String, dynamic> toJson() => _$OrgStatsModelToJson(this);
+}
+
+// ─── UpdateOrganizationRequest ─────────────────────────────────────────────
+
+@JsonSerializable(includeIfNull: false)
+class UpdateOrganizationRequest {
+  final String? name;
+  final String? type;
+  final String? address;
+  final String? phone;
+  final String? email;
+
+  @JsonKey(name: 'tax_id')
+  final String? taxId;
+
+  @JsonKey(name: 'billing_email')
+  final String? billingEmail;
+
+  @JsonKey(name: 'billing_address')
+  final String? billingAddress;
+
+  const UpdateOrganizationRequest({
+    this.name,
+    this.type,
+    this.address,
+    this.phone,
+    this.email,
+    this.taxId,
+    this.billingEmail,
+    this.billingAddress,
+  });
+
+  factory UpdateOrganizationRequest.fromJson(Map<String, dynamic> json) =>
+      _$UpdateOrganizationRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$UpdateOrganizationRequestToJson(this);
+}

@@ -283,3 +283,68 @@ class FacilitySwitchResponse {
     );
   }
 }
+
+// ─── FacilityStaffMemberModel ──────────────────────────────────────────────
+// One entry from GET /staff/memberships — used by StaffManagementScreen.
+
+class FacilityStaffMemberModel {
+  final String membershipId;
+  final String userId;
+  final String firstName;
+  final String lastName;
+  final String email;
+  final String staffType;
+  final bool isActive;
+  final ClinicalRankModel? clinicalRank;
+
+  const FacilityStaffMemberModel({
+    required this.membershipId,
+    required this.userId,
+    required this.firstName,
+    required this.lastName,
+    required this.email,
+    required this.staffType,
+    required this.isActive,
+    this.clinicalRank,
+  });
+
+  String get fullName => '$firstName $lastName'.trim();
+
+  String get initials {
+    final f = firstName.isNotEmpty ? firstName[0].toUpperCase() : '';
+    final l = lastName.isNotEmpty ? lastName[0].toUpperCase() : '';
+    return '$f$l';
+  }
+
+  String get displayStaffType {
+    const labels = {
+      'doctor': 'Doctor',
+      'nurse': 'Nurse',
+      'pharmacist': 'Pharmacist',
+      'lab_tech': 'Lab Technician',
+      'radiologist': 'Radiologist',
+      'physiotherapist': 'Physiotherapist',
+      'dentist': 'Dentist',
+      'admin': 'Administrator',
+      'other': 'Healthcare Professional',
+    };
+    return labels[staffType] ?? staffType;
+  }
+
+  factory FacilityStaffMemberModel.fromJson(Map<String, dynamic> json) {
+    final user = json['user'] as Map<String, dynamic>? ?? {};
+    return FacilityStaffMemberModel(
+      membershipId: json['id'] as String,
+      userId: (user['id'] ?? json['user_id']) as String,
+      firstName: user['first_name'] as String? ?? '',
+      lastName: user['last_name'] as String? ?? '',
+      email: user['email'] as String? ?? '',
+      staffType: json['staff_type'] as String? ?? '',
+      isActive: json['is_active'] as bool? ?? true,
+      clinicalRank: json['clinical_rank'] == null
+          ? null
+          : ClinicalRankModel.fromJson(
+              json['clinical_rank'] as Map<String, dynamic>),
+    );
+  }
+}

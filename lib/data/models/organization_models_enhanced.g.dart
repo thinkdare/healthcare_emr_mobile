@@ -81,3 +81,45 @@ Map<String, dynamic> _$FacilityModelToJson(FacilityModel instance) =>
       'created_at': instance.createdAt.toIso8601String(),
       'updated_at': instance.updatedAt.toIso8601String(),
     };
+
+OrgStatsModel _$OrgStatsModelFromJson(Map<String, dynamic> json) =>
+    OrgStatsModel(
+      totalFacilities: (json['total_facilities'] as num).toInt(),
+      totalStaff: (json['total_staff'] as num).toInt(),
+      totalPatients: (json['total_patients'] as num).toInt(),
+      activeSubscriptions: (json['active_subscriptions'] as num).toInt(),
+    );
+
+Map<String, dynamic> _$OrgStatsModelToJson(OrgStatsModel instance) =>
+    <String, dynamic>{
+      'total_facilities': instance.totalFacilities,
+      'total_staff': instance.totalStaff,
+      'total_patients': instance.totalPatients,
+      'active_subscriptions': instance.activeSubscriptions,
+    };
+
+UpdateOrganizationRequest _$UpdateOrganizationRequestFromJson(
+  Map<String, dynamic> json,
+) => UpdateOrganizationRequest(
+  name: json['name'] as String?,
+  type: json['type'] as String?,
+  address: json['address'] as String?,
+  phone: json['phone'] as String?,
+  email: json['email'] as String?,
+  taxId: json['tax_id'] as String?,
+  billingEmail: json['billing_email'] as String?,
+  billingAddress: json['billing_address'] as String?,
+);
+
+Map<String, dynamic> _$UpdateOrganizationRequestToJson(
+  UpdateOrganizationRequest instance,
+) => <String, dynamic>{
+  'name': ?instance.name,
+  'type': ?instance.type,
+  'address': ?instance.address,
+  'phone': ?instance.phone,
+  'email': ?instance.email,
+  'tax_id': ?instance.taxId,
+  'billing_email': ?instance.billingEmail,
+  'billing_address': ?instance.billingAddress,
+};
