@@ -14,9 +14,11 @@ import '../dashboard/screens/provider_dashboard_screen.dart';
 import '../emergency_access/screens/emergency_access_screen.dart';
 import '../../core/api/api_client.dart';
 import '../../data/repositories/organization_repository.dart';
+import '../../data/repositories/staff_repository.dart';
 import '../facilities/screens/facilities_list_screen.dart';
 import '../organization/screens/organization_profile_screen.dart';
 import '../providers/screens/provider_invitation_screen.dart';
+import '../staff/screens/staff_management_screen.dart';
 import '../profile/screens/staff_profile_screen.dart';
 import '../reporting/screens/reporting_screen.dart';
 import '../subscription/screens/subscription_details_screen.dart';
@@ -97,7 +99,13 @@ class MoreScreen extends StatelessWidget {
                         color: CupertinoColors.systemOrange),
                     title: const Text('Staff'),
                     trailing: const CupertinoListTileChevron(),
-                    onTap: () {}, // StaffManagementScreen wired in Task 7
+                    onTap: () => _push(
+                      context,
+                      StaffManagementScreen(
+                        repository: StaffRepository(
+                            apiClient: context.read<ApiClient>()),
+                      ),
+                    ),
                   ),
                   CupertinoListTile(
                     leading: const Icon(CupertinoIcons.mail,
