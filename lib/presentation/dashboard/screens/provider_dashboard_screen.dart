@@ -19,7 +19,9 @@ import '../../profile/screens/staff_profile_screen.dart';
 import '../../facilities/screens/facilities_list_screen.dart';
 import '../../organization/screens/organization_profile_screen.dart';
 import '../../providers/screens/provider_invitation_screen.dart';
+import '../../staff/screens/staff_management_screen.dart';
 import '../../../data/repositories/organization_repository.dart';
+import '../../../data/repositories/staff_repository.dart';
 import '../../reporting/screens/reporting_screen.dart';
 import '../../subscription/screens/subscription_details_screen.dart';
 import '../../subscription/screens/subscription_upgrade_screen.dart';
@@ -416,7 +418,12 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   title: const Text('Staff'),
                   onTap: () {
                     Navigator.of(context).pop();
-                    // StaffManagementScreen wired in Task 7
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => StaffManagementScreen(
+                        repository: StaffRepository(
+                            apiClient: context.read<ApiClient>()),
+                      ),
+                    ));
                   },
                 ),
                 ListTile(
