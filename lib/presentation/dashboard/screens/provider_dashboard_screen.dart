@@ -15,6 +15,8 @@ import '../../emergency_access/screens/emergency_access_screen.dart';
 import '../../patients/screens/patient_list_screen.dart';
 import '../../roster/screens/roster_screen.dart';
 import '../../profile/screens/staff_profile_screen.dart';
+import '../../facilities/screens/facilities_list_screen.dart';
+import '../../providers/screens/provider_invitation_screen.dart';
 import '../../reporting/screens/reporting_screen.dart';
 import '../../subscription/screens/subscription_details_screen.dart';
 import '../../subscription/screens/subscription_upgrade_screen.dart';
@@ -370,26 +372,85 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         builder: (_) => const EmergencyAccessScreen()));
                   },
                 ),
+              // ── Admin section (org admins only) ──────────────────────
               if (isOrgAdmin) ...[
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Text('ADMIN',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          color: Colors.orange.shade700)),
+                ),
                 ListTile(
-                  leading: const Icon(Icons.subscriptions),
-                  title: const Text('Subscription'),
+                  leading: Icon(Icons.business, color: Colors.orange.shade700),
+                  title: const Text('Organization'),
                   onTap: () {
                     Navigator.of(context).pop();
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const SubscriptionDetailsScreen()));
+                    // OrganizationProfileScreen wired in Task 6
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.analytics_outlined),
-                  title: const Text('Reports & Compliance'),
+                  leading: Icon(Icons.local_hospital_outlined,
+                      color: Colors.orange.shade700),
+                  title: const Text('Facilities'),
                   onTap: () {
                     Navigator.of(context).pop();
                     Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const ReportingScreen()));
+                        builder: (_) => const FacilitiesListScreen()));
+                  },
+                ),
+                ListTile(
+                  leading:
+                      Icon(Icons.group_outlined, color: Colors.orange.shade700),
+                  title: const Text('Staff'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    // StaffManagementScreen wired in Task 7
+                  },
+                ),
+                ListTile(
+                  leading:
+                      Icon(Icons.mail_outline, color: Colors.orange.shade700),
+                  title: const Text('Invite Staff'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const ProviderInvitationScreen()));
                   },
                 ),
               ],
+              // ── Account section (all staff) ───────────────────────────
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: Text('ACCOUNT',
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: Colors.grey.shade600)),
+              ),
+              ListTile(
+                leading: const Icon(Icons.subscriptions),
+                title: const Text('Subscription'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const SubscriptionDetailsScreen()));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.analytics_outlined),
+                title: const Text('Reports & Compliance'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const ReportingScreen()));
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.person_outline),
                 title: const Text('My Profile'),

@@ -12,6 +12,8 @@ import '../../data/providers/sync_provider.dart';
 import '../auth/screens/login_screen.dart';
 import '../dashboard/screens/provider_dashboard_screen.dart';
 import '../emergency_access/screens/emergency_access_screen.dart';
+import '../facilities/screens/facilities_list_screen.dart';
+import '../providers/screens/provider_invitation_screen.dart';
 import '../profile/screens/staff_profile_screen.dart';
 import '../reporting/screens/reporting_screen.dart';
 import '../subscription/screens/subscription_details_screen.dart';
@@ -26,6 +28,7 @@ class MoreScreen extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     final sync = context.watch<SyncProvider>();
     final showEmergency = auth.canEmergencyAccess;
+    final isOrgAdmin = auth.isOrgAdmin;
 
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
@@ -59,6 +62,44 @@ class MoreScreen extends StatelessWidget {
                   ),
               ],
             ),
+            if (isOrgAdmin)
+              CupertinoListSection.insetGrouped(
+                header: Text('Admin',
+                    style: TextStyle(
+                        color: CupertinoColors.systemOrange
+                            .resolveFrom(context))),
+                children: [
+                  CupertinoListTile(
+                    leading: const Icon(CupertinoIcons.building_2_fill,
+                        color: CupertinoColors.systemOrange),
+                    title: const Text('Organization'),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: () {}, // OrganizationProfileScreen wired in Task 6
+                  ),
+                  CupertinoListTile(
+                    leading: const Icon(CupertinoIcons.house_fill,
+                        color: CupertinoColors.systemOrange),
+                    title: const Text('Facilities'),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: () => _push(context, const FacilitiesListScreen()),
+                  ),
+                  CupertinoListTile(
+                    leading: const Icon(CupertinoIcons.group,
+                        color: CupertinoColors.systemOrange),
+                    title: const Text('Staff'),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: () {}, // StaffManagementScreen wired in Task 7
+                  ),
+                  CupertinoListTile(
+                    leading: const Icon(CupertinoIcons.mail,
+                        color: CupertinoColors.systemOrange),
+                    title: const Text('Invite Staff'),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: () =>
+                        _push(context, const ProviderInvitationScreen()),
+                  ),
+                ],
+              ),
             CupertinoListSection.insetGrouped(
               header: const Text('Account'),
               children: [
