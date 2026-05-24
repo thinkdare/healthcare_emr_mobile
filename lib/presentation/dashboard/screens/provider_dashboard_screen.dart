@@ -216,9 +216,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   return const Center(child: Text('Loading…'));
                 }
 
-                final isAdmin = auth.staffType == 'admin';
+                final isOrgAdmin = auth.isOrgAdmin;
                 final isDoctor = auth.staffType == 'doctor';
-                final showGrants = isAdmin || isDoctor ||
+                final showGrants = isOrgAdmin || isDoctor ||
                     (auth.activeMembership?.clinicalRank
                             ?.canApproveAccessGrants ??
                         false);
@@ -234,7 +234,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       children: [
                         _WelcomeCard(auth: auth),
                         const SizedBox(height: 16),
-                        if (isAdmin) ...[
+                        if (isOrgAdmin) ...[
                           _SubscriptionCard(),
                           const SizedBox(height: 16),
                         ],
@@ -286,13 +286,12 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     return Drawer(
       child: Consumer<AuthProvider>(
         builder: (context, auth, _) {
-          final isAdmin = auth.staffType == 'admin';
+          final isOrgAdmin = auth.isOrgAdmin;
           final isDoctor = auth.staffType == 'doctor';
-          final showGrants = isAdmin || isDoctor ||
+          final showGrants = isOrgAdmin || isDoctor ||
               (auth.activeMembership?.clinicalRank?.canApproveAccessGrants ??
                   false);
           final showEmergency = auth.canEmergencyAccess;
-          final showAdminItems = isAdmin;
 
           return Column(
             children: [
@@ -371,7 +370,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         builder: (_) => const EmergencyAccessScreen()));
                   },
                 ),
-              if (showAdminItems) ...[
+              if (isOrgAdmin) ...[
                 ListTile(
                   leading: const Icon(Icons.subscriptions),
                   title: const Text('Subscription'),
@@ -630,32 +629,6 @@ class _RecentPatientsCard extends StatelessWidget {
                       child: Padding(
                           padding: EdgeInsets.all(24),
                           child: CircularProgressIndicator()))
-                else if (p.error != null)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(children: [
-                          const Icon(Icons.error_outline,
-                              size: 18, color: AppTheme.errorColor),
-                          const SizedBox(width: 8),
-                          const Text('Failed to load patients',
-                              style: TextStyle(
-                                  color: AppTheme.errorColor,
-                                  fontWeight: FontWeight.w600)),
-                        ]),
-                        const SizedBox(height: 8),
-                        SelectableText(
-                          p.error!,
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.gray600,
-                              fontFamily: 'monospace'),
-                        ),
-                      ],
-                    ),
-                  )
                 else if (recent.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),
