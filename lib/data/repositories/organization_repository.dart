@@ -1,5 +1,6 @@
 import '../../core/api/api_client.dart';
 import '../models/auth_models.dart';
+import '../models/organization_models_enhanced.dart';
 
 class OrganizationRepository {
   final ApiClient apiClient;
@@ -23,6 +24,42 @@ class OrganizationRepository {
     }
 
     return CheckEmailResponse.fromJson(
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
+  }
+
+  Future<OrganizationEnhancedModel> getOrganization(String id) async {
+    final response = await apiClient.get('/organizations/$id');
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to load organization');
+    }
+    return OrganizationEnhancedModel.fromJson(
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
+  }
+
+  Future<OrgStatsModel> getOrgStats(String id) async {
+    final response = await apiClient.get('/organizations/$id/stats');
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to load org stats');
+    }
+    return OrgStatsModel.fromJson(
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
+  }
+
+  Future<OrganizationEnhancedModel> updateOrganization(
+    String id,
+    UpdateOrganizationRequest request,
+  ) async {
+    final response = await apiClient.put(
+      '/organizations/$id',
+      data: request.toJson(),
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to update organization');
+    }
+    return OrganizationEnhancedModel.fromJson(
       Map<String, dynamic>.from(response['data'] as Map),
     );
   }
