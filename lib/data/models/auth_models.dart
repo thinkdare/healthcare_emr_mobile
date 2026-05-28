@@ -209,18 +209,23 @@ class AuthFacilityModel {
 class CheckEmailResponse {
   final bool exists;
   final bool hasPassword;
+  final String? userType;
   final List<AuthFacilityModel> facilities;
 
   const CheckEmailResponse({
     required this.exists,
     required this.hasPassword,
+    this.userType,
     required this.facilities,
   });
+
+  bool get isOrgAdmin => userType == 'org_admin';
 
   factory CheckEmailResponse.fromJson(Map<String, dynamic> json) =>
       CheckEmailResponse(
         exists: json['exists'] as bool? ?? false,
         hasPassword: json['has_password'] as bool? ?? true,
+        userType: json['user_type'] as String?,
         facilities: (json['facilities'] as List? ?? [])
             .map((e) =>
                 AuthFacilityModel.fromJson(e as Map<String, dynamic>))

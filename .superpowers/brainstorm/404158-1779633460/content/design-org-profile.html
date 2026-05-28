@@ -1,0 +1,144 @@
+<h2>Design — Section 2: Organization Profile Screen</h2>
+<p class="subtitle">New screen — <code>lib/presentation/organization/screens/organization_profile_screen.dart</code></p>
+
+<div class="split">
+
+  <div class="mockup">
+    <div class="mockup-header">View mode (default)</div>
+    <div class="mockup-body" style="padding:0;font-size:0.82rem;max-height:560px;overflow-y:auto">
+
+      <!-- App bar -->
+      <div style="background:#1565c0;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
+        <span>← Organization</span>
+        <span style="font-size:1.1rem">✏️</span>
+      </div>
+
+      <!-- Stats header -->
+      <div style="background:linear-gradient(135deg,#1565c0,#1976d2);color:#fff;padding:16px">
+        <div style="font-weight:700;font-size:1rem;margin-bottom:4px">CityHealth Group</div>
+        <div style="opacity:.8;font-size:0.78rem;margin-bottom:14px">Hospital Group · Active</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:1.3rem;font-weight:700">3</div>
+            <div style="font-size:0.7rem;opacity:.85">Facilities</div>
+          </div>
+          <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:1.3rem;font-weight:700">24</div>
+            <div style="font-size:0.7rem;opacity:.85">Staff</div>
+          </div>
+          <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:1.3rem;font-weight:700">1,240</div>
+            <div style="font-size:0.7rem;opacity:.85">Patients</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Details card -->
+      <div style="margin:12px;background:#fff;border-radius:10px;border:1px solid #e0e0e0;overflow:hidden">
+        <div style="padding:10px 14px;background:#f8f9fa;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#666">Organization Details</div>
+        <div style="padding:10px 14px;border-top:1px solid #f0f0f0"><span style="color:#888;font-size:0.75rem">Name</span><br>CityHealth Group</div>
+        <div style="padding:10px 14px;border-top:1px solid #f0f0f0"><span style="color:#888;font-size:0.75rem">Type</span><br>Hospital Group</div>
+        <div style="padding:10px 14px;border-top:1px solid #f0f0f0"><span style="color:#888;font-size:0.75rem">Address</span><br>123 Health Avenue, Lagos</div>
+        <div style="padding:10px 14px;border-top:1px solid #f0f0f0"><span style="color:#888;font-size:0.75rem">Phone</span><br>+234 801 234 5678</div>
+        <div style="padding:10px 14px;border-top:1px solid #f0f0f0"><span style="color:#888;font-size:0.75rem">Email</span><br>admin@cityhealth.ng</div>
+        <div style="padding:10px 14px;border-top:1px solid #f0f0f0"><span style="color:#888;font-size:0.75rem">Tax ID</span><br>TIN-12345678</div>
+      </div>
+
+      <!-- Billing card -->
+      <div style="margin:12px;background:#fff;border-radius:10px;border:1px solid #e0e0e0;overflow:hidden">
+        <div style="padding:10px 14px;background:#f8f9fa;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#666">Billing</div>
+        <div style="padding:10px 14px;border-top:1px solid #f0f0f0"><span style="color:#888;font-size:0.75rem">Billing Email</span><br>billing@cityhealth.ng</div>
+        <div style="padding:10px 14px;border-top:1px solid #f0f0f0"><span style="color:#888;font-size:0.75rem">Billing Address</span><br>123 Health Avenue, Lagos</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Edit mode (pencil icon toggles inline)</div>
+    <div class="mockup-body" style="padding:0;font-size:0.82rem;max-height:560px;overflow-y:auto">
+
+      <!-- App bar in edit mode -->
+      <div style="background:#1565c0;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
+        <span>✕ Cancel</span>
+        <span style="font-weight:700">Save</span>
+      </div>
+
+      <!-- Stats header (same, no edit) -->
+      <div style="background:linear-gradient(135deg,#1565c0,#1976d2);color:#fff;padding:16px">
+        <div style="font-weight:700;font-size:1rem;margin-bottom:4px">CityHealth Group</div>
+        <div style="opacity:.8;font-size:0.78rem;margin-bottom:14px">Hospital Group · Active</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:1.3rem;font-weight:700">3</div>
+            <div style="font-size:0.7rem;opacity:.85">Facilities</div>
+          </div>
+          <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:1.3rem;font-weight:700">24</div>
+            <div style="font-size:0.7rem;opacity:.85">Staff</div>
+          </div>
+          <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:1.3rem;font-weight:700">1,240</div>
+            <div style="font-size:0.7rem;opacity:.85">Patients</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Editable fields -->
+      <div style="margin:12px;background:#fff;border-radius:10px;border:1px solid #1565c0;overflow:hidden">
+        <div style="padding:10px 14px;background:#e8f0fe;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#1565c0">Organization Details</div>
+        <div style="padding:8px 14px;border-top:1px solid #f0f0f0">
+          <div style="color:#888;font-size:0.72rem;margin-bottom:3px">Name *</div>
+          <div style="border:1px solid #90caf9;border-radius:6px;padding:6px 10px;background:#f8f9ff">CityHealth Group</div>
+        </div>
+        <div style="padding:8px 14px;border-top:1px solid #f0f0f0">
+          <div style="color:#888;font-size:0.72rem;margin-bottom:3px">Type *</div>
+          <div style="border:1px solid #90caf9;border-radius:6px;padding:6px 10px;background:#f8f9ff;display:flex;justify-content:space-between">Hospital Group <span>▾</span></div>
+        </div>
+        <div style="padding:8px 14px;border-top:1px solid #f0f0f0">
+          <div style="color:#888;font-size:0.72rem;margin-bottom:3px">Address *</div>
+          <div style="border:1px solid #90caf9;border-radius:6px;padding:6px 10px;background:#f8f9ff">123 Health Avenue, Lagos</div>
+        </div>
+        <div style="padding:8px 14px;border-top:1px solid #f0f0f0">
+          <div style="color:#888;font-size:0.72rem;margin-bottom:3px">Phone</div>
+          <div style="border:1px solid #90caf9;border-radius:6px;padding:6px 10px;background:#f8f9ff">+234 801 234 5678</div>
+        </div>
+        <div style="padding:8px 14px;border-top:1px solid #f0f0f0">
+          <div style="color:#888;font-size:0.72rem;margin-bottom:3px">Email</div>
+          <div style="border:1px solid #90caf9;border-radius:6px;padding:6px 10px;background:#f8f9ff">admin@cityhealth.ng</div>
+        </div>
+        <div style="padding:8px 14px;border-top:1px solid #f0f0f0">
+          <div style="color:#888;font-size:0.72rem;margin-bottom:3px">Tax ID</div>
+          <div style="border:1px solid #90caf9;border-radius:6px;padding:6px 10px;background:#f8f9ff">TIN-12345678</div>
+        </div>
+      </div>
+
+      <div style="margin:12px;background:#fff;border-radius:10px;border:1px solid #1565c0;overflow:hidden">
+        <div style="padding:10px 14px;background:#e8f0fe;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#1565c0">Billing</div>
+        <div style="padding:8px 14px;border-top:1px solid #f0f0f0">
+          <div style="color:#888;font-size:0.72rem;margin-bottom:3px">Billing Email</div>
+          <div style="border:1px solid #90caf9;border-radius:6px;padding:6px 10px;background:#f8f9ff">billing@cityhealth.ng</div>
+        </div>
+        <div style="padding:8px 14px;border-top:1px solid #f0f0f0">
+          <div style="color:#888;font-size:0.72rem;margin-bottom:3px">Billing Address</div>
+          <div style="border:1px solid #90caf9;border-radius:6px;padding:6px 10px;background:#f8f9ff">123 Health Avenue, Lagos</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:1.2rem">
+  <h3>Implementation notes</h3>
+  <ul style="font-size:0.88rem;line-height:1.8">
+    <li>Two API calls on load: <code>GET /organizations/{auth.organizationId}</code> + <code>GET /organizations/{id}/stats</code> (parallel).</li>
+    <li>State: <code>_isEditing</code> bool — pencil icon toggles it. Cancel reverts controllers to original values. Save calls <code>PUT /organizations/{id}</code>.</li>
+    <li>New <code>OrganizationRepository</code> methods: <code>getOrganization(id)</code>, <code>getOrgStats(id)</code>, <code>updateOrganization(id, data)</code>.</li>
+    <li>No new provider needed — the screen manages its own state (StatefulWidget) since org profile is a single-use screen not shared across the app.</li>
+    <li>Type dropdown values: <code>hospital</code>, <code>clinic</code>, <code>pharmacy</code>, <code>laboratory</code>, <code>diagnostic_center</code>, <code>hospital_group</code>, <code>other</code>.</li>
+  </ul>
+</div>
+
+<p style="color:var(--text-muted);font-size:0.85rem">Does this org profile design look right? Confirm in terminal to see Section 3.</p>

@@ -60,18 +60,22 @@ class AuthProvider extends ChangeNotifier {
   String get initials => _currentUser?.initials ?? 'P';
   String get staffTypeDisplay => _activeMembership?.displayType ?? '';
   String get facilityName => _activeFacility?.name ?? '';
-  String get organizationName => _activeFacility?.organization?.name ?? '';
-  String? get organizationId => _activeFacility?.organization?.id;
+  String get organizationName => _activeFacility?.organization?.name
+      ?? _currentUser?.primaryOrganizationName ?? '';
 
   String? get activeTenantId => _activeFacility?.id;
   bool get isStaff => _activeMembership != null;
+  bool get isOrgAdmin => _currentUser?.isOrgAdmin ?? false;
 
   bool get canPrescribe => _activeMembership?.canPrescribe ?? false;
   bool get canOrderLabs => _activeMembership?.canOrderLabs ?? false;
   bool get canEmergencyAccess => _activeMembership?.canEmergencyAccess ?? false;
   String get department => _activeMembership?.department ?? '';
   String get staffType => _activeMembership?.staffType ?? '';
-  bool get isOrgAdmin => _currentUser?.isOrgAdmin ?? false;
+
+  /// Organization ID — from selected facility (staff) or user profile (org admin).
+  String? get organizationId =>
+      _activeFacility?.organization?.id ?? _currentUser?.primaryOrganizationId;
 
   // ── Initialisation ─────────────────────────────────────────────────────────
 
@@ -88,6 +92,13 @@ class AuthProvider extends ChangeNotifier {
         return;
       }
       _currentUser = user;
+
+      // Org admins have no facility memberships — go straight to authenticated.
+      if (user.isOrgAdmin) {
+        _state = AuthState.authenticated;
+        notifyListeners();
+        return;
+      }
 
       // Check if there is a stored tenant selection
       final tenantId = await repository.apiClient.getTenantId();
@@ -171,6 +182,13 @@ class AuthProvider extends ChangeNotifier {
   // ── Facility selection ─────────────────────────────────────────────────────
 
   Future<void> _loadFacilities() async {
+    // Org admins are not credentialed at individual facilities.
+    if (_currentUser?.isOrgAdmin == true) {
+      _state = AuthState.authenticated;
+      notifyListeners();
+      return;
+    }
+
     _availableFacilities = await repository.getFacilities();
 
     if (_availableFacilities.length == 1) {

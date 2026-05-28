@@ -62,7 +62,7 @@ class ClinicalRecordTab extends StatelessWidget {
                 onRefresh: () => clinical.loadAll(clinical.patientId!),
               ),
               SliverPadding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.only(top: 8, bottom: 32),
                 sliver: SliverList.list(children: sections),
               ),
             ],
@@ -72,7 +72,7 @@ class ClinicalRecordTab extends StatelessWidget {
         return RefreshIndicator(
           onRefresh: () => clinical.loadAll(clinical.patientId!),
           child: ListView(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.only(top: 8, bottom: 32),
             children: sections,
           ),
         );

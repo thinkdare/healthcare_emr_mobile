@@ -27,6 +27,10 @@ class UserModel {
   @JsonKey(name: 'updated_at')
   final DateTime? updatedAt;
 
+  /// Populated from the `organizations` array in /auth/me for org_admin users.
+  final String? primaryOrganizationId;
+  final String? primaryOrganizationName;
+
   UserModel({
     required this.id,
     required this.email,
@@ -35,6 +39,8 @@ class UserModel {
     this.twoFactorEnabled = false,
     this.createdAt,
     this.updatedAt,
+    this.primaryOrganizationId,
+    this.primaryOrganizationName,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) =>

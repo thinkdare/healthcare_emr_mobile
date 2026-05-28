@@ -61,7 +61,7 @@ void main() {
     test('sends request and returns updated model', () async {
       final fake = _FakeApiClient(
         getHandler: (_) => {'success': true, 'data': {}},
-        putHandler: (_, __) => {
+        putHandler: (_, _) => {
           'success': true,
           'data': {
             'id': 'org-1',

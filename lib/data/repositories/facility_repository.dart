@@ -13,8 +13,8 @@ class FacilityRepository {
     bool activeOnly = true,
   }) async {
     final queryParams = <String, dynamic>{
-      if (organizationId != null) 'organization_id': organizationId,
-      if (type != null) 'type': type,
+      'organization_id': ?organizationId,
+      'type': ?type,
       'active_only': activeOnly,
     };
 
@@ -63,8 +63,8 @@ class FacilityRepository {
         'name': name,
         'type': type,
         'address': address,
-        if (phone != null) 'phone': phone,
-        if (operatingHours != null) 'operating_hours': operatingHours,
+        'phone': ?phone,
+        'operating_hours': ?operatingHours,
         'supports_emergency_access': supportsEmergencyAccess,
       },
     );
@@ -154,6 +154,30 @@ class FacilityRepository {
         'name': user != null
             ? '${user['first_name']} ${user['last_name']}'
             : 'Provider',
+      };
+    }).toList().cast<Map<String, dynamic>>();
+  }
+
+  /// List colleagues at the current user's active tenant — used in intra-grant form.
+  /// Returns membership_id alongside user info so the controller can target the correct membership.
+  Future<List<Map<String, dynamic>>> listStaffAtCurrentTenant() async {
+    final response = await apiClient.get(
+      '/staff/memberships',
+      queryParameters: {'per_page': 100},
+    );
+    if (response['success'] != true) return [];
+    final data = response['data'];
+    final raw =
+        data is Map ? (data['data'] as List? ?? []) : (data as List? ?? []);
+    return raw.map((e) {
+      final user = e['user'] as Map?;
+      return {
+        'membership_id': e['id'],
+        'user_id': user?['id'] ?? e['user_id'],
+        'name': user != null
+            ? '${user['first_name']} ${user['last_name']}'
+            : 'Provider',
+        'staff_type': e['staff_type'] ?? '',
       };
     }).toList().cast<Map<String, dynamic>>();
   }

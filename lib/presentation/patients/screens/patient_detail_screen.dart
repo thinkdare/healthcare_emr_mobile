@@ -9,6 +9,8 @@ import '../../../data/models/clinical_models.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/clinical_provider.dart';
 import '../../../data/providers/patient_provider.dart';
+import '../../../data/models/intra_grant_models.dart';
+import '../../../data/providers/intra_grant_provider.dart';
 import '../../../data/providers/referral_provider.dart';
 import '../../referrals/widgets/create_referral_sheet.dart';
 import '../widgets/clinical_forms.dart';
@@ -26,11 +28,11 @@ class PatientDetailScreen extends StatefulWidget {
 }
 
 // Tabs available to each staff type (by index into _allTabs).
-// 0=Overview 1=Appointments 2=Prescriptions 3=Lab Results 4=Documents 5=Clinical Record
-const _nurseTabIndices      = [0, 1, 5];
-const _pharmacistTabIndices = [0, 2];
-const _labTechTabIndices    = [0, 3];
-const _doctorTabIndices     = [0, 1, 2, 3, 4, 5];
+// 0=Overview 1=Appointments 2=Prescriptions 3=Lab Results 4=Documents 5=Clinical Record 6=Notes
+const _nurseTabIndices      = [0, 1, 5, 6];
+const _pharmacistTabIndices = [0, 2, 6];
+const _labTechTabIndices    = [0, 3, 6];
+const _doctorTabIndices     = [0, 1, 2, 3, 4, 5, 6];
 
 List<int> _tabIndicesFor(String staffType) => switch (staffType) {
       'nurse' => _nurseTabIndices,
@@ -348,6 +350,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                 _LabResultsTab(patientId: _patient.id),
                 _DocumentsTab(patientId: _patient.id),
                 const ClinicalRecordTab(),
+                _NotesTab(patient: _patient),
               ];
               return Column(
                 children: [
@@ -370,7 +373,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                                 'Rx',
                                 'Labs',
                                 'Docs',
-                                'Clinical'
+                                'Clinical',
+                                'Notes',
                               ][_visibleIndices[i]],
                               style: const TextStyle(fontSize: 12),
                             ),
@@ -448,7 +452,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                 'Prescriptions',
                 'Lab Results',
                 'Documents',
-                'Clinical Record'
+                'Clinical Record',
+                'Notes',
               ][i]),
           ],
         ),
@@ -471,6 +476,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
             _LabResultsTab(patientId: _patient.id),
             _DocumentsTab(patientId: _patient.id),
             const ClinicalRecordTab(),
+            _NotesTab(patient: _patient),
           ];
           return TabBarView(
             controller: _tabs,
@@ -1489,4 +1495,176 @@ class _ErrorView extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Notes Tab ─────────────────────────────────────────────────────────────────
+
+class _NotesTab extends StatefulWidget {
+  final PatientModel patient;
+  const _NotesTab({required this.patient});
+
+  @override
+  State<_NotesTab> createState() => _NotesTabState();
+}
+
+class _NotesTabState extends State<_NotesTab> {
+  List<ClinicalNoteModel> _notes = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final repo = context.read<IntraGrantProvider>().repository;
+      _notes = await repo.getPatientNotes(widget.patient.id);
+    } catch (e) {
+      _error = 'Failed to load notes.';
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline,
+                  size: 48, color: Colors.grey.shade400),
+              const SizedBox(height: 12),
+              Text(_error!,
+                  style: TextStyle(color: AppTheme.gray600),
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              AdaptiveFilledButton(
+                  onPressed: _load, child: const Text('Retry')),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_notes.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.notes_outlined,
+                  size: 56, color: Colors.grey.shade300),
+              const SizedBox(height: 16),
+              const Text('No clinical notes',
+                  style: TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Text(
+                'Consultation responses will appear here once a colleague has reviewed this patient.',
+                style: TextStyle(fontSize: 13, color: AppTheme.gray600),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        itemCount: _notes.length,
+        itemBuilder: (_, i) => _ClinicalNoteCard(note: _notes[i]),
+      ),
+    );
+  }
+}
+
+class _ClinicalNoteCard extends StatelessWidget {
+  final ClinicalNoteModel note;
+  const _ClinicalNoteCard({required this.note});
+
+  @override
+  Widget build(BuildContext context) {
+    final isResponse = note.isConsultationResponse;
+    final isDeclined = note.isConsultationDeclined;
+    final accentColor = isDeclined ? AppTheme.warningColor : AppTheme.successColor;
+    final bgColor = isDeclined ? Colors.orange.shade50 : Colors.green.shade50;
+    final borderColor = isDeclined ? Colors.orange.shade200 : Colors.green.shade200;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  isResponse
+                      ? Icons.check_circle_outline
+                      : isDeclined
+                          ? Icons.cancel_outlined
+                          : Icons.notes_outlined,
+                  size: 18,
+                  color: isResponse || isDeclined ? accentColor : AppTheme.primaryColor,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    note.displayTitle,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${note.authoredByName}  ·  ${_fmtDate(note.authoredAt)}',
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+            ),
+            const Divider(height: 20),
+            if (isResponse || isDeclined)
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: borderColor),
+                ),
+                child: Text(note.body,
+                    style: const TextStyle(fontSize: 13, height: 1.5)),
+              )
+            else
+              Text(note.body,
+                  style: const TextStyle(fontSize: 13, height: 1.5)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _fmtDate(DateTime dt) =>
+      '${dt.day.toString().padLeft(2, '0')}/'
+      '${dt.month.toString().padLeft(2, '0')}/'
+      '${dt.year}';
 }

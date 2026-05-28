@@ -1,0 +1,87 @@
+<h2>Design — Section 1: Navigation</h2>
+<p class="subtitle">Admin entries are injected into the existing drawer (Android) and More tab (iOS), gated by <code>auth.staffType == 'admin'</code></p>
+
+<div class="split">
+
+  <div class="mockup">
+    <div class="mockup-header">Android — Drawer (ProviderDashboardScreen)</div>
+    <div class="mockup-body" style="padding:0;font-size:0.85rem">
+
+      <div style="background:#1565c0;color:#fff;padding:16px">
+        <div style="font-weight:700;font-size:1rem">Dr. Jane Smith</div>
+        <div style="opacity:.8;font-size:0.8rem">City General Hospital</div>
+      </div>
+
+      <div style="padding:6px 16px 2px;font-size:0.68rem;text-transform:uppercase;letter-spacing:.08em;color:#888;font-weight:600">Clinical</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #f5f5f5"><span>🏠</span> Home</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #f5f5f5"><span>👤</span> Patients</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #f5f5f5"><span>🔑</span> Access Grants</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #f5f5f5"><span>🚨</span> Emergency Access</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #f5f5f5"><span>↔️</span> Referrals</div>
+
+      <div style="padding:6px 16px 2px;margin-top:4px;font-size:0.68rem;text-transform:uppercase;letter-spacing:.08em;color:#e67e22;font-weight:600">Admin</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #f5f5f5;background:#fffaf5"><span>🏢</span> <strong>Organization</strong></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #f5f5f5;background:#fffaf5"><span>🏥</span> <strong>Facilities</strong></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #f5f5f5;background:#fffaf5"><span>👥</span> <strong>Staff</strong></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #f5f5f5;background:#fffaf5"><span>✉️</span> <strong>Invite Staff</strong></div>
+
+      <div style="padding:6px 16px 2px;margin-top:4px;font-size:0.68rem;text-transform:uppercase;letter-spacing:.08em;color:#888;font-weight:600">Account</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #f5f5f5"><span>💳</span> Subscription</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #f5f5f5"><span>📊</span> Reports</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #f5f5f5"><span>👤</span> My Profile</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;color:#e74c3c"><span>⬅️</span> Logout</div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">iOS — More Tab (MoreScreen)</div>
+    <div class="mockup-body" style="padding:0;font-size:0.85rem">
+
+      <div style="background:#f2f2f7;padding:8px 16px;font-size:0.68rem;text-transform:uppercase;letter-spacing:.04em;color:#888;font-weight:600">Clinical</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff;border-bottom:1px solid #e5e5ea">
+        <span style="color:#007aff">⬛</span> <span>Dashboard</span> <span style="margin-left:auto;color:#c7c7cc">›</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff;border-bottom:1px solid #e5e5ea">
+        <span style="color:#ff3b30">⬛</span> <span>Emergency Access</span> <span style="margin-left:auto;color:#c7c7cc">›</span>
+      </div>
+
+      <div style="background:#f2f2f7;padding:8px 16px;margin-top:8px;font-size:0.68rem;text-transform:uppercase;letter-spacing:.04em;color:#e67e22;font-weight:600">Admin</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fffaf5;border-bottom:1px solid #e5e5ea">
+        <span style="color:#e67e22">🏢</span> <span><strong>Organization</strong></span> <span style="margin-left:auto;color:#c7c7cc">›</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fffaf5;border-bottom:1px solid #e5e5ea">
+        <span style="color:#e67e22">🏥</span> <span><strong>Facilities</strong></span> <span style="margin-left:auto;color:#c7c7cc">›</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fffaf5;border-bottom:1px solid #e5e5ea">
+        <span style="color:#e67e22">👥</span> <span><strong>Staff</strong></span> <span style="margin-left:auto;color:#c7c7cc">›</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fffaf5;border-bottom:1px solid #e5e5ea">
+        <span style="color:#e67e22">✉️</span> <span><strong>Invite Staff</strong></span> <span style="margin-left:auto;color:#c7c7cc">›</span>
+      </div>
+
+      <div style="background:#f2f2f7;padding:8px 16px;margin-top:8px;font-size:0.68rem;text-transform:uppercase;letter-spacing:.04em;color:#888;font-weight:600">Account</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff;border-bottom:1px solid #e5e5ea">
+        <span style="color:#007aff">⬛</span> <span>Staff Profile</span> <span style="margin-left:auto;color:#c7c7cc">›</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff;border-bottom:1px solid #e5e5ea">
+        <span style="color:#007aff">⬛</span> <span>Subscription &amp; Billing</span> <span style="margin-left:auto;color:#c7c7cc">›</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff">
+        <span style="color:#ff3b30">⬛</span> <span style="color:#ff3b30">Sign Out</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:1.5rem">
+  <h3>Implementation notes</h3>
+  <ul style="font-size:0.9rem;line-height:1.8">
+    <li><code>ProviderDashboardScreen</code> drawer: add an <code>if (auth.staffType == 'admin')</code> block rendering the Admin section between the Clinical and Account groups. No other changes to existing drawer items.</li>
+    <li><code>MoreScreen</code>: same guard, new <code>CupertinoListSection.insetGrouped</code> block with header <code>"Admin"</code>, inserted between the Clinical and Account sections.</li>
+    <li>All four admin entries navigate via <code>Navigator.push</code> — no new named routes needed.</li>
+    <li>Non-admin users see no Admin section at all. The section is not rendered, not greyed out.</li>
+  </ul>
+</div>
+
+<p style="color:var(--text-muted);font-size:0.85rem">Does this navigation design look right? Confirm in terminal and I'll show the next section.</p>

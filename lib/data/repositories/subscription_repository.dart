@@ -63,7 +63,7 @@ class SubscriptionRepository {
       '/billing/organizations/$orgId/subscriptions/trial',
       data: {
         'plan_id': planId,
-        if (trialDays != null) 'trial_days': trialDays,
+        'trial_days': ?trialDays,
       },
     );
     if (response['success'] != true) {
@@ -117,7 +117,7 @@ class SubscriptionRepository {
       '/billing/organizations/$orgId/invoices',
       queryParameters: {
         'page': page,
-        if (status != null) 'status': status,
+        'status': ?status,
       },
     );
     if (response['success'] != true) {
@@ -142,6 +142,44 @@ class SubscriptionRepository {
       throw Exception(response['message'] ?? 'Failed to get invoice');
     }
     return InvoiceModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  /// POST /billing/organizations/{orgId}/checkout-session
+  /// Returns { checkout_url, reference, gateway }
+  Future<Map<String, dynamic>> createCheckoutSession(
+    String orgId, {
+    required String planId,
+    required String gateway,
+  }) async {
+    final response = await apiClient.post(
+      '/billing/organizations/$orgId/checkout-session',
+      data: {'plan_id': planId, 'gateway': gateway},
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to create checkout session');
+    }
+    return Map<String, dynamic>.from(response['data'] as Map);
+  }
+
+  /// POST /billing/verify-payment
+  /// Called after the deep link return to confirm payment and activate subscription.
+  Future<SubscriptionModel> verifyPayment({
+    required String reference,
+    required String gateway,
+    String? transactionId, // Flutterwave
+    String? sessionId,     // Stripe
+  }) async {
+    final response = await apiClient.post('/billing/verify-payment', data: {
+      'reference': reference,
+      'gateway':   gateway,
+      'transaction_id': ?transactionId,
+      'session_id':     ?sessionId,
+    });
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Payment verification failed');
+    }
+    return SubscriptionModel.fromJson(
         Map<String, dynamic>.from(response['data'] as Map));
   }
 }

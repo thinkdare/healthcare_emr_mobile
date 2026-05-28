@@ -10,7 +10,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
 import '../../../core/platform.dart';
+import '../../../data/models/clinical_models.dart';
 import '../../../data/providers/clinical_provider.dart';
+import 'interaction_warning_sheet.dart';
 
 // ── Appointment Form ──────────────────────────────────────────────────────────
 
@@ -256,8 +258,28 @@ class _PrescriptionFormState extends State<PrescriptionForm> {
 
     setState(() => _saving = true);
 
+    final medicationName = _medicationCtrl.text.trim();
+    final clinical = context.read<ClinicalProvider>();
+
+    // Pre-check drug interactions before saving
+    final checkResult = await clinical.checkInteractions(medicationName);
+    if (!mounted) return;
+
+    List<DrugInteraction> warnings = [];
+    bool acknowledged = false;
+
+    if (checkResult.hasInteractions) {
+      // Pause spinner while doctor reads the warning sheet
+      setState(() => _saving = false);
+      acknowledged = await InteractionWarningSheet.show(context, checkResult.interactions);
+      if (!mounted) return;
+      if (!acknowledged) return; // doctor cancelled
+      warnings = checkResult.interactions;
+      setState(() => _saving = true);
+    }
+
     final data = <String, dynamic>{
-      'medication_name':      _medicationCtrl.text.trim(),
+      'medication_name':      medicationName,
       'dosage':               _dosageCtrl.text.trim(),
       'frequency':            _frequencyCtrl.text.trim(),
       'route':                _route,
@@ -268,16 +290,24 @@ class _PrescriptionFormState extends State<PrescriptionForm> {
       'expires_date':         _fmt(_expiresDate!),
       if (_instructionsCtrl.text.trim().isNotEmpty)
         'special_instructions': _instructionsCtrl.text.trim(),
+      'drug_interactions_checked': checkResult.apiAvailable,
+      if (acknowledged) 'interactions_acknowledged': true,
+      if (warnings.isNotEmpty)
+        'drug_interaction_warnings': warnings.map((w) => w.toJson()).toList(),
     };
 
-    final result = await context.read<ClinicalProvider>().createPrescription(data);
+    final result = await clinical.createPrescription(data);
     if (!mounted) return;
     setState(() => _saving = false);
 
     if (result != null) {
       Navigator.of(context).pop(true);
     } else {
-      showAdaptiveToast(context, context.read<ClinicalProvider>().error ?? 'Failed to create prescription', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        clinical.error ?? 'Failed to create prescription',
+        type: ToastType.error,
+      );
     }
   }
 
@@ -589,10 +619,9 @@ class _DocumentUploadFormState extends State<DocumentUploadForm> {
   }
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'tiff', 'txt', 'zip'],
-      withData: false,
     );
     if (result != null && result.files.isNotEmpty) {
       final file = result.files.single;

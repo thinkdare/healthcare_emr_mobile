@@ -32,9 +32,9 @@ class StaffRepository {
     bool? isActive,
   }) async {
     final data = <String, dynamic>{
-      if (staffType != null) 'staff_type': staffType,
-      if (clinicalRankId != null) 'clinical_rank_id': clinicalRankId,
-      if (isActive != null) 'is_active': isActive,
+      'staff_type': ?staffType,
+      'clinical_rank_id': ?clinicalRankId,
+      'is_active': ?isActive,
     };
     final response = await apiClient.put(
       '/staff/memberships/$membershipId',

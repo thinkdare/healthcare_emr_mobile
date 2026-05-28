@@ -62,7 +62,8 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    if (result.facilities.isEmpty) {
+    // Org admins are not credentialed at individual facilities.
+    if (result.facilities.isEmpty && !result.isOrgAdmin) {
       setState(() {
         _loading = false;
         _errorMessage =
@@ -188,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
           body: SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 400),
                   child: Column(

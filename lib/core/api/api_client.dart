@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../config/app_config.dart';
 
@@ -54,20 +55,22 @@ class ApiClient {
             options.headers['X-Tenant-ID'] = tenantId;
           }
 
-          print('REQUEST: ${options.method} ${options.uri}');
-          print('DATA: ${options.data}');
+          if (kDebugMode) {
+            debugPrint('REQUEST: ${options.method} ${options.uri.path}');
+          }
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          print('RESPONSE: ${response.statusCode} ${response.requestOptions.uri}');
-          print('DATA: ${response.data}');
+          if (kDebugMode) {
+            debugPrint('RESPONSE: ${response.statusCode} ${response.requestOptions.uri.path}');
+          }
           return handler.next(response);
         },
         onError: (error, handler) async {
-          print('ERROR: ${error.response?.statusCode} ${error.requestOptions.uri}');
-          print('MESSAGE: ${error.message}');
-          print('DATA: ${error.response?.data}');
-          
+          if (kDebugMode) {
+            debugPrint('ERROR: ${error.response?.statusCode} ${error.requestOptions.uri.path}');
+          }
+
           if (error.response?.statusCode == 401) {
             await _storage.delete(key: 'auth_token');
             await _storage.delete(key: 'active_tenant_id');

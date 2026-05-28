@@ -79,7 +79,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
                 : MaterialPageRoute(
                     builder: (_) => const PatientFormScreen()),
           );
-          if (result != null && mounted) {
+          if (result != null && context.mounted) {
             showAdaptiveToast(context, 'Patient registered', type: ToastType.success);
           }
         },
@@ -195,8 +195,8 @@ class _PatientListScreenState extends State<PatientListScreen> {
                                 onRefresh: _onRefresh,
                                 child: ListView.builder(
                                   controller: _scrollController,
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 8),
+                                  padding: const EdgeInsets.only(
+                                      top: 8, bottom: 32),
                                   itemCount: patients.length +
                                       (patientProvider.isLoadingMore
                                           ? 1

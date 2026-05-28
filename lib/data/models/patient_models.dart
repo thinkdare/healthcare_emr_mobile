@@ -52,7 +52,7 @@ class MedicationModel {
   Map<String, dynamic> toJson() => _$MedicationModelToJson(this);
 
   String get displayDose {
-    final parts = [if (dosage != null) dosage!, if (frequency != null) frequency!];
+    final parts = [?dosage, ?frequency];
     return parts.isNotEmpty ? parts.join(' — ') : name;
   }
 }

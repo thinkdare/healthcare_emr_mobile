@@ -126,7 +126,7 @@ class SyncRepository {
   }) async {
     final response = await apiClient.post('/sync/conflicts/$id/resolve', data: {
       'resolution_strategy': strategy,
-      if (mergedData != null) 'merged_data': mergedData,
+      'merged_data': ?mergedData,
       if (notes != null && notes.isNotEmpty) 'notes': notes,
     });
     if (response['success'] != true) {

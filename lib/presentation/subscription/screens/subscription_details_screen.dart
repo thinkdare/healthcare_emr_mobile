@@ -117,7 +117,7 @@ class _SubscriptionDetailsScreenState extends State<SubscriptionDetailsScreen> {
 
             return SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -283,13 +283,13 @@ class _DetailsCard extends StatelessWidget {
             ]),
             const Divider(height: 24),
             if (plan != null) ...[
-              _Row('Plan', '${plan.name} (${plan.slug})'),
+              _row('Plan', '${plan.name} (${plan.slug})'),
             ],
-            _Row('Billing', sub.billingCycle == 'annual' ? 'Annual' : 'Monthly'),
-            _Row('Amount', sub.formattedAmount),
-            _Row('Currency', sub.currency as String),
+            _row('Billing', sub.billingCycle == 'annual' ? 'Annual' : 'Monthly'),
+            _row('Amount', sub.formattedAmount),
+            _row('Currency', sub.currency as String),
             if (sub.currentPeriodStart != null)
-              _Row(
+              _row(
                 'Period',
                 '${_fmt(sub.currentPeriodStart)} – ${_fmt(sub.currentPeriodEnd)}',
               ),
@@ -299,7 +299,7 @@ class _DetailsCard extends StatelessWidget {
     );
   }
 
-  Widget _Row(String label, String value) => Padding(
+  Widget _row(String label, String value) => Padding(
         padding: const EdgeInsets.only(bottom: 10),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -227,7 +227,7 @@ class _EmergencyAccessScreenState extends State<EmergencyAccessScreen> {
             onRefresh: () => provider.loadLogs(refresh: true),
             child: ListView.separated(
               controller: _scrollCtrl,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               itemCount: provider.logs.length +
                   (provider.hasMore ? 1 : 0),
               separatorBuilder: (context, index) => const SizedBox(height: 10),

@@ -1,0 +1,48 @@
+<h2>Question 2: Which admin screens are in scope?</h2>
+<p class="subtitle">Select all that apply. I'll build or fix exactly these.</p>
+
+<div class="options" data-multiselect>
+
+  <div class="option" data-choice="org-profile" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Organization Profile <span style="font-size:0.75rem;background:#e74c3c;color:#fff;padding:2px 6px;border-radius:4px;margin-left:4px">NEW</span></h3>
+      <p>View &amp; edit the org's name, type, address, phone, email, tax ID, billing details. Uses <code>GET/PUT /organizations/{id}</code>.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="staff-list" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Staff Management <span style="font-size:0.75rem;background:#e74c3c;color:#fff;padding:2px 6px;border-radius:4px;margin-left:4px">NEW</span></h3>
+      <p>List all staff at the active facility. View role, clinical rank, active/inactive status. Tap to edit staff type or deactivate. Uses <code>GET /staff/memberships</code>.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="facilities" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Facilities List &amp; Form <span style="font-size:0.75rem;background:#f39c12;color:#fff;padding:2px 6px;border-radius:4px;margin-left:4px">EXISTS — UNWIRED</span></h3>
+      <p>Already built. Just needs to be added to the admin navigation section in the drawer (Android) and More tab (iOS).</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="invite" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>Invite Staff <span style="font-size:0.75rem;background:#f39c12;color:#fff;padding:2px 6px;border-radius:4px;margin-left:4px">EXISTS — BROKEN</span></h3>
+      <p>Built but stubbed against the wrong API shape. Needs to be rewritten to match <code>POST /staff/invite</code> which expects <code>email</code>, <code>staff_type</code>, and <code>clinical_rank_id</code> (loaded from <code>GET /clinical-ranks</code>).</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="admin-nav" onclick="toggleSelect(this)">
+    <div class="letter">E</div>
+    <div class="content">
+      <h3>Admin Navigation Section <span style="font-size:0.75rem;background:#e74c3c;color:#fff;padding:2px 6px;border-radius:4px;margin-left:4px">NEW</span></h3>
+      <p>A dedicated "Admin" group in the Android drawer and iOS More tab, visible only when <code>staffType == 'admin'</code>. All admin screens route through here.</p>
+    </div>
+  </div>
+
+</div>
+
+<p style="margin-top:1.5rem;color:var(--text-muted);font-size:0.85rem">Click to select, click again to deselect. Then tell me your choices in the terminal.</p>

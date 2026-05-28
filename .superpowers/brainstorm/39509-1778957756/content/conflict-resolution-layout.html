@@ -1,0 +1,95 @@
+<h2>How should conflicts be presented for resolution?</h2>
+<p class="subtitle">Clinicians need to clearly understand what changed before deciding which version wins</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:12px;font-family:sans-serif;min-height:220px">
+      <div style="color:#94a3b8;font-size:10px;margin-bottom:6px">Prescription — Amoxicillin 500mg</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div style="background:#1e3a2f;border:1px solid #22c55e;border-radius:6px;padding:8px">
+          <div style="color:#4ade80;font-size:9px;font-weight:700;margin-bottom:4px">YOUR VERSION</div>
+          <div style="color:#e2e8f0;font-size:10px">Dosage: <span style="color:#4ade80">750mg</span></div>
+          <div style="color:#e2e8f0;font-size:10px">Freq: Twice daily</div>
+          <div style="color:#e2e8f0;font-size:10px">Duration: 7 days</div>
+          <div style="color:#e2e8f0;font-size:10px">Notes: —</div>
+        </div>
+        <div style="background:#2d1b1b;border:1px solid #ef4444;border-radius:6px;padding:8px">
+          <div style="color:#f87171;font-size:9px;font-weight:700;margin-bottom:4px">SERVER VERSION</div>
+          <div style="color:#e2e8f0;font-size:10px">Dosage: <span style="color:#f87171">500mg</span></div>
+          <div style="color:#e2e8f0;font-size:10px">Freq: Twice daily</div>
+          <div style="color:#e2e8f0;font-size:10px">Duration: 7 days</div>
+          <div style="color:#e2e8f0;font-size:10px">Notes: —</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+        <div style="background:#22c55e22;border-radius:5px;padding:6px;text-align:center;color:#4ade80;font-size:10px;font-weight:600">Keep Mine</div>
+        <div style="background:#ef444422;border-radius:5px;padding:6px;text-align:center;color:#f87171;font-size:10px;font-weight:600">Use Server</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Side-by-side diff</h3>
+      <p>Your offline edit on the left, server version on the right. Changed fields highlighted. Two action buttons: Keep Mine or Use Server.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:12px;font-family:sans-serif;min-height:220px">
+      <div style="color:#94a3b8;font-size:10px;margin-bottom:6px">Prescription — Amoxicillin 500mg</div>
+      <div style="background:#1e293b;border-radius:6px;padding:8px;margin-bottom:6px">
+        <div style="color:#94a3b8;font-size:9px;margin-bottom:4px">CHANGED FIELDS</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <span style="color:#e2e8f0;font-size:10px;width:50px">Dosage</span>
+          <div style="display:flex;align-items:center;gap:4px">
+            <span style="background:#22c55e22;color:#4ade80;font-size:9px;padding:1px 5px;border-radius:3px">750mg ✓</span>
+            <span style="color:#64748b;font-size:9px">vs</span>
+            <span style="background:#1e293b;color:#64748b;font-size:9px;padding:1px 5px;border-radius:3px;border:1px solid #334155">500mg</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="color:#e2e8f0;font-size:10px;width:50px">Status</span>
+          <div style="display:flex;align-items:center;gap:4px">
+            <span style="background:#1e293b;color:#64748b;font-size:9px;padding:1px 5px;border-radius:3px;border:1px solid #334155">Active</span>
+            <span style="color:#64748b;font-size:9px">vs</span>
+            <span style="background:#22c55e22;color:#4ade80;font-size:9px;padding:1px 5px;border-radius:3px">Filled ✓</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
+        <div style="background:#22c55e22;border-radius:4px;padding:5px;text-align:center;color:#4ade80;font-size:9px">Keep Mine</div>
+        <div style="background:#3b82f622;border-radius:4px;padding:5px;text-align:center;color:#60a5fa;font-size:9px">Use Server</div>
+        <div style="background:#f59e0b22;border-radius:4px;padding:5px;text-align:center;color:#fbbf24;font-size:9px">Per Field</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Changed fields only + per-field pick</h3>
+      <p>Only shows fields that differ, with your value vs server value. Three options: keep all mine, use all server, or pick per field. Most granular.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:12px;font-family:sans-serif;min-height:220px">
+      <div style="color:#94a3b8;font-size:10px;margin-bottom:6px">Prescription — Amoxicillin 500mg</div>
+      <div style="background:#1e293b;border-radius:6px;padding:8px;margin-bottom:6px">
+        <div style="color:#fbbf24;font-size:9px;margin-bottom:4px">⚠ EDITED WHILE OFFLINE</div>
+        <div style="color:#e2e8f0;font-size:10px">You changed dosage from 500mg → <strong>750mg</strong></div>
+        <div style="color:#e2e8f0;font-size:10px;margin-top:2px">Dr Adeyemi updated status → <strong>Filled</strong> at 14:23</div>
+      </div>
+      <div style="background:#1e293b;border-radius:6px;padding:8px;margin-bottom:6px">
+        <div style="color:#94a3b8;font-size:9px;margin-bottom:3px">WHAT WOULD YOU LIKE TO DO?</div>
+        <div style="color:#e2e8f0;font-size:10px">① Save my dosage change (750mg) and keep server status (Filled)</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+        <div style="background:#3b82f622;border-radius:4px;padding:6px;text-align:center;color:#60a5fa;font-size:9px">Accept Suggestion</div>
+        <div style="background:#1e293b;border-radius:4px;padding:6px;text-align:center;color:#94a3b8;font-size:9px">Review Manually</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Narrative summary + smart suggestion</h3>
+      <p>Plain-language summary of what you changed vs what changed on server. Suggests a resolution. One tap to accept or drop into manual review.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:24px">Click your preferred layout, then reply in the terminal</p>

@@ -379,6 +379,11 @@ class ClinicalProvider extends ChangeNotifier {
     }
   }
 
+  Future<InteractionCheckResult> checkInteractions(String medicationName) async {
+    if (_patientId == null) return InteractionCheckResult.unavailable();
+    return repository.checkInteractions(_patientId!, medicationName);
+  }
+
   Future<PrescriptionModel?> createPrescription(
       Map<String, dynamic> data) async {
     if (_patientId == null) return null;

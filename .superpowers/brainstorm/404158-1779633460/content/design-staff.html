@@ -1,0 +1,159 @@
+<h2>Design — Section 3: Staff Management Screen</h2>
+<p class="subtitle">New screen — <code>lib/presentation/staff/screens/staff_management_screen.dart</code></p>
+
+<div class="split">
+
+  <div class="mockup">
+    <div class="mockup-header">Staff list with filters</div>
+    <div class="mockup-body" style="padding:0;font-size:0.82rem;max-height:600px;overflow-y:auto">
+
+      <!-- App bar -->
+      <div style="background:#1565c0;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
+        <span>← Staff</span>
+        <span style="font-size:1rem">🔍</span>
+      </div>
+
+      <!-- Filter chips — type -->
+      <div style="padding:10px 12px;background:#fafafa;border-bottom:1px solid #eeeeee;overflow-x:auto;white-space:nowrap">
+        <span style="display:inline-block;padding:5px 12px;border-radius:20px;background:#1565c0;color:#fff;font-size:0.75rem;margin-right:6px">All</span>
+        <span style="display:inline-block;padding:5px 12px;border-radius:20px;background:#e3f2fd;color:#1565c0;font-size:0.75rem;margin-right:6px;border:1px solid #90caf9">Doctor</span>
+        <span style="display:inline-block;padding:5px 12px;border-radius:20px;background:#e3f2fd;color:#1565c0;font-size:0.75rem;margin-right:6px;border:1px solid #90caf9">Nurse</span>
+        <span style="display:inline-block;padding:5px 12px;border-radius:20px;background:#e3f2fd;color:#1565c0;font-size:0.75rem;margin-right:6px;border:1px solid #90caf9">Pharmacist</span>
+        <span style="display:inline-block;padding:5px 12px;border-radius:20px;background:#e3f2fd;color:#1565c0;font-size:0.75rem;margin-right:6px;border:1px solid #90caf9">Admin</span>
+      </div>
+
+      <!-- Active/Inactive toggle -->
+      <div style="padding:8px 12px;display:flex;gap:8px;background:#fafafa;border-bottom:1px solid #eee">
+        <span style="display:inline-block;padding:4px 14px;border-radius:20px;background:#2e7d32;color:#fff;font-size:0.73rem">Active</span>
+        <span style="display:inline-block;padding:4px 14px;border-radius:20px;background:#f5f5f5;color:#666;font-size:0.73rem;border:1px solid #ddd">Inactive</span>
+        <span style="display:inline-block;padding:4px 14px;border-radius:20px;background:#f5f5f5;color:#666;font-size:0.73rem;border:1px solid #ddd">All</span>
+      </div>
+
+      <!-- Staff count -->
+      <div style="padding:8px 14px;font-size:0.75rem;color:#888">24 staff members</div>
+
+      <!-- Staff card 1 -->
+      <div style="margin:0 10px 8px;background:#fff;border-radius:10px;border:1px solid #e0e0e0;padding:12px;cursor:pointer">
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div style="width:40px;height:40px;border-radius:20px;background:#1565c0;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">JS</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:0.88rem">Dr. Jane Smith</div>
+            <div style="font-size:0.75rem;color:#666;margin-top:2px">Consultant · <span style="background:#e8f5e9;color:#2e7d32;padding:1px 6px;border-radius:4px;font-size:0.72rem">Active</span></div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">
+              <span style="font-size:0.68rem;background:#e3f2fd;color:#1565c0;padding:2px 7px;border-radius:4px">Doctor</span>
+              <span style="font-size:0.68rem;background:#f3e5f5;color:#7b1fa2;padding:2px 7px;border-radius:4px">Rx</span>
+              <span style="font-size:0.68rem;background:#fff3e0;color:#e65100;padding:2px 7px;border-radius:4px">Labs</span>
+              <span style="font-size:0.68rem;background:#fce4ec;color:#c62828;padding:2px 7px;border-radius:4px">Emergency</span>
+            </div>
+          </div>
+          <span style="color:#ccc">›</span>
+        </div>
+      </div>
+
+      <!-- Staff card 2 -->
+      <div style="margin:0 10px 8px;background:#fff;border-radius:10px;border:1px solid #e0e0e0;padding:12px;cursor:pointer">
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div style="width:40px;height:40px;border-radius:20px;background:#00695c;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">AM</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:0.88rem">Alice Mensah</div>
+            <div style="font-size:0.75rem;color:#666;margin-top:2px">Senior Nurse · <span style="background:#e8f5e9;color:#2e7d32;padding:1px 6px;border-radius:4px;font-size:0.72rem">Active</span></div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">
+              <span style="font-size:0.68rem;background:#e0f7fa;color:#00695c;padding:2px 7px;border-radius:4px">Nurse</span>
+            </div>
+          </div>
+          <span style="color:#ccc">›</span>
+        </div>
+      </div>
+
+      <!-- Staff card 3 — Inactive -->
+      <div style="margin:0 10px 8px;background:#fafafa;border-radius:10px;border:1px solid #e0e0e0;padding:12px;cursor:pointer;opacity:.75">
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div style="width:40px;height:40px;border-radius:20px;background:#9e9e9e;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">KO</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:0.88rem;color:#666">Kwame Osei</div>
+            <div style="font-size:0.75rem;color:#888;margin-top:2px">Registrar · <span style="background:#fce4ec;color:#c62828;padding:1px 6px;border-radius:4px;font-size:0.72rem">Inactive</span></div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">
+              <span style="font-size:0.68rem;background:#e3f2fd;color:#1565c0;padding:2px 7px;border-radius:4px">Doctor</span>
+              <span style="font-size:0.68rem;background:#f3e5f5;color:#7b1fa2;padding:2px 7px;border-radius:4px">Rx</span>
+            </div>
+          </div>
+          <span style="color:#ccc">›</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Edit bottom sheet (tap any staff card)</div>
+    <div class="mockup-body" style="padding:0;font-size:0.82rem;position:relative">
+
+      <!-- Dimmed screen behind -->
+      <div style="background:#e0e0e0;height:180px;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:0.8rem">staff list (dimmed)</div>
+
+      <!-- Bottom sheet -->
+      <div style="background:#fff;border-radius:16px 16px 0 0;padding:16px;border-top:1px solid #e0e0e0">
+        <div style="width:40px;height:4px;background:#e0e0e0;border-radius:2px;margin:0 auto 16px"></div>
+
+        <!-- Staff header -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #f0f0f0">
+          <div style="width:44px;height:44px;border-radius:22px;background:#1565c0;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem">JS</div>
+          <div>
+            <div style="font-weight:700">Dr. Jane Smith</div>
+            <div style="font-size:0.75rem;color:#888">jane.smith@cityhealth.ng</div>
+          </div>
+        </div>
+
+        <!-- Staff Type -->
+        <div style="margin-bottom:12px">
+          <div style="font-size:0.75rem;color:#666;font-weight:600;margin-bottom:4px">Staff Type</div>
+          <div style="border:1px solid #90caf9;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;background:#f8f9ff">
+            <span>Doctor</span><span style="color:#888">▾</span>
+          </div>
+        </div>
+
+        <!-- Clinical Rank -->
+        <div style="margin-bottom:12px">
+          <div style="font-size:0.75rem;color:#666;font-weight:600;margin-bottom:4px">Clinical Rank</div>
+          <div style="border:1px solid #90caf9;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;background:#f8f9ff">
+            <div>
+              <div style="font-size:0.85rem">Consultant</div>
+              <div style="font-size:0.7rem;color:#888">Rx · Labs · Emergency</div>
+            </div>
+            <span style="color:#888">▾</span>
+          </div>
+        </div>
+
+        <!-- Active toggle -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid #f5f5f5;margin-top:4px">
+          <div>
+            <div style="font-size:0.85rem;font-weight:600">Active</div>
+            <div style="font-size:0.73rem;color:#888">Inactive staff can no longer log in</div>
+          </div>
+          <div style="width:44px;height:24px;background:#2e7d32;border-radius:12px;position:relative">
+            <div style="width:20px;height:20px;background:#fff;border-radius:10px;position:absolute;right:2px;top:2px"></div>
+          </div>
+        </div>
+
+        <!-- Save button -->
+        <div style="margin-top:14px;background:#1565c0;color:#fff;padding:12px;border-radius:10px;text-align:center;font-weight:600">Save Changes</div>
+        <div style="margin-top:8px;padding:10px;border-radius:10px;text-align:center;font-weight:600;color:#c62828;border:1px solid #fce4ec">Remove from Facility</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:1.2rem">
+  <h3>Implementation notes</h3>
+  <ul style="font-size:0.88rem;line-height:1.8">
+    <li><strong>API uncertainty flagged:</strong> <code>GET /v1/staff/memberships</code> is documented as "current user's memberships." For admin use we assume it returns all facility staff when called with <code>X-Tenant-ID</code> and an admin token. Confirm with backend before building; if not, a <code>GET /tenants/{id}/staff</code> endpoint may be needed.</li>
+    <li>Filter chips are client-side only — filter the already-loaded list, no new API calls.</li>
+    <li>Clinical ranks loaded once on screen open via <code>GET /clinical-ranks</code>, cached in the bottom sheet state.</li>
+    <li>Edit calls <code>PUT /staff/memberships/{id}</code> with <code>staff_type</code>, <code>clinical_rank_id</code>, <code>is_active</code>.</li>
+    <li>"Remove from Facility" calls <code>DELETE /staff/memberships/{id}</code> with a confirmation dialog first.</li>
+    <li>New file: <code>lib/presentation/staff/screens/staff_management_screen.dart</code></li>
+  </ul>
+</div>
+
+<p style="color:var(--text-muted);font-size:0.85rem">Does this staff management design look right? Confirm in terminal to see Section 4.</p>

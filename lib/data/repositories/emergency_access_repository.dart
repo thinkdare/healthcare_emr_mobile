@@ -16,7 +16,7 @@ class EmergencyAccessRepository {
     final params = <String, dynamic>{
       'page': page,
       'per_page': perPage,
-      if (masterPatientId != null) 'master_patient_id': masterPatientId,
+      'master_patient_id': ?masterPatientId,
       if (unreviewedOnly) 'unreviewed_only': 1,
     };
 

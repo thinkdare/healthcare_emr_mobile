@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug (Genymotion)",
+      "request": "launch",
+      "type": "dart",
+      "toolArgs": ["-d", "127.0.0.1:6562"]
+    },
+    {
+      "name": "Debug (Linux desktop)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "linux"
+    },
+    {
+      "name": "Debug (Chrome)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome"
+    }
+  ]
+}

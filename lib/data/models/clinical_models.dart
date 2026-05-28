@@ -183,9 +183,52 @@ class PrescriptionModel {
   bool get canRefill => isActive && refillsRemaining > 0;
 
   String get doseDisplay {
-    final parts = [dosage, frequency, if (route != null) route!];
+    final parts = [dosage, frequency, ?route];
     return parts.join(' · ');
   }
+}
+
+// ── Drug Interaction models ───────────────────────────────────────────────────
+
+class DrugInteraction {
+  final String severity; // 'high' | 'moderate' | 'minor'
+  final List<String> drugs;
+  final String description;
+
+  const DrugInteraction({
+    required this.severity,
+    required this.drugs,
+    required this.description,
+  });
+
+  factory DrugInteraction.fromJson(Map<String, dynamic> json) {
+    return DrugInteraction(
+      severity: json['severity'] as String? ?? 'minor',
+      drugs: List<String>.from(json['drugs'] as List? ?? []),
+      description: json['description'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'severity': severity,
+    'drugs': drugs,
+    'description': description,
+  };
+}
+
+class InteractionCheckResult {
+  final List<DrugInteraction> interactions;
+  final bool apiAvailable;
+
+  const InteractionCheckResult({
+    required this.interactions,
+    required this.apiAvailable,
+  });
+
+  factory InteractionCheckResult.unavailable() =>
+      const InteractionCheckResult(interactions: [], apiAvailable: false);
+
+  bool get hasInteractions => interactions.isNotEmpty;
 }
 
 // ── LabResult ─────────────────────────────────────────────────────────────────

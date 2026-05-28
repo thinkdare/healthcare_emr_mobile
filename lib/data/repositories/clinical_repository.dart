@@ -27,7 +27,7 @@ class ClinicalRepository {
       '/patients/$patientId/appointments',
       queryParameters: {
         'page': page,
-        if (status != null) 'status': status,
+        'status': ?status,
       },
     );
     if (response['success'] != true) {
@@ -81,7 +81,7 @@ class ClinicalRepository {
       {String? reason}) async {
     final response = await apiClient.post(
       '/patients/$patientId/appointments/$appointmentId/cancel',
-      data: {if (reason != null) 'cancellation_reason': reason},
+      data: {'cancellation_reason': ?reason},
     );
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to cancel appointment');
@@ -101,7 +101,7 @@ class ClinicalRepository {
       '/patients/$patientId/prescriptions',
       queryParameters: {
         'page': page,
-        if (status != null) 'status': status,
+        'status': ?status,
       },
     );
     if (response['success'] != true) {
@@ -123,6 +123,29 @@ class ClinicalRepository {
     }
     return PrescriptionModel.fromJson(
         Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  Future<InteractionCheckResult> checkInteractions(
+      String patientId, String medicationName) async {
+    try {
+      final response = await apiClient.post(
+        '/patients/$patientId/prescriptions/check-interactions',
+        data: {'medication_name': medicationName},
+      );
+      if (response['success'] != true) {
+        return InteractionCheckResult.unavailable();
+      }
+      final data = Map<String, dynamic>.from(response['data'] as Map);
+      final apiAvailable = data['api_available'] as bool? ?? false;
+      if (!apiAvailable) return InteractionCheckResult.unavailable();
+      final rawList = data['interactions'] as List? ?? [];
+      final interactions = rawList
+          .map((e) => DrugInteraction.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      return InteractionCheckResult(interactions: interactions, apiAvailable: true);
+    } catch (_) {
+      return InteractionCheckResult.unavailable();
+    }
   }
 
   Future<PrescriptionModel> createPrescription(
@@ -155,7 +178,7 @@ class ClinicalRepository {
       {String? reason}) async {
     final response = await apiClient.post(
       '/patients/$patientId/prescriptions/$prescriptionId/discontinue',
-      data: {if (reason != null) 'discontinuation_reason': reason},
+      data: {'discontinuation_reason': ?reason},
     );
     if (response['success'] != true) {
       throw Exception(
@@ -176,7 +199,7 @@ class ClinicalRepository {
       '/patients/$patientId/lab-results',
       queryParameters: {
         'page': page,
-        if (status != null) 'status': status,
+        'status': ?status,
       },
     );
     if (response['success'] != true) {
@@ -235,7 +258,7 @@ class ClinicalRepository {
       '/patients/$patientId/documents',
       queryParameters: {
         'page': page,
-        if (documentType != null) 'document_type': documentType,
+        'document_type': ?documentType,
       },
     );
     if (response['success'] != true) {
@@ -348,7 +371,7 @@ class ClinicalRepository {
       '/patients/$patientId/diagnoses',
       queryParameters: {
         'page': page,
-        if (status != null) 'status': status,
+        'status': ?status,
       },
     );
     if (response['success'] != true) {
@@ -391,7 +414,7 @@ class ClinicalRepository {
       '/patients/$patientId/problems',
       queryParameters: {
         'page': page,
-        if (status != null) 'status': status,
+        'status': ?status,
       },
     );
     if (response['success'] != true) {
@@ -514,8 +537,8 @@ class ClinicalRepository {
       '/patients/$patientId/roster',
       queryParameters: {
         'page': page,
-        if (date != null) 'date': date,
-        if (status != null) 'status': status,
+        'date': ?date,
+        'status': ?status,
       },
     );
     if (response['success'] != true) {

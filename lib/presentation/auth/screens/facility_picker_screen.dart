@@ -51,10 +51,9 @@ class _FacilityPickerScreenState extends State<FacilityPickerScreen> {
                 padding: EdgeInsets.zero,
                 onPressed: () async {
                   await context.read<AuthProvider>().logout();
-                  if (mounted) {
-                    Navigator.of(context)
-                        .pushNamedAndRemoveUntil('/', (_) => false);
-                  }
+                  if (!context.mounted) return;
+                  Navigator.of(context)
+                      .pushNamedAndRemoveUntil('/', (_) => false);
                 },
                 child: const Text('Logout'),
               ),
@@ -69,10 +68,9 @@ class _FacilityPickerScreenState extends State<FacilityPickerScreen> {
                       style: TextStyle(color: Colors.white)),
                   onPressed: () async {
                     await context.read<AuthProvider>().logout();
-                    if (mounted) {
-                      Navigator.of(context)
-                          .pushNamedAndRemoveUntil('/', (_) => false);
-                    }
+                    if (!context.mounted) return;
+                    Navigator.of(context)
+                        .pushNamedAndRemoveUntil('/', (_) => false);
                   },
                 ),
               ],

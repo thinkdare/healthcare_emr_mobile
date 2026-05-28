@@ -1,0 +1,70 @@
+<h2>How should the referrals list be organised?</h2>
+<p class="subtitle">You can be the sending facility on some and the receiving facility on others — actions differ completely between them</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:12px;font-family:sans-serif;min-height:200px">
+      <!-- Two tabs -->
+      <div style="display:flex;gap:0;margin-bottom:8px;background:#1e293b;border-radius:6px;overflow:hidden">
+        <div style="flex:1;text-align:center;padding:5px;background:#3b82f6;color:white;font-size:10px;font-weight:600">Sent <span style="background:rgba(255,255,255,0.3);border-radius:8px;padding:0 5px">3</span></div>
+        <div style="flex:1;text-align:center;padding:5px;color:#64748b;font-size:10px">Received <span style="background:#ef4444;color:white;border-radius:8px;padding:0 5px">2</span></div>
+      </div>
+      <div style="background:#1e293b;border-radius:6px;padding:8px;margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="color:#e2e8f0;font-size:10px;font-weight:600">Adaobi Nwosu</div>
+            <div style="color:#94a3b8;font-size:9px">→ Cardiology · Lagos Gen</div>
+          </div>
+          <span style="background:#f59e0b22;color:#f59e0b;font-size:9px;padding:2px 6px;border-radius:4px">Pending</span>
+        </div>
+      </div>
+      <div style="background:#1e293b;border-radius:6px;padding:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="color:#e2e8f0;font-size:10px;font-weight:600">Emeka Obi</div>
+            <div style="color:#94a3b8;font-size:9px">→ Neurology · Abuja Spec</div>
+          </div>
+          <span style="background:#22c55e22;color:#22c55e;font-size:9px;padding:2px 6px;border-radius:4px">Scheduled</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Two tabs: Sent / Received</h3>
+      <p>Clear separation between referrals you sent vs. ones your facility received. Actions tab-appropriate. Separate unread badges per tab.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:12px;font-family:sans-serif;min-height:200px">
+      <!-- Single list with role chip -->
+      <div style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap">
+        <div style="background:#3b82f622;color:#60a5fa;font-size:9px;padding:2px 7px;border-radius:8px;border:1px solid #3b82f6">All</div>
+        <div style="background:#1e293b;color:#64748b;font-size:9px;padding:2px 7px;border-radius:8px">Pending</div>
+        <div style="background:#1e293b;color:#64748b;font-size:9px;padding:2px 7px;border-radius:8px">Active</div>
+        <div style="background:#1e293b;color:#64748b;font-size:9px;padding:2px 7px;border-radius:8px">Done</div>
+      </div>
+      <div style="background:#1e293b;border-radius:6px;padding:8px;margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <span style="background:#7c3aed22;color:#a78bfa;font-size:8px;padding:1px 5px;border-radius:3px">SENT</span>
+          <span style="background:#f59e0b22;color:#f59e0b;font-size:9px;padding:2px 6px;border-radius:4px">Pending</span>
+        </div>
+        <div style="color:#e2e8f0;font-size:10px">Adaobi Nwosu → Lagos Gen Cardiology</div>
+      </div>
+      <div style="background:#1e293b;border-radius:6px;padding:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <span style="background:#0891b222;color:#22d3ee;font-size:8px;padding:1px 5px;border-radius:3px">RECEIVED</span>
+          <span style="background:#ef444422;color:#f87171;font-size:9px;padding:2px 6px;border-radius:4px">Urgent</span>
+        </div>
+        <div style="color:#e2e8f0;font-size:10px">Chukwudi Eze from Abuja Spec</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Single list, status filter chips, role badge</h3>
+      <p>One unified list. Each card shows a SENT/RECEIVED chip. Filter chips let you view by status. Simpler — one scroll, full picture.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px">Click your preferred layout, then reply in the terminal</p>

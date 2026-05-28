@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/platform.dart';
@@ -5,6 +6,7 @@ import '../../../config/theme.dart';
 import '../../../data/models/organization_models_enhanced.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/repositories/organization_repository.dart';
+import '../../common/error_view.dart';
 
 class OrganizationProfileScreen extends StatefulWidget {
   final OrganizationRepository repository;
@@ -35,14 +37,13 @@ class _OrganizationProfileScreenState
   String? _selectedType;
   final _formKey = GlobalKey<FormState>();
 
+  // Values match the backend enum exactly
   static const _orgTypes = [
-    ('hospital', 'Hospital'),
-    ('clinic', 'Clinic'),
-    ('pharmacy', 'Pharmacy'),
-    ('laboratory', 'Laboratory'),
-    ('diagnostic_center', 'Diagnostic Center'),
-    ('hospital_group', 'Hospital Group'),
-    ('other', 'Other'),
+    ('state', 'State'),
+    ('federal', 'Federal'),
+    ('private_group', 'Private Group'),
+    ('ngo', 'NGO'),
+    ('standalone', 'Standalone'),
   ];
 
   @override
@@ -150,15 +151,9 @@ class _OrganizationProfileScreenState
           name: _nameCtrl.text.trim(),
           type: _selectedType,
           address: _addressCtrl.text.trim(),
-          phone: _phoneCtrl.text.trim().isEmpty
-              ? null
-              : _phoneCtrl.text.trim(),
-          email: _emailCtrl.text.trim().isEmpty
-              ? null
-              : _emailCtrl.text.trim(),
-          taxId: _taxIdCtrl.text.trim().isEmpty
-              ? null
-              : _taxIdCtrl.text.trim(),
+          phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+          email: _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
+          taxId: _taxIdCtrl.text.trim().isEmpty ? null : _taxIdCtrl.text.trim(),
           billingEmail: _billingEmailCtrl.text.trim().isEmpty
               ? null
               : _billingEmailCtrl.text.trim(),
@@ -175,11 +170,7 @@ class _OrganizationProfileScreenState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(e.toString()),
-              backgroundColor: Colors.red),
-        );
+        showAdaptiveToast(context, e.toString(), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -188,48 +179,90 @@ class _OrganizationProfileScreenState
 
   @override
   Widget build(BuildContext context) {
+    if (kIsIOS) {
+      return CupertinoPageScaffold(
+        navigationBar: CupertinoNavigationBar(
+          middle: const Text('Organisation'),
+          leading: _isEditing
+              ? CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: _cancelEdit,
+                  child: const Text('Cancel'),
+                )
+              : null,
+          trailing: _buildNavTrailing(),
+        ),
+        child: SafeArea(child: _buildContent()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Organization'),
+        title: const Text('Organisation'),
         actions: [
-          if (_loading || _org == null)
-            const SizedBox.shrink()
-          else if (_isEditing) ...[
-            TextButton(
-              onPressed: _cancelEdit,
-              child: const Text('Cancel',
-                  style: TextStyle(color: Colors.white)),
-            ),
-            if (_saving)
-              const Padding(
-                padding: EdgeInsets.all(14),
-                child: SizedBox(
+          if (!_loading && _org != null) ...[
+            if (_isEditing) ...[
+              TextButton(
+                onPressed: _cancelEdit,
+                child: const Text('Cancel',
+                    style: TextStyle(color: Colors.white)),
+              ),
+              if (_saving)
+                const Padding(
+                  padding: EdgeInsets.all(14),
+                  child: SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white)),
-              )
-            else
-              TextButton(
-                onPressed: _save,
-                child: const Text('Save',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold)),
+                        strokeWidth: 2, color: Colors.white),
+                  ),
+                )
+              else
+                TextButton(
+                  onPressed: _save,
+                  child: const Text('Save',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold)),
+                ),
+            ] else
+              IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () => setState(() => _isEditing = true),
               ),
-          ] else
-            IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              onPressed: () => setState(() => _isEditing = true),
-            ),
+          ],
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _loadError != null
-              ? _ErrorView(message: _loadError!, onRetry: _load)
-              : _buildBody(),
+      body: _buildContent(),
     );
+  }
+
+  Widget? _buildNavTrailing() {
+    if (_loading || _org == null) return null;
+    if (_isEditing) {
+      if (_saving) {
+        return const CupertinoActivityIndicator();
+      }
+      return CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: _save,
+        child: const Text('Save',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+      );
+    }
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      onPressed: () => setState(() => _isEditing = true),
+      child: const Icon(CupertinoIcons.pencil),
+    );
+  }
+
+  Widget _buildContent() {
+    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loadError != null) {
+      return ErrorView(message: _loadError!, onRetry: _load);
+    }
+    return _buildBody();
   }
 
   Widget _buildBody() {
@@ -332,29 +365,22 @@ class _StatsHeader extends StatelessWidget {
                   fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           Text(org.type,
-              style:
-                  const TextStyle(color: Colors.white70, fontSize: 13)),
+              style: const TextStyle(color: Colors.white70, fontSize: 13)),
           const SizedBox(height: 16),
           Row(children: [
             _StatTile(
                 label: 'Facilities',
-                value: statsError
-                    ? '—'
-                    : '${stats?.totalFacilities ?? '—'}',
+                value: statsError ? '—' : '${stats?.totalFacilities ?? '—'}',
                 warning: statsError),
             const SizedBox(width: 8),
             _StatTile(
                 label: 'Staff',
-                value: statsError
-                    ? '—'
-                    : '${stats?.totalStaff ?? '—'}',
+                value: statsError ? '—' : '${stats?.totalStaff ?? '—'}',
                 warning: statsError),
             const SizedBox(width: 8),
             _StatTile(
                 label: 'Patients',
-                value: statsError
-                    ? '—'
-                    : '${stats?.totalPatients ?? '—'}',
+                value: statsError ? '—' : '${stats?.totalPatients ?? '—'}',
                 warning: statsError),
           ]),
         ],
@@ -388,13 +414,11 @@ class _StatTile extends StatelessWidget {
                     fontWeight: FontWeight.bold)),
             if (warning) ...[
               const SizedBox(width: 4),
-              const Icon(Icons.warning_amber,
-                  size: 14, color: Colors.white70),
+              const Icon(Icons.warning_amber, size: 14, color: Colors.white70),
             ],
           ]),
           Text(label,
-              style: const TextStyle(
-                  color: Colors.white70, fontSize: 11)),
+              style: const TextStyle(color: Colors.white70, fontSize: 11)),
         ]),
       ),
     );
@@ -406,9 +430,7 @@ class _SectionCard extends StatelessWidget {
   final List<Widget> children;
   final bool editing;
   const _SectionCard(
-      {required this.title,
-      required this.children,
-      required this.editing});
+      {required this.title, required this.children, required this.editing});
 
   @override
   Widget build(BuildContext context) {
@@ -487,8 +509,7 @@ class _ReadRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 4),
-      child:
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label,
             style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
         const SizedBox(height: 2),
@@ -521,23 +542,5 @@ class _TypeDropdown extends StatelessWidget {
         validator: (v) => v == null ? 'Type is required' : null,
       ),
     );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-  const _ErrorView({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-      const Icon(Icons.error_outline, size: 48, color: Colors.red),
-      const SizedBox(height: 12),
-      Text(message, textAlign: TextAlign.center),
-      const SizedBox(height: 16),
-      ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
-    ]));
   }
 }

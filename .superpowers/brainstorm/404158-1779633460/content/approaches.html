@@ -1,0 +1,35 @@
+<h2>Two approaches for the org admin section</h2>
+<p class="subtitle">Same screens in both — the difference is density and richness of information</p>
+
+<div class="options">
+
+  <div class="option" data-choice="standard" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Standard — follow existing patterns exactly</h3>
+      <p><strong>Org Profile:</strong> read-only card view with an Edit button that navigates to a form screen. Same card layout as StaffProfileScreen.</p>
+      <p><strong>Staff Management:</strong> plain list of staff cards (name, type, rank, active badge). Tap a card → bottom sheet with two dropdowns (staff type, clinical rank) and an active toggle.</p>
+      <p><strong>Invite Staff:</strong> clean form — email, staff type dropdown, clinical rank dropdown (loaded from API). No extra fields.</p>
+      <p style="color:#27ae60;margin-top:6px">✓ Fastest to build &nbsp; ✓ Consistent with rest of app &nbsp; ✗ No at-a-glance org overview</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="enhanced" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Enhanced — richer admin-tool feel</h3>
+      <p><strong>Org Profile:</strong> stats header card at the top showing org-level counts (facilities, staff, patients) from <code>GET /organizations/{id}/stats</code>, then editable fields below. One screen, inline edit mode via pencil icon.</p>
+      <p><strong>Staff Management:</strong> filter chips at the top (All / Doctor / Nurse / Admin / etc. and Active / Inactive toggle). Staff cards show capability chips (Prescribe, Labs, Emergency). Tap → bottom sheet editor.</p>
+      <p><strong>Invite Staff:</strong> same form, but clinical rank picker shows rank name + capability summary so admin can see what they're granting.</p>
+      <p style="color:#27ae60;margin-top:6px">✓ More useful for admins managing large teams &nbsp; ✓ Stats give immediate context &nbsp; ✗ More API calls, more state to manage</p>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:1.5rem;padding:14px;background:#eaf4fb;border-radius:8px;border-left:4px solid #3498db">
+  <strong>My recommendation: B (Enhanced)</strong><br>
+  <span style="font-size:0.9rem">Admins who manage facilities and staff need situational awareness — a bare list gives them no context. The extra API call for org stats is one request cached in the provider. The filter chips on Staff Management will pay off immediately for facilities with more than ~10 staff members. The capability summary on the rank picker prevents the common mistake of granting the wrong rank.</span>
+</div>
+
+<p style="margin-top:1rem;color:var(--text-muted);font-size:0.85rem">Click to select, then confirm in terminal.</p>

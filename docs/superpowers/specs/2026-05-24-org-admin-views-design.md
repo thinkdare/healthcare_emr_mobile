@@ -19,7 +19,7 @@ All admin UI is gated on `auth.isOrgAdmin` — a new convenience getter added to
 bool get isOrgAdmin => _currentUser?.isOrgAdmin ?? false;
 ```
 
-`UserModel.isOrgAdmin` already exists (`userType == 'org_admin'`). `UserModel.userType` is populated from the `user_type` field in `GET /auth/me`. The backend enforces org-admin access on `PUT /organizations/{id}` and `DELETE /staff/memberships/{id}` at the controller level — the client gate is a UX decision only, not a security control.
+`UserModel.isOrgAdmin` already exists (`userType == 'org_admin'`). `UserModel.userType` is populated from `GET /auth/me` at session start — it is fetched from the API, never reconstructed from `FlutterSecureStorage`. An attacker who tampers with local storage can affect the UI gate but every admin-only API request is validated against the JWT signature server-side. The client gate is a UX decision only, not a security control.
 
 **Why not `staffType == 'admin'`:** `staff_type` is a `TenantStaffMembership` field for clinical role categorisation. Backend admin enforcement uses `User.user_type === 'org_admin'`, which is unrelated. Gating on `staffType` would show admin UI to the wrong users.
 
@@ -104,7 +104,33 @@ This keeps a DI seam for testing without requiring a root-level provider for a s
 `OrganizationRepository` gets three new methods:
 - `getOrganization(String id)` → `GET /organizations/{id}`, returns `OrganizationEnhancedModel`
 - `getOrgStats(String id)` → `GET /organizations/{id}/stats`, returns `OrgStatsModel`
-- `updateOrganization(String id, Map<String, dynamic> data)` → `PUT /organizations/{id}`, returns `OrganizationEnhancedModel`
+- `updateOrganization(String id, UpdateOrganizationRequest request)` → `PUT /organizations/{id}`, returns `OrganizationEnhancedModel`
+
+`Map<String, dynamic>` is replaced by a typed request model to make the mutable field set auditable and prevent accidental inclusion of backend-owned fields like `user_type` or `is_active`.
+
+New `UpdateOrganizationRequest` (add to `organization_models_enhanced.dart`):
+```dart
+@JsonSerializable(includeIfNull: false)
+class UpdateOrganizationRequest {
+  final String? name;
+  final String? type;
+  final String? address;
+  final String? phone;
+  final String? email;
+  @JsonKey(name: 'tax_id')     final String? taxId;
+  @JsonKey(name: 'billing_email')   final String? billingEmail;
+  @JsonKey(name: 'billing_address') final String? billingAddress;
+
+  const UpdateOrganizationRequest({
+    this.name, this.type, this.address, this.phone,
+    this.email, this.taxId, this.billingEmail, this.billingAddress,
+  });
+
+  Map<String, dynamic> toJson() => _$UpdateOrganizationRequestToJson(this);
+}
+```
+
+`includeIfNull: false` ensures only explicitly set fields are sent.
 
 New `OrgStatsModel` (add to `organization_models_enhanced.dart`):
 ```dart
@@ -125,8 +151,8 @@ class OrgStatsModel {
 **APIs:** `GET /staff/memberships`, `GET /clinical-ranks`, `PUT /staff/memberships/{id}`, `DELETE /staff/memberships/{id}`  
 **Backend auth:** `PUT` and `DELETE` enforced — 403 for non-org-admins.
 
-> **⛔ Build blocker — endpoint contract unconfirmed.**  
-> `GET /staff/memberships` is documented as "current user's memberships across all facilities." Backend investigation confirms it returns only the calling user's own memberships for regular staff; org admins receive memberships across their org (not scoped to the active tenant). This does not match the "all staff at the active facility" data shape this screen requires. A dedicated endpoint (`GET /tenants/{id}/staff` or equivalent) may be needed. **Build this screen last, after the endpoint contract is confirmed with the backend team.**
+> **✅ Endpoint confirmed unblocked.**  
+> `FacilityRepository.listStaffAtCurrentTenant()` already calls `GET /staff/memberships` (no query params) and receives all staff at the active facility via the `X-Tenant-ID` header injected by `ApiClient`. `listStaffAtTenant(tenantId)` passes `tenant_id` explicitly and also works. The endpoint response includes a nested `user` object with `first_name`, `last_name`, and `id`. A new `FacilityStaffMemberModel` is needed to capture the full shape for the management screen.
 
 ### List view
 
@@ -145,11 +171,15 @@ class OrgStatsModel {
 - Clinical Rank selector — same rank cards as invite screen (loaded once, cached in sheet state).
 - Active toggle — subtitle: "Inactive staff can no longer log in".
 - **Save Changes** → `PUT /staff/memberships/{id}` with `{ staff_type, clinical_rank_id, is_active }`.
-- **Remove from Facility** (destructive) → confirmation dialog → `DELETE /staff/memberships/{id}`. Requires a reason field (min 10 chars, matching backend validation).
+- **Remove from Facility** (destructive) → confirmation dialog with a required reason text field (min 10 chars) → `DELETE /staff/memberships/{id}`. The backend returns a structured 422 on validation failure: `{ errors: { reason: ["The reason must be at least 10 characters."] } }`. The UI must surface this inline below the reason field, not as a toast.
 
 ### Repository
 
-New `StaffRepository` (`lib/data/repositories/staff_repository.dart`), constructor-injected. Methods: `getStaffMemberships()`, `updateMembership(id, data)`, `deleteMembership(id)`.
+New `StaffRepository` (`lib/data/repositories/staff_repository.dart`), constructor-injected. Methods: `getStaffMemberships()`, `updateMembership(id, data)`, `deleteMembership(id, reason)`.
+
+### Clinical ranks caching — accepted trade-off
+
+Ranks are loaded once on first edit sheet open and cached for the session lifetime. If a rank is added server-side while the admin has the app open, they will not see it without restarting the session. This stale window is accepted — clinical ranks are reference data that changes rarely. No pull-to-refresh is needed on the rank selector.
 
 ---
 
@@ -196,12 +226,13 @@ Internal named routes (`/facilities/add`, `/facilities/edit`) continue as-is.
 
 ## Build Order
 
-| Step | Deliverable | Rationale |
+| Step | Deliverable | Merge gate |
 |---|---|---|
-| 1 | Navigation wiring (Facilities) | Zero risk — no new code, no new API calls |
-| 2 | Invite Staff rewrite | Self-contained, API contract confirmed (pending backend security fix) |
-| 3 | Organization Profile | After confirming backend 403 enforcement (confirmed ✓) |
-| 4 | Staff Management | Only after `GET /staff/memberships` contract is confirmed with backend |
+| 1 | Auth gate + navigation wiring | None — zero risk |
+| 2 | Model + repository additions (OrgStats, UpdateOrganizationRequest, OrganizationRepository, StaffRepository) | None |
+| 3 | Invite Staff rewrite | **Hard gate:** PR cannot merge beyond local dev until `StaffRegistrationController::invite()` backend fix is deployed and a 403 test from a non-org-admin token passes in staging. |
+| 4 | Organization Profile screen | Backend 403 enforcement confirmed ✓ — no additional gate |
+| 5 | Staff Management screen | Endpoint confirmed ✓ via existing `FacilityRepository.listStaffAtCurrentTenant()` — no additional gate |
 
 ---
 

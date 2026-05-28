@@ -42,31 +42,35 @@ class MoreScreen extends StatelessWidget {
       child: SafeArea(
         child: ListView(
           children: [
-            CupertinoListSection.insetGrouped(
-              header: const Text('Clinical'),
-              children: [
-                CupertinoListTile(
-                  leading: const Icon(
-                    CupertinoIcons.chart_bar_alt_fill,
-                    color: AppColors.primary,
-                  ),
-                  title: const Text('Dashboard'),
-                  trailing: const CupertinoListTileChevron(),
-                  onTap: () => _push(context, const ProviderDashboardScreen()),
-                ),
-                if (showEmergency)
+            // Org admins land on the Overview tab (ProviderDashboardScreen);
+            // the Clinical section is redundant for them.
+            if (!isOrgAdmin)
+              CupertinoListSection.insetGrouped(
+                header: const Text('Clinical'),
+                children: [
                   CupertinoListTile(
                     leading: const Icon(
-                      CupertinoIcons.exclamationmark_circle,
-                      color: AppColors.error,
+                      CupertinoIcons.chart_bar_alt_fill,
+                      color: AppColors.primary,
                     ),
-                    title: const Text('Emergency Access'),
+                    title: const Text('Dashboard'),
                     trailing: const CupertinoListTileChevron(),
                     onTap: () =>
-                        _push(context, const EmergencyAccessScreen()),
+                        _push(context, const ProviderDashboardScreen()),
                   ),
-              ],
-            ),
+                  if (showEmergency)
+                    CupertinoListTile(
+                      leading: const Icon(
+                        CupertinoIcons.exclamationmark_circle,
+                        color: AppColors.error,
+                      ),
+                      title: const Text('Emergency Access'),
+                      trailing: const CupertinoListTileChevron(),
+                      onTap: () =>
+                          _push(context, const EmergencyAccessScreen()),
+                    ),
+                ],
+              ),
             if (isOrgAdmin)
               CupertinoListSection.insetGrouped(
                 header: Text('Admin',

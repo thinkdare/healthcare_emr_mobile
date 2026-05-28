@@ -1,11 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../core/platform.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/subscription_provider.dart';
 import '../../../data/models/subscription_models.dart';
 import '../../../config/theme.dart';
+import '../widgets/gateway_picker_sheet.dart';
 
 class SubscriptionUpgradeScreen extends StatefulWidget {
   const SubscriptionUpgradeScreen({super.key});
@@ -29,37 +31,65 @@ class _SubscriptionUpgradeScreenState
 
   Future<void> _handleSelectPlan(SubscriptionPlanModel plan) async {
     final auth = context.read<AuthProvider>();
-    final sp = context.read<SubscriptionProvider>();
+    final sp   = context.read<SubscriptionProvider>();
 
     final orgId = auth.organizationId;
-    final sub = sp.subscription;
+    final sub   = sp.subscription;
 
     if (orgId == null) {
       showAdaptiveToast(context, 'No organization found. Contact your administrator.', type: ToastType.error);
       return;
     }
 
+    // Trial start — no payment needed
+    if (sub == null) {
+      setState(() => _selectedPlanId = plan.id);
+      final ok = await sp.startTrial(orgId, planId: plan.id);
+      setState(() => _selectedPlanId = null);
+      if (mounted) {
+        if (ok) {
+          showAdaptiveToast(context, '14-day free trial started!', type: ToastType.success);
+          Navigator.of(context).pop();
+        } else {
+          showAdaptiveToast(context, sp.error ?? 'Failed to start trial', type: ToastType.error);
+        }
+      }
+      return;
+    }
+
+    // Paid plan change — route through a payment gateway
+    if (!mounted) return;
+    final gateway = await showGatewayPicker(context);
+    if (gateway == null || !mounted) return;
+
     setState(() => _selectedPlanId = plan.id);
 
-    bool success;
-    if (sub != null) {
-      // Change existing plan
-      success = await sp.changePlan(orgId, sub.id, planId: plan.id);
-    } else {
-      // Start a trial on the selected plan
-      success = await sp.startTrial(orgId, planId: plan.id);
-    }
+    final session = await sp.createCheckoutSession(orgId,
+        planId: plan.id, gateway: gateway.id);
 
     setState(() => _selectedPlanId = null);
 
-    if (mounted) {
-      if (success) {
-        showAdaptiveToast(context, 'Plan updated successfully', type: ToastType.success);
-        Navigator.of(context).pop();
-      } else {
-        showAdaptiveToast(context, sp.error ?? 'Failed to update plan', type: ToastType.error);
+    if (!mounted) return;
+    if (session == null) {
+      showAdaptiveToast(context, sp.error ?? 'Failed to initiate payment', type: ToastType.error);
+      return;
+    }
+
+    final url = Uri.tryParse(session['checkout_url'] as String? ?? '');
+    if (url == null) {
+      showAdaptiveToast(context, 'Invalid checkout URL from gateway', type: ToastType.error);
+      return;
+    }
+
+    showAdaptiveToast(context, 'Opening ${gateway.label} checkout…');
+
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        showAdaptiveToast(context, 'Could not open payment page', type: ToastType.error);
       }
     }
+    // After the user pays, the gateway redirects to voya://payment/return
+    // which is caught by the deep-link listener in main.dart.
   }
 
   @override
@@ -96,7 +126,7 @@ class _SubscriptionUpgradeScreenState
           final currentPlanId = sp.subscription?.planId;
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

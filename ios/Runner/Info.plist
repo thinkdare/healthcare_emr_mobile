@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Healthcare Emr Mobile</string>
+	<string>Voya</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>healthcare_emr_mobile</string>
+	<string>Voya</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -45,5 +45,29 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Firebase / FCM: replace placeholder values with real ones from GoogleService-Info.plist -->
+	<!-- Download from Firebase Console → Project Settings → iOS app → GoogleService-Info.plist -->
+	<!-- Then copy values here OR add the full GoogleService-Info.plist file to ios/Runner/ -->
+	<key>BUNDLE_ID</key>
+	<string>com.voya.health</string>
+	<key>GCM_SENDER_ID</key>
+	<string>000000000000</string>
+	<!-- Face ID permission — required by local_auth -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>Voya uses Face ID to keep your patients' records secure.</string>
+	<!-- Voya deep-link scheme: voya://payment/return -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.voya.health</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>voya</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

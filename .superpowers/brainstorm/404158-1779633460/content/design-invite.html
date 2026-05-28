@@ -1,0 +1,120 @@
+<h2>Design — Section 4: Invite Staff Screen (rewrite)</h2>
+<p class="subtitle">File: <code>lib/presentation/providers/screens/provider_invitation_screen.dart</code> — gutted and rewritten to match the real API</p>
+
+<div class="split">
+
+  <div class="mockup">
+    <div class="mockup-header">Current (broken) — wrong fields</div>
+    <div class="mockup-body" style="padding:12px;font-size:0.82rem;background:#fff8f8">
+
+      <div style="background:#e53935;color:#fff;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:0.78rem">
+        ✕ Broken — sends fields the backend ignores. API call is a 2-second fake delay.
+      </div>
+
+      <div style="margin-bottom:8px"><div style="font-size:0.72rem;color:#888;margin-bottom:3px">First Name *</div><div style="border:1px solid #ddd;border-radius:6px;padding:8px 10px;background:#fafafa">Jane</div></div>
+      <div style="margin-bottom:8px"><div style="font-size:0.72rem;color:#888;margin-bottom:3px">Last Name *</div><div style="border:1px solid #ddd;border-radius:6px;padding:8px 10px;background:#fafafa">Smith</div></div>
+      <div style="margin-bottom:8px"><div style="font-size:0.72rem;color:#888;margin-bottom:3px">Email *</div><div style="border:1px solid #ddd;border-radius:6px;padding:8px 10px;background:#fafafa">jane@clinic.com</div></div>
+      <div style="margin-bottom:8px"><div style="font-size:0.72rem;color:#888;margin-bottom:3px">Phone</div><div style="border:1px solid #ddd;border-radius:6px;padding:8px 10px;background:#fafafa">+234...</div></div>
+      <div style="margin-bottom:8px"><div style="font-size:0.72rem;color:#888;margin-bottom:3px">License Number</div><div style="border:1px solid #ddd;border-radius:6px;padding:8px 10px;background:#fafafa">—</div></div>
+      <div style="margin-bottom:8px"><div style="font-size:0.72rem;color:#888;margin-bottom:3px">Specialization</div><div style="border:1px solid #ddd;border-radius:6px;padding:8px 10px;background:#fafafa">—</div></div>
+      <div style="margin-bottom:8px"><div style="font-size:0.72rem;color:#888;margin-bottom:3px">Provider Type</div><div style="border:1px solid #ddd;border-radius:6px;padding:8px 10px;background:#fafafa;display:flex;justify-content:space-between">Doctor <span>▾</span></div></div>
+      <div style="margin-bottom:8px"><div style="font-size:0.72rem;color:#888;margin-bottom:3px">Facility (placeholder)</div><div style="border:1px solid #ddd;border-radius:6px;padding:8px 10px;background:#fafafa;display:flex;justify-content:space-between">facility_1 <span>▾</span></div></div>
+      <div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;padding:8px 0"><span style="font-size:0.85rem">Can Emergency Access</span><div style="width:44px;height:24px;background:#e0e0e0;border-radius:12px"></div></div>
+
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">New — matches POST /staff/invite exactly</div>
+    <div class="mockup-body" style="padding:0;font-size:0.82rem;max-height:580px;overflow-y:auto">
+
+      <!-- App bar -->
+      <div style="background:#1565c0;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
+        <span>← Invite Staff</span>
+        <span style="font-weight:700">Send</span>
+      </div>
+
+      <div style="padding:12px">
+
+        <!-- Context banner -->
+        <div style="background:#e3f2fd;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:0.78rem;color:#1565c0;border-left:3px solid #1565c0">
+          Inviting to: <strong>City General Hospital</strong><br>
+          <span style="font-size:0.72rem;opacity:.8">Staff will receive an email invitation to complete registration.</span>
+        </div>
+
+        <!-- Email -->
+        <div style="margin-bottom:12px">
+          <div style="font-size:0.75rem;color:#666;font-weight:600;margin-bottom:4px">Email address *</div>
+          <div style="border:1px solid #90caf9;border-radius:8px;padding:10px 12px;background:#f8f9ff">jane.smith@clinic.com</div>
+        </div>
+
+        <!-- Staff Type -->
+        <div style="margin-bottom:12px">
+          <div style="font-size:0.75rem;color:#666;font-weight:600;margin-bottom:4px">Staff type *</div>
+          <div style="border:1px solid #90caf9;border-radius:8px;padding:10px 12px;background:#f8f9ff;display:flex;justify-content:space-between">
+            <span>Doctor</span><span style="color:#888">▾</span>
+          </div>
+          <div style="font-size:0.7rem;color:#888;margin-top:3px;padding-left:4px">Valid: doctor · nurse · pharmacist · lab_tech · radiologist · physiotherapist · dentist · admin · other</div>
+        </div>
+
+        <!-- Clinical Rank — enhanced picker -->
+        <div style="margin-bottom:12px">
+          <div style="font-size:0.75rem;color:#666;font-weight:600;margin-bottom:4px">Clinical rank *</div>
+
+          <!-- Rank option 1 — selected -->
+          <div style="border:2px solid #1565c0;border-radius:8px;padding:10px 12px;background:#e8f0fe;margin-bottom:6px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-size:0.85rem;font-weight:600;color:#1565c0">Consultant</div>
+                <div style="font-size:0.7rem;color:#555;margin-top:3px">Level 800</div>
+              </div>
+              <span style="color:#1565c0;font-size:1.1rem">✓</span>
+            </div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">
+              <span style="font-size:0.68rem;background:#f3e5f5;color:#7b1fa2;padding:2px 7px;border-radius:4px">Can Prescribe</span>
+              <span style="font-size:0.68rem;background:#fff3e0;color:#e65100;padding:2px 7px;border-radius:4px">Can Order Labs</span>
+              <span style="font-size:0.68rem;background:#fce4ec;color:#c62828;padding:2px 7px;border-radius:4px">Emergency Access</span>
+            </div>
+          </div>
+
+          <!-- Rank option 2 -->
+          <div style="border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;background:#fff;margin-bottom:6px">
+            <div style="font-size:0.85rem;font-weight:600">Registrar</div>
+            <div style="font-size:0.7rem;color:#555;margin-top:2px">Level 600</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">
+              <span style="font-size:0.68rem;background:#f3e5f5;color:#7b1fa2;padding:2px 7px;border-radius:4px">Can Prescribe</span>
+              <span style="font-size:0.68rem;background:#fff3e0;color:#e65100;padding:2px 7px;border-radius:4px">Can Order Labs</span>
+            </div>
+          </div>
+
+          <!-- Rank option 3 -->
+          <div style="border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;background:#fff">
+            <div style="font-size:0.85rem;font-weight:600">House Officer</div>
+            <div style="font-size:0.7rem;color:#555;margin-top:2px">Level 200</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">
+              <span style="font-size:0.68rem;background:#f5f5f5;color:#9e9e9e;padding:2px 7px;border-radius:4px">No special capabilities</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Send button -->
+        <div style="margin-top:8px;background:#1565c0;color:#fff;padding:13px;border-radius:10px;text-align:center;font-weight:600">Send Invitation</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:1.2rem">
+  <h3>What changes</h3>
+  <ul style="font-size:0.88rem;line-height:1.8">
+    <li><strong>Remove:</strong> first name, last name, phone, license number, specialization, facility dropdown, emergency access toggle — the backend doesn't accept these.</li>
+    <li><strong>Keep:</strong> email field.</li>
+    <li><strong>Add:</strong> staff type dropdown (values from API contract), clinical rank selector (expanded cards showing capability chips, loaded from <code>GET /clinical-ranks</code>), active facility banner.</li>
+    <li><strong>API call:</strong> <code>POST /staff/invite</code> with <code>{ email, staff_type, clinical_rank_id }</code> and the <code>X-Tenant-ID</code> header.</li>
+    <li>On success: snackbar "Invitation sent to jane@clinic.com", form resets.</li>
+    <li>Clinical ranks are loaded once on <code>initState</code> and shown as selectable cards — not a dropdown — so the capability chips are visible without extra taps.</li>
+  </ul>
+</div>
+
+<p style="color:var(--text-muted);font-size:0.85rem">Does this invite screen redesign look right? Confirm in terminal to see Section 5 (facilities wiring).</p>

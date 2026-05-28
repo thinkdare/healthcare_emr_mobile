@@ -1,0 +1,90 @@
+<h2>Question 3: How should admin screens be exposed in navigation?</h2>
+<p class="subtitle">Android drawer + iOS More tab — two structural approaches</p>
+
+<div class="split">
+
+  <!-- Option A -->
+  <div class="mockup" data-choice="flat" onclick="toggleSelect(this)" style="cursor:pointer">
+    <div class="mockup-header">A — Flat list under "Admin" heading</div>
+    <div class="mockup-body" style="padding:0">
+
+      <!-- Drawer simulation -->
+      <div style="background:#1a1a2e;color:#fff;padding:12px 16px;font-size:0.7rem;text-transform:uppercase;letter-spacing:.08em;opacity:.6">Clinical</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f0f0f0">
+        <span style="color:#4a90d9">⬜</span><span style="font-size:0.9rem">Patients</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f0f0f0">
+        <span style="color:#4a90d9">⬜</span><span style="font-size:0.9rem">Access Grants</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f0f0f0">
+        <span style="color:#4a90d9">⬜</span><span style="font-size:0.9rem">Referrals</span>
+      </div>
+
+      <div style="background:#1a1a2e;color:#fff;padding:12px 16px;font-size:0.7rem;text-transform:uppercase;letter-spacing:.08em;opacity:.6">Admin</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f0f0f0;background:#fff8f0">
+        <span style="color:#e67e22">🏢</span><span style="font-size:0.9rem">Organization Profile</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f0f0f0;background:#fff8f0">
+        <span style="color:#e67e22">🏥</span><span style="font-size:0.9rem">Facilities</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f0f0f0;background:#fff8f0">
+        <span style="color:#e67e22">👥</span><span style="font-size:0.9rem">Staff</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f0f0f0;background:#fff8f0">
+        <span style="color:#e67e22">✉️</span><span style="font-size:0.9rem">Invite Staff</span>
+      </div>
+
+      <div style="background:#1a1a2e;color:#fff;padding:12px 16px;font-size:0.7rem;text-transform:uppercase;letter-spacing:.08em;opacity:.6">Account</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f0f0f0">
+        <span style="color:#4a90d9">⬜</span><span style="font-size:0.9rem">My Profile</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px">
+        <span style="color:#4a90d9">⬜</span><span style="font-size:0.9rem">Subscription</span>
+      </div>
+
+      <div style="padding:8px 16px;font-size:0.75rem;color:#888;font-style:italic">✓ Fewer taps to reach any screen<br>✓ Matches existing drawer pattern<br>✗ Drawer gets longer for admins</div>
+    </div>
+  </div>
+
+  <!-- Option B -->
+  <div class="mockup" data-choice="hub" onclick="toggleSelect(this)" style="cursor:pointer">
+    <div class="mockup-header">B — Admin Hub screen (one entry point)</div>
+    <div class="mockup-body" style="padding:0">
+
+      <!-- Drawer simulation -->
+      <div style="background:#1a1a2e;color:#fff;padding:12px 16px;font-size:0.7rem;text-transform:uppercase;letter-spacing:.08em;opacity:.6">Clinical</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f0f0f0">
+        <span style="color:#4a90d9">⬜</span><span style="font-size:0.9rem">Patients</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f0f0f0">
+        <span style="color:#4a90d9">⬜</span><span style="font-size:0.9rem">Access Grants</span>
+      </div>
+
+      <div style="background:#1a1a2e;color:#fff;padding:12px 16px;font-size:0.7rem;text-transform:uppercase;letter-spacing:.08em;opacity:.6">Admin</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f0f0f0;background:#fff8f0">
+        <span style="color:#e67e22">⚙️</span><span style="font-size:0.9rem;font-weight:600">Administration</span><span style="margin-left:auto;color:#999;font-size:0.8rem">›</span>
+      </div>
+
+      <div style="background:#1a1a2e;color:#fff;padding:12px 16px;font-size:0.7rem;text-transform:uppercase;letter-spacing:.08em;opacity:.6">Account</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px">
+        <span style="color:#4a90d9">⬜</span><span style="font-size:0.9rem">My Profile</span>
+      </div>
+
+      <!-- Admin hub screen -->
+      <div style="margin-top:12px;border-top:2px solid #e67e22;padding:10px 12px">
+        <div style="font-size:0.75rem;font-weight:700;color:#e67e22;margin-bottom:8px">ADMINISTRATION SCREEN</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="background:#fff8f0;border:1px solid #fde8c8;border-radius:8px;padding:10px;text-align:center;font-size:0.75rem">🏢<br>Org Profile</div>
+          <div style="background:#fff8f0;border:1px solid #fde8c8;border-radius:8px;padding:10px;text-align:center;font-size:0.75rem">🏥<br>Facilities</div>
+          <div style="background:#fff8f0;border:1px solid #fde8c8;border-radius:8px;padding:10px;text-align:center;font-size:0.75rem">👥<br>Staff</div>
+          <div style="background:#fff8f0;border:1px solid #fde8c8;border-radius:8px;padding:10px;text-align:center;font-size:0.75rem">✉️<br>Invite</div>
+        </div>
+      </div>
+
+      <div style="padding:8px 16px;font-size:0.75rem;color:#888;font-style:italic">✓ Drawer stays clean<br>✓ Admin tools grouped in one place<br>✗ One extra tap to reach any admin screen</div>
+    </div>
+  </div>
+
+</div>
+
+<p style="margin-top:1rem;color:var(--text-muted);font-size:0.85rem">Click a panel to select it, then confirm in the terminal. My recommendation: <strong>A (flat list)</strong> — matches the existing drawer pattern and admins use these screens regularly enough that fewer taps matters.</p>

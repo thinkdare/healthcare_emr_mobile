@@ -385,6 +385,7 @@ class RosterEntryModel {
   // 'waiting'|'in_consultation'|'seen'|'admitted'|'referred'|'carried_over'
   final String status;
   final String? seenById;
+  final String? seenByName;
   final DateTime? seenAt;
   final String? consultationNotes;
   final int carryOverCount;
@@ -406,6 +407,7 @@ class RosterEntryModel {
     this.chiefComplaint,
     required this.status,
     this.seenById,
+    this.seenByName,
     this.seenAt,
     this.consultationNotes,
     required this.carryOverCount,
@@ -433,7 +435,8 @@ class RosterEntryModel {
       triageSeverity: json['triage_severity'] as String?,
       chiefComplaint: json['chief_complaint'] as String?,
       status: json['status'] as String? ?? 'waiting',
-      seenById: json['seen_by_id'] as String?,
+      seenById:   json['seen_by_id'] as String?,
+      seenByName: json['seen_by_name'] as String?,
       seenAt: d('seen_at'),
       consultationNotes: json['consultation_notes'] as String?,
       carryOverCount: (json['carry_over_count'] as num?)?.toInt() ?? 0,

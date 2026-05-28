@@ -303,9 +303,10 @@ class PatientProvider extends ChangeNotifier {
     if (msg.contains('SocketException') || msg.contains('Connection')) {
       return 'No internet connection. Showing cached data.';
     }
-    if (msg.contains('401')) return 'Session expired. Please log in again.';
-    if (msg.contains('403')) return 'You do not have permission to view these records.';
-    if (msg.contains('404')) return 'Patient record not found.';
-    return 'Something went wrong. Please try again.';
+    if (msg.contains('401')) return '[401] Session expired. Please log out and log back in.';
+    if (msg.contains('403')) return '[403] Access denied: $msg';
+    if (msg.contains('404')) return '[404] Not found: $msg';
+    // Include raw error so the exact API message / stack is visible during debugging
+    return 'Error: $msg';
   }
 }

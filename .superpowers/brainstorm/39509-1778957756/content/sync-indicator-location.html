@@ -1,0 +1,67 @@
+<h2>Where should the sync status indicator live?</h2>
+<p class="subtitle">It needs to be visible when syncing/offline without blocking clinical workflows</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:16px;font-family:monospace;font-size:12px;color:#94a3b8;min-height:180px">
+      <div style="background:#1e293b;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+        <div style="width:8px;height:8px;border-radius:50%;background:#f59e0b"></div>
+        <span style="color:#e2e8f0;font-size:13px">⟳ Syncing 3 changes…</span>
+        <span style="margin-left:auto;color:#64748b;font-size:11px">✕</span>
+      </div>
+      <div style="background:#1e293b;border-radius:8px;padding:10px 14px;color:#e2e8f0;font-size:13px">Dashboard content here…</div>
+      <div style="position:absolute;bottom:16px;left:16px;right:16px;background:#1e293b;border-radius:8px;padding:8px 14px;display:flex;justify-content:space-around;color:#64748b;font-size:11px">
+        <span>🏠</span><span>👥</span><span>📅</span><span>👤</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Dismissible Banner</h3>
+      <p>Appears below the nav bar when offline or syncing. Disappears when sync completes and user dismisses. Tapping it opens the sync detail screen.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:16px;font-family:monospace;font-size:12px;color:#94a3b8;min-height:180px">
+      <div style="background:#1e293b;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+        <span style="color:#e2e8f0;font-size:13px;font-weight:600">Dashboard</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:8px;height:8px;border-radius:50%;background:#f59e0b;box-shadow:0 0 4px #f59e0b"></div>
+          <span style="color:#f59e0b;font-size:11px">Syncing</span>
+        </div>
+      </div>
+      <div style="background:#1e293b;border-radius:8px;padding:10px 14px;color:#e2e8f0;font-size:13px">Dashboard content here…</div>
+      <div style="position:absolute;bottom:16px;left:16px;right:16px;background:#1e293b;border-radius:8px;padding:8px 14px;display:flex;justify-content:space-around;color:#64748b;font-size:11px">
+        <span>🏠</span><span>👥</span><span>📅</span><span>👤</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — App Bar Pill</h3>
+      <p>A small coloured dot + label lives in the top-right of every screen's app bar. Green = synced, amber = syncing, red = offline, orange badge = conflicts pending.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:16px;font-family:monospace;font-size:12px;color:#94a3b8;min-height:180px">
+      <div style="background:#1e293b;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+        <span style="color:#e2e8f0;font-size:13px;font-weight:600">Dashboard</span>
+        <span style="color:#64748b;font-size:12px">⋯</span>
+      </div>
+      <div style="background:#1e293b;border-radius:8px;padding:10px 14px;color:#e2e8f0;font-size:13px;margin-bottom:8px">Dashboard content here…</div>
+      <div style="background:#7c3aed22;border:1px solid #7c3aed;border-radius:8px;padding:8px 14px;display:flex;align-items:center;gap:8px">
+        <span style="color:#a78bfa;font-size:11px">⚠ 2 conflicts need your attention</span>
+        <span style="margin-left:auto;color:#a78bfa;font-size:11px">Review →</span>
+      </div>
+      <div style="position:absolute;bottom:16px;left:16px;right:16px;background:#1e293b;border-radius:8px;padding:8px 14px;display:flex;justify-content:space-around;color:#64748b;font-size:11px">
+        <span>🏠</span><span>👥</span><span>📅</span><span>👤</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Dashboard Card Only</h3>
+      <p>Sync is silent unless there are conflicts. A card appears on the dashboard when conflicts need attention. No persistent indicator elsewhere.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:24px">Click your preferred option, then reply in the terminal</p>

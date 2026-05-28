@@ -188,8 +188,10 @@ void showAdaptiveToast(
   };
 
   entry = OverlayEntry(
-    builder: (_) => Positioned(
-      top: MediaQuery.of(context).padding.top + 8,
+    // Use the builder's own context (overlayCtx), never the captured call-site
+    // context — which may be deactivated by the time this builds (e.g. after pop).
+    builder: (overlayCtx) => Positioned(
+      top: MediaQuery.of(overlayCtx).padding.top + 8,
       left: 16,
       right: 16,
       child: Material(
@@ -198,7 +200,7 @@ void showAdaptiveToast(
           padding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: CupertinoColors.systemBackground.resolveFrom(context),
+            color: CupertinoColors.systemBackground.resolveFrom(overlayCtx),
             borderRadius: BorderRadius.circular(12),
             border: Border(
                 left: BorderSide(color: borderColor, width: 4)),
@@ -221,7 +223,11 @@ void showAdaptiveToast(
   );
 
   overlay.insert(entry);
-  Future.delayed(const Duration(seconds: 2), entry.remove);
+  // Guard removal: the overlay or entry may already be gone if the screen
+  // was popped before the 2-second timer fires.
+  Future.delayed(const Duration(seconds: 2), () {
+    try { entry.remove(); } catch (_) {}
+  });
 }
 
 // ── Adaptive buttons ──────────────────────────────────────────────────────────

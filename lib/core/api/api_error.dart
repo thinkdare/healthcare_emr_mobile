@@ -71,7 +71,6 @@ class ApiError {
           );
           
         case DioExceptionType.unknown:
-        default:
           return ApiError(
             code: 'NETWORK_ERROR',
             message: 'Network error. Please check your internet connection.',

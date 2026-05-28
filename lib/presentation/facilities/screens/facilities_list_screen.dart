@@ -6,6 +6,7 @@ import '../../../data/models/organization_models_enhanced.dart';
 import '../../../data/repositories/facility_repository.dart';
 import '../../../core/api/api_client.dart';
 import '../../../config/theme.dart';
+import 'facility_form_screen.dart';
 
 class FacilitiesListScreen extends StatefulWidget {
   const FacilitiesListScreen({super.key});
@@ -23,9 +24,7 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
   @override
   void initState() {
     super.initState();
-    _repository = FacilityRepository(
-      apiClient: context.read<ApiClient>(),
-    );
+    _repository = FacilityRepository(apiClient: context.read<ApiClient>());
     _loadFacilities();
   }
 
@@ -54,7 +53,8 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
     await showAdaptiveActionSheet(
       context: context,
       title: 'Delete Facility',
-      message: 'Are you sure you want to delete "${facility.name}"? This action cannot be undone.',
+      message:
+          'Are you sure you want to delete "${facility.name}"? This action cannot be undone.',
       destructiveLabel: 'Delete',
       onConfirm: () => confirmed = true,
     );
@@ -62,60 +62,91 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
     if (confirmed) {
       try {
         await _repository.deleteFacility(facility.id);
-
         if (mounted) {
-          showAdaptiveToast(context, 'Facility deleted successfully', type: ToastType.success);
+          showAdaptiveToast(context, 'Facility deleted successfully',
+              type: ToastType.success);
           _loadFacilities();
         }
       } catch (e) {
         if (mounted) {
-          showAdaptiveToast(context, 'Failed to delete facility: $e', type: ToastType.error);
+          showAdaptiveToast(context, 'Failed to delete facility: $e',
+              type: ToastType.error);
         }
       }
     }
   }
 
+  Future<void> _navigateToAdd() async {
+    final result = await Navigator.of(context).push(
+      kIsIOS
+          ? CupertinoPageRoute<bool>(
+              builder: (_) => const FacilityFormScreen())
+          : MaterialPageRoute<bool>(
+              builder: (_) => const FacilityFormScreen()),
+    );
+    if (result == true) _loadFacilities();
+  }
+
+  Future<void> _navigateToEdit(FacilityModel facility) async {
+    final result = await Navigator.of(context).push(
+      kIsIOS
+          ? CupertinoPageRoute<bool>(
+              builder: (_) => FacilityFormScreen(facility: facility))
+          : MaterialPageRoute<bool>(
+              builder: (_) => FacilityFormScreen(facility: facility)),
+    );
+    if (result == true) _loadFacilities();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isWeb = MediaQuery.of(context).size.width > 600;
+    final isWide = MediaQuery.of(context).size.width > 600;
 
-    return Scaffold(
-      appBar: kIsIOS
-          ? CupertinoNavigationBar(
-              middle: const Text('Facilities'),
-              trailing: CupertinoButton(
+    if (kIsIOS) {
+      return CupertinoPageScaffold(
+        navigationBar: CupertinoNavigationBar(
+          middle: const Text('Facilities'),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CupertinoButton(
                 padding: EdgeInsets.zero,
                 onPressed: _loadFacilities,
                 child: const Icon(CupertinoIcons.refresh),
               ),
-            )
-          : AppBar(
-              title: const Text('Facilities'),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: _loadFacilities,
-                  tooltip: 'Refresh',
-                ),
-              ],
-            ),
-      body: _buildBody(isWeb),
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: _navigateToAdd,
+                child: const Icon(CupertinoIcons.add),
+              ),
+            ],
+          ),
+        ),
+        child: SafeArea(child: _buildBody(isWide)),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Facilities'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadFacilities,
+            tooltip: 'Refresh',
+          ),
+        ],
+      ),
+      body: _buildBody(isWide),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final result = await Navigator.of(context).pushNamed(
-            '/facilities/add',
-          );
-          if (result == true) {
-            _loadFacilities();
-          }
-        },
+        onPressed: _navigateToAdd,
         icon: const Icon(Icons.add),
         label: const Text('Add Facility'),
       ),
     );
   }
 
-  Widget _buildBody(bool isWeb) {
+  Widget _buildBody(bool isWide) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -130,17 +161,14 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
             Text(
               'Failed to load facilities',
               style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.gray900,
-              ),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.gray900),
             ),
             const SizedBox(height: 8),
-            Text(
-              _error!,
-              style: TextStyle(color: AppTheme.gray600),
-              textAlign: TextAlign.center,
-            ),
+            Text(_error!,
+                style: TextStyle(color: AppTheme.gray600),
+                textAlign: TextAlign.center),
             const SizedBox(height: 24),
             AdaptiveFilledButton(
               onPressed: _loadFacilities,
@@ -156,31 +184,22 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.business, size: 80, color: AppTheme.gray600.withValues(alpha: 0.5)),
+            Icon(Icons.business,
+                size: 80, color: AppTheme.gray600.withValues(alpha: 0.5)),
             const SizedBox(height: 16),
             Text(
               'No facilities yet',
               style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.gray900,
-              ),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.gray900),
             ),
             const SizedBox(height: 8),
-            Text(
-              'Add your first facility to get started',
-              style: TextStyle(color: AppTheme.gray600),
-            ),
+            Text('Add your first facility to get started',
+                style: TextStyle(color: AppTheme.gray600)),
             const SizedBox(height: 24),
             AdaptiveFilledButton(
-              onPressed: () async {
-                final result = await Navigator.of(context).pushNamed(
-                  '/facilities/add',
-                );
-                if (result == true) {
-                  _loadFacilities();
-                }
-              },
+              onPressed: _navigateToAdd,
               icon: const Icon(Icons.add),
               child: const Text('Add Facility'),
             ),
@@ -191,9 +210,7 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadFacilities,
-      child: isWeb
-          ? _buildGridView()
-          : _buildListView(),
+      child: isWide ? _buildGridView() : _buildListView(),
     );
   }
 
@@ -207,44 +224,33 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
         mainAxisSpacing: 16,
       ),
       itemCount: _facilities.length,
-      itemBuilder: (context, index) {
-        return _buildFacilityCard(_facilities[index], isGrid: true);
-      },
+      itemBuilder: (context, index) =>
+          _buildFacilityCard(_facilities[index], isGrid: true),
     );
   }
 
   Widget _buildListView() {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       itemCount: _facilities.length,
-      itemBuilder: (context, index) {
-        return _buildFacilityCard(_facilities[index], isGrid: false);
-      },
+      itemBuilder: (context, index) =>
+          _buildFacilityCard(_facilities[index], isGrid: false),
     );
   }
 
-  Widget _buildFacilityCard(FacilityModel facility, {required bool isGrid}) {
-    final facilityTypes = {
-      'main_hospital': 'Main Hospital',
-      'branch': 'Branch',
-      'pharmacy': 'Pharmacy',
-      'lab': 'Laboratory',
-      'diagnostic_center': 'Diagnostic Center',
-    };
+  static const _facilityTypeLabels = {
+    'main_hospital': 'Main Hospital',
+    'branch': 'Branch',
+    'pharmacy': 'Pharmacy',
+    'lab': 'Laboratory',
+    'diagnostic_center': 'Diagnostic Center',
+  };
 
+  Widget _buildFacilityCard(FacilityModel facility, {required bool isGrid}) {
     return Card(
       elevation: 2,
       child: InkWell(
-        onTap: () {
-          Navigator.of(context).pushNamed(
-            '/facilities/edit',
-            arguments: facility,
-          ).then((result) {
-            if (result == true) {
-              _loadFacilities();
-            }
-          });
-        },
+        onTap: () => _navigateToEdit(facility),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -260,7 +266,7 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
-                      _getFacilityIcon(facility.type),
+                      _facilityIcon(facility.type),
                       color: AppTheme.primaryColor,
                       size: 24,
                     ),
@@ -273,61 +279,20 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                         Text(
                           facility.name,
                           style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                              fontSize: 18, fontWeight: FontWeight.bold),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          facilityTypes[facility.type] ?? facility.type,
+                          _facilityTypeLabels[facility.type] ?? facility.type,
                           style: TextStyle(
-                            fontSize: 14,
-                            color: AppTheme.gray600,
-                          ),
+                              fontSize: 14, color: AppTheme.gray600),
                         ),
                       ],
                     ),
                   ),
-                  PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        Navigator.of(context).pushNamed(
-                          '/facilities/edit',
-                          arguments: facility,
-                        ).then((result) {
-                          if (result == true) {
-                            _loadFacilities();
-                          }
-                        });
-                      } else if (value == 'delete') {
-                        _deleteFacility(facility);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(Icons.edit, size: 20),
-                            SizedBox(width: 8),
-                            Text('Edit'),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete, size: 20, color: AppTheme.errorColor),
-                            SizedBox(width: 8),
-                            Text('Delete', style: TextStyle(color: AppTheme.errorColor)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                  _buildActionsButton(facility),
                 ],
               ),
               const SizedBox(height: 16),
@@ -339,68 +304,33 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: facility.isActive
-                          ? AppTheme.successColor.withValues(alpha: 0.1)
-                          : AppTheme.errorColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          facility.isActive ? Icons.check_circle : Icons.cancel,
-                          size: 14,
-                          color: facility.isActive
-                              ? AppTheme.successColor
-                              : AppTheme.errorColor,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          facility.isActive ? 'Active' : 'Inactive',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: facility.isActive
-                                ? AppTheme.successColor
-                                : AppTheme.errorColor,
-                          ),
-                        ),
-                      ],
-                    ),
+                  _StatusBadge(
+                    active: facility.isActive,
+                    activeLabel: 'Active',
+                    inactiveLabel: 'Inactive',
                   ),
                   if (facility.supportsEmergencyAccess) ...[
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppTheme.warningColor.withValues(alpha: 0.1),
+                        color:
+                            AppTheme.warningColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.emergency,
-                            size: 14,
-                            color: AppTheme.warningColor,
-                          ),
+                          Icon(Icons.emergency,
+                              size: 14, color: AppTheme.warningColor),
                           const SizedBox(width: 4),
                           Text(
                             'Emergency',
                             style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.warningColor,
-                            ),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.warningColor),
                           ),
                         ],
                       ),
@@ -415,6 +345,82 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
     );
   }
 
+  Widget _buildActionsButton(FacilityModel facility) {
+    if (kIsIOS) {
+      return CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: () => _showIOSActions(facility),
+        child: const Icon(CupertinoIcons.ellipsis_circle,
+            color: CupertinoColors.systemGrey),
+      );
+    }
+    return PopupMenuButton<String>(
+      onSelected: (value) {
+        if (value == 'edit') {
+          _navigateToEdit(facility);
+        } else if (value == 'delete') {
+          _deleteFacility(facility);
+        }
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'edit',
+          child: Row(
+            children: [
+              Icon(Icons.edit, size: 20),
+              SizedBox(width: 8),
+              Text('Edit'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(Icons.delete, size: 20, color: AppTheme.errorColor),
+              SizedBox(width: 8),
+              Text('Delete',
+                  style: TextStyle(color: AppTheme.errorColor)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showIOSActions(FacilityModel facility) async {
+    String? choice;
+    await showCupertinoModalPopup<void>(
+      context: context,
+      builder: (_) => CupertinoActionSheet(
+        title: Text(facility.name),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
+              choice = 'edit';
+              Navigator.of(context).pop();
+            },
+            child: const Text('Edit'),
+          ),
+          CupertinoActionSheetAction(
+            isDestructiveAction: true,
+            onPressed: () {
+              choice = 'delete';
+              Navigator.of(context).pop();
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+      ),
+    );
+    if (choice == 'edit') _navigateToEdit(facility);
+    if (choice == 'delete') _deleteFacility(facility);
+  }
+
   Widget _buildInfoRow(IconData icon, String text) {
     return Row(
       children: [
@@ -423,10 +429,7 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
         Expanded(
           child: Text(
             text,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppTheme.gray600,
-            ),
+            style: TextStyle(fontSize: 14, color: AppTheme.gray600),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -435,19 +438,53 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
     );
   }
 
-  IconData _getFacilityIcon(String type) {
-    switch (type) {
-      case 'main_hospital':
-        return Icons.local_hospital;
-      case 'branch':
-        return Icons.business;
-      case 'pharmacy':
-        return Icons.medication;
-      case 'lab':
-      case 'diagnostic_center':
-        return Icons.science;
-      default:
-        return Icons.location_city;
-    }
+  static IconData _facilityIcon(String type) {
+    return switch (type) {
+      'main_hospital' => Icons.local_hospital,
+      'branch' => Icons.business,
+      'pharmacy' => Icons.medication,
+      'lab' || 'diagnostic_center' => Icons.science,
+      _ => Icons.location_city,
+    };
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  final bool active;
+  final String activeLabel;
+  final String inactiveLabel;
+
+  const _StatusBadge({
+    required this.active,
+    required this.activeLabel,
+    required this.inactiveLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = active ? AppTheme.successColor : AppTheme.errorColor;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            active ? Icons.check_circle : Icons.cancel,
+            size: 14,
+            color: color,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            active ? activeLabel : inactiveLabel,
+            style: TextStyle(
+                fontSize: 12, fontWeight: FontWeight.w600, color: color),
+          ),
+        ],
+      ),
+    );
   }
 }

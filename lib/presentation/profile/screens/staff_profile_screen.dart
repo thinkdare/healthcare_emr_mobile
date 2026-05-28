@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../../../core/platform.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
+import '../../../core/biometric/biometric_provider.dart';
+import '../../../core/biometric/biometric_service.dart';
+import '../../../core/platform.dart';
 import '../../../data/providers/auth_provider.dart';
 
 class StaffProfileScreen extends StatefulWidget {
@@ -75,7 +77,7 @@ class _ProfileTab extends StatelessWidget {
         final facility = auth.activeFacility;
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           child: Column(
             children: [
               // Avatar
@@ -219,6 +221,61 @@ class _SecurityTabState extends State<_SecurityTab> {
   bool _obscureNew = true;
   bool _obscureConfirm = true;
 
+  // Biometric state
+  BiometricAvailability _biometricAvailability = BiometricAvailability.unavailable;
+  bool _biometricEnabled = false;
+  bool _biometricLoading = true;
+  String _biometricLabel = 'Biometrics';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBiometricState();
+  }
+
+  Future<void> _loadBiometricState() async {
+    final svc = context.read<BiometricProvider>().service;
+    final availability = await svc.checkAvailability();
+    final enabled      = await svc.isEnabled();
+    final label        = await svc.biometricLabel();
+    if (mounted) {
+      setState(() {
+        _biometricAvailability = availability;
+        _biometricEnabled      = enabled;
+        _biometricLabel        = label;
+        _biometricLoading      = false;
+      });
+    }
+  }
+
+  Future<void> _toggleBiometric(bool value) async {
+    final svc = context.read<BiometricProvider>().service;
+
+    if (value) {
+      // Verify biometrics work before enabling
+      final ok = await svc.authenticate(
+        reason: 'Verify your identity to enable $_biometricLabel',
+      );
+      if (!mounted) return;
+      if (!ok) {
+        showAdaptiveToast(context, '$_biometricLabel verification failed.',
+            type: ToastType.error);
+        return;
+      }
+    }
+
+    await svc.setEnabled(value);
+    if (mounted) setState(() => _biometricEnabled = value);
+
+    if (mounted) {
+      showAdaptiveToast(
+        context,
+        value ? '$_biometricLabel enabled.' : '$_biometricLabel disabled.',
+        type: ToastType.success,
+      );
+    }
+  }
+
   @override
   void dispose() {
     _currentCtrl.dispose();
@@ -253,7 +310,7 @@ class _SecurityTabState extends State<_SecurityTab> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       child: Column(
         children: [
           _SectionCard(
@@ -347,6 +404,77 @@ class _SecurityTabState extends State<_SecurityTab> {
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          _SectionCard(
+            title: 'Biometric Authentication',
+            icon: Icons.fingerprint,
+            children: [
+              if (_biometricLoading)
+                const Center(child: CircularProgressIndicator())
+              else if (_biometricAvailability == BiometricAvailability.notSupported)
+                _BiometricInfoRow(
+                  icon: Icons.info_outline,
+                  color: AppTheme.gray600,
+                  message: 'Biometric authentication is not available on this device.',
+                )
+              else if (_biometricAvailability == BiometricAvailability.notEnrolled)
+                _BiometricInfoRow(
+                  icon: Icons.warning_amber_outlined,
+                  color: AppTheme.warningColor,
+                  message: 'No biometrics enrolled. Set up $_biometricLabel in your device settings first.',
+                )
+              else ...[
+                Row(
+                  children: [
+                    Icon(
+                      _biometricLabel == 'Face ID'
+                          ? Icons.face_outlined
+                          : Icons.fingerprint,
+                      color: _biometricEnabled
+                          ? AppTheme.successColor
+                          : AppTheme.gray600,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_biometricLabel,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600, fontSize: 15)),
+                          Text(
+                            _biometricEnabled
+                                ? 'Enabled — app locks after 5 minutes in background'
+                                : 'Disabled — tap to enable',
+                            style: TextStyle(
+                                fontSize: 12, color: AppTheme.gray600),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: _biometricEnabled,
+                      onChanged: _biometricAvailability == BiometricAvailability.available
+                          ? _toggleBiometric
+                          : null,
+                      activeThumbColor: AppTheme.successColor,
+                    ),
+                  ],
+                ),
+                if (_biometricEnabled) ...[
+                  const SizedBox(height: 10),
+                  _BiometricInfoRow(
+                    icon: Icons.shield_outlined,
+                    color: AppTheme.successColor,
+                    message:
+                        'Your session is protected. You\'ll be prompted when returning after 5+ minutes away.',
+                  ),
+                ],
+              ],
+            ],
+          ),
+          const SizedBox(height: 16),
           _SectionCard(
             title: 'Active Sessions',
             icon: Icons.devices_outlined,
@@ -415,16 +543,28 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
   }
 
   Future<void> _startSetup() async {
+    // Re-auth gate before exposing TOTP secret
+    final svc  = context.read<BiometricProvider>().service;
+    final auth = context.read<AuthProvider>();
+    final availability = await svc.checkAvailability();
+    if (availability == BiometricAvailability.available) {
+      final ok = await svc.authenticate(
+        reason: 'Verify your identity to set up two-factor authentication',
+      );
+      if (!ok) {
+        if (mounted) showAdaptiveToast(context, 'Authentication required to set up 2FA', type: ToastType.error);
+        return;
+      }
+    }
     setState(() => _loading = true);
-    final data =
-        await context.read<AuthProvider>().twoFactorSetup();
+    final data = await auth.twoFactorSetup();
     if (!mounted) return;
     setState(() {
       _loading = false;
       _setupData = data;
     });
     if (data == null) {
-      final err = context.read<AuthProvider>().error;
+      final err = auth.error;
       showAdaptiveToast(context, err ?? 'Failed to start 2FA setup', type: ToastType.error);
     }
   }
@@ -570,7 +710,7 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
 
         // Main 2FA status view
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           child: Column(
             children: [
               // Status card
@@ -726,7 +866,7 @@ class _SetupFlow extends StatelessWidget {
     final secret = setupData['secret'] as String? ?? '';
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -776,7 +916,10 @@ class _SetupFlow extends StatelessWidget {
                   tooltip: 'Copy secret',
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: secret));
-                    showAdaptiveToast(context, 'Secret copied to clipboard');
+                    showAdaptiveToast(context, 'Secret copied — will be cleared in 30 seconds');
+                    Future.delayed(const Duration(seconds: 30), () {
+                      Clipboard.setData(const ClipboardData(text: ''));
+                    });
                   },
                 ),
               ],
@@ -910,7 +1053,10 @@ class _BackupCodesView extends StatelessWidget {
                   onPressed: () {
                     Clipboard.setData(
                         ClipboardData(text: codes.join('\n')));
-                    showAdaptiveToast(context, 'Backup codes copied to clipboard');
+                    showAdaptiveToast(context, 'Backup codes copied — will be cleared in 30 seconds');
+                    Future.delayed(const Duration(seconds: 30), () {
+                      Clipboard.setData(const ClipboardData(text: ''));
+                    });
                   },
                 ),
               ),
@@ -1033,6 +1179,28 @@ class _CapRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _BiometricInfoRow extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String message;
+  const _BiometricInfoRow({required this.icon, required this.color, required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(message,
+              style: TextStyle(fontSize: 12, color: color, height: 1.4)),
+        ),
+      ],
     );
   }
 }

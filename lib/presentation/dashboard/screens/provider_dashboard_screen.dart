@@ -46,20 +46,21 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   Future<void> _loadAll() async {
     final auth = context.read<AuthProvider>();
     final userId = auth.currentUserId;
-
     final orgId = auth.organizationId;
+
     await Future.wait([
       if (orgId != null)
         context.read<SubscriptionProvider>().loadSubscription(orgId),
-      if (userId != null)
-        context.read<PatientProvider>().loadPatients(providerId: userId),
-      context.read<AccessGrantProvider>().loadGrants(),
-      context
-          .read<EmergencyAccessProvider>()
-          .loadLogs(refresh: true),
+      // Clinical endpoints require tenant context — skip for org admins.
+      if (!auth.isOrgAdmin) ...[
+        if (userId != null)
+          context.read<PatientProvider>().loadPatients(providerId: userId),
+        context.read<AccessGrantProvider>().loadGrants(),
+        context.read<EmergencyAccessProvider>().loadLogs(refresh: true),
+      ],
     ]);
 
-    if (userId != null && mounted) {
+    if (!auth.isOrgAdmin && userId != null && mounted) {
       await context.read<PatientProvider>().loadDashboardStats(userId);
     }
   }
@@ -67,19 +68,19 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   Future<void> _handleRefresh() async {
     final auth = context.read<AuthProvider>();
     final userId = auth.currentUserId;
-
     final orgId = auth.organizationId;
+
     await Future.wait([
       if (orgId != null)
         context.read<SubscriptionProvider>().loadSubscription(orgId),
-      if (userId != null)
+      if (!auth.isOrgAdmin && userId != null)
         context.read<PatientProvider>().loadPatients(
               providerId: userId,
               forceRefresh: true,
             ),
     ]);
 
-    if (userId != null && mounted) {
+    if (!auth.isOrgAdmin && userId != null && mounted) {
       await context.read<PatientProvider>().loadDashboardStats(userId);
     }
   }
@@ -244,17 +245,19 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         if (isOrgAdmin) ...[
                           _SubscriptionCard(),
                           const SizedBox(height: 16),
-                        ],
-                        _PatientStatsCard(userId: auth.currentUserId ?? ''),
-                        const SizedBox(height: 16),
-                        _RecentPatientsCard(userId: auth.currentUserId ?? ''),
-                        if (showGrants) ...[
+                          _OrgAdminQuickActionsCard(),
+                        ] else ...[
+                          _PatientStatsCard(userId: auth.currentUserId ?? ''),
                           const SizedBox(height: 16),
-                          _AccessGrantsCard(),
-                        ],
-                        if (showEmergency) ...[
-                          const SizedBox(height: 16),
-                          _EmergencyAccessCard(),
+                          _RecentPatientsCard(userId: auth.currentUserId ?? ''),
+                          if (showGrants) ...[
+                            const SizedBox(height: 16),
+                            _AccessGrantsCard(),
+                          ],
+                          if (showEmergency) ...[
+                            const SizedBox(height: 16),
+                            _EmergencyAccessCard(),
+                          ],
                         ],
                       ],
                     ),
@@ -267,6 +270,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
       ),
       floatingActionButton: Consumer<AuthProvider>(
         builder: (context, auth, _) {
+          if (auth.isOrgAdmin) return const SizedBox.shrink();
           final useRoster = auth.staffType == 'doctor' ||
               auth.staffType == 'nurse';
           return FloatingActionButton.extended(
@@ -339,17 +343,18 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         builder: (_) => const RosterScreen()));
                   },
                 ),
-              ListTile(
-                leading: const Icon(Icons.people),
-                title: const Text('Patients'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (_) => const PatientListScreen()),
-                  );
-                },
-              ),
+              if (!isOrgAdmin)
+                ListTile(
+                  leading: const Icon(Icons.people),
+                  title: const Text('Patients'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (_) => const PatientListScreen()),
+                    );
+                  },
+                ),
               if (showGrants)
                 Consumer<AccessGrantProvider>(
                   builder: (context, grants, _) => ListTile(
@@ -533,14 +538,27 @@ class _WelcomeCard extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     color: Colors.white)),
             const SizedBox(height: 8),
-            if (auth.staffTypeDisplay.isNotEmpty)
+            if (auth.isOrgAdmin)
+              const Text('Organization Administrator',
+                  style: TextStyle(fontSize: 16, color: Colors.white70))
+            else if (auth.staffTypeDisplay.isNotEmpty)
               Text(
                 auth.department.isNotEmpty
                     ? '${auth.staffTypeDisplay} · ${auth.department}'
                     : auth.staffTypeDisplay,
                 style: const TextStyle(fontSize: 16, color: Colors.white70),
               ),
-            if (auth.facilityName.isNotEmpty) ...[
+            if (auth.isOrgAdmin &&
+                auth.currentUser?.primaryOrganizationName != null) ...[
+              const SizedBox(height: 4),
+              Row(children: [
+                const Icon(Icons.business, size: 14, color: Colors.white54),
+                const SizedBox(width: 4),
+                Text(auth.currentUser!.primaryOrganizationName!,
+                    style:
+                        const TextStyle(fontSize: 13, color: Colors.white70)),
+              ]),
+            ] else if (!auth.isOrgAdmin && auth.facilityName.isNotEmpty) ...[
               const SizedBox(height: 4),
               Row(children: [
                 const Icon(Icons.location_on,
@@ -551,6 +569,148 @@ class _WelcomeCard extends StatelessWidget {
                         const TextStyle(fontSize: 13, color: Colors.white70)),
               ]),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Org Admin Quick Actions Card ──────────────────────────────────────────────
+
+class _OrgAdminQuickActionsCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              const Icon(Icons.admin_panel_settings,
+                  color: AppTheme.primaryColor),
+              const SizedBox(width: 8),
+              const Text('Administration',
+                  style:
+                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ]),
+            const Divider(height: 24),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 2.4,
+              children: [
+                _AdminTile(
+                  icon: Icons.business,
+                  label: 'Organization',
+                  color: Colors.orange.shade700,
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => OrganizationProfileScreen(
+                        repository: OrganizationRepository(
+                            apiClient: context.read<ApiClient>()),
+                      ),
+                    ));
+                  },
+                ),
+                _AdminTile(
+                  icon: Icons.local_hospital_outlined,
+                  label: 'Facilities',
+                  color: Colors.blue.shade700,
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const FacilitiesListScreen()));
+                  },
+                ),
+                _AdminTile(
+                  icon: Icons.group_outlined,
+                  label: 'Staff',
+                  color: Colors.green.shade700,
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => StaffManagementScreen(
+                        repository: StaffRepository(
+                            apiClient: context.read<ApiClient>()),
+                      ),
+                    ));
+                  },
+                ),
+                _AdminTile(
+                  icon: Icons.mail_outline,
+                  label: 'Invite Staff',
+                  color: Colors.purple.shade700,
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const ProviderInvitationScreen()));
+                  },
+                ),
+                _AdminTile(
+                  icon: Icons.analytics_outlined,
+                  label: 'Reports',
+                  color: Colors.teal.shade700,
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const ReportingScreen()));
+                  },
+                ),
+                _AdminTile(
+                  icon: Icons.shield_outlined,
+                  label: 'Access Grants',
+                  color: Colors.indigo.shade700,
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const AccessGrantsScreen()));
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _AdminTile({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(label,
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: color)),
+            ),
           ],
         ),
       ),

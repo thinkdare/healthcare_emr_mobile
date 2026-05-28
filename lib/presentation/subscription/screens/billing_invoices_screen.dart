@@ -106,7 +106,8 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
               ? subscriptionProvider.loadInvoices(_orgId!)
               : Future.value(),
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(isWeb ? 32 : 16),
+              padding: EdgeInsets.fromLTRB(
+                  isWeb ? 32 : 16, isWeb ? 32 : 16, isWeb ? 32 : 16, isWeb ? 40 : 32),
               child: Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: isWeb ? 900 : double.infinity),
@@ -471,7 +472,6 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                   height: 56,
                   child: AdaptiveFilledButton(
                     onPressed: () {
-                      // TODO: Implement payment
                       Navigator.of(context).pop();
                       showAdaptiveToast(context, 'Payment feature coming soon');
                     },
@@ -487,7 +487,6 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                 height: 56,
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    // TODO: Implement download
                     showAdaptiveToast(context, 'Download feature coming soon');
                   },
                   icon: const Icon(Icons.download),

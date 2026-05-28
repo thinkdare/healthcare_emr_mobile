@@ -1,18 +1,16 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 class AppConfig {
   static const String appName = 'Healthcare EMR System';
   static const String apiVersion = 'v1';
 
   static String get baseUrl {
-    if (Platform.isAndroid) {
-      // 10.0.3.2 = host loopback on Genymotion; use 10.0.2.2 for standard AVD
-      return 'http://10.0.3.2:8000/api/v1';
-    } else if (Platform.isIOS) {
-      return 'http://localhost:8000/api/v1';
-    } else {
-      return 'http://localhost:8000/api/v1';
-    }
+    const fromEnv = String.fromEnvironment('API_BASE_URL');
+    if (fromEnv.isNotEmpty) return fromEnv;
+    // Dev fallback only — overridden at build time for any real deployment
+    if (Platform.isAndroid) return 'http://10.0.3.2:8000/api/v1';
+    return 'http://localhost:8000/api/v1';
   }
 
   // Timeout configurations
@@ -42,6 +40,6 @@ class AppConfig {
   };
 
   static void printConfig() {
-    print('App: $appName | API: $baseUrl');
+    debugPrint('App: $appName | API: $baseUrl');
   }
 }

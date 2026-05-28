@@ -128,6 +128,49 @@ class SubscriptionProvider extends ChangeNotifier {
     }
   }
 
+  // ── Payment gateway checkout ──────────────────────────────────────────────
+
+  /// Returns { checkout_url, reference, gateway } or null on error.
+  Future<Map<String, dynamic>?> createCheckoutSession(
+    String orgId, {
+    required String planId,
+    required String gateway,
+  }) async {
+    _error = null;
+    try {
+      return await repository.createCheckoutSession(orgId,
+          planId: planId, gateway: gateway);
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<bool> verifyPayment({
+    required String reference,
+    required String gateway,
+    String? transactionId,
+    String? sessionId,
+  }) async {
+    _error = null;
+    _setLoading(true);
+    try {
+      _subscription = await repository.verifyPayment(
+        reference:     reference,
+        gateway:       gateway,
+        transactionId: transactionId,
+        sessionId:     sessionId,
+      );
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   void clearError() {

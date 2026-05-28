@@ -1,0 +1,30 @@
+{
+  "_comment": "PLACEHOLDER — Replace with your real google-services.json from Firebase Console. See .env.example for setup instructions.",
+  "project_info": {
+    "project_number": "000000000000",
+    "project_id": "voya-health-placeholder",
+    "storage_bucket": "voya-health-placeholder.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+        "android_client_info": {
+          "package_name": "com.voya.health"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "placeholder_api_key_replace_with_real_value"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
