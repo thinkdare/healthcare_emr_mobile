@@ -41,7 +41,11 @@ kIsWeb                     → OrgAdminWebShell    (auth.isOrgAdmin)
 !kIsWeb && !kIsIOS         → AndroidShell        (internally branches on isOrgAdmin)
 ```
 
+Note: `kIsIOS` is a project-defined getter in `lib/core/platform.dart` (`!kIsWeb && Platform.isIOS`), not Flutter's framework constant. It is already web-safe and the three-way branch above is correct.
+
 `IOSShell` and `AndroidShell` each watch `AuthProvider.isOrgAdmin` and render the org admin shell variant when true; otherwise render their existing clinical shell unchanged.
+
+**Authorization model:** Shell-level routing is a UI gate only, not an authorization control. Each org admin screen calls the backend directly — the backend enforces role checks on every endpoint and returns 401/403 for unauthorized requests. The existing `_ErrorView` pattern handles these failures. No widget-layer role guard is needed in org admin screens; the backend is the authority.
 
 ---
 
@@ -85,6 +89,7 @@ On **web**, the More tab is replaced by sidebar footer actions (see Web Shell se
 - 3 primary `NavigationRailDestination` items: Overview, Facilities, Staff
 - Footer: vertical column of `IconButton`s (or `TextButton`s when expanded) for: Organisation Profile, Subscription & Billing, Reporting, Sign Out
 - Sidebar background: `Colors.white` with a right border; no elevation
+- Collapsed state: `NavigationRail` at default 72 dp width. The footer column must set `overflow: Overflow.clip` (or wrap in `ClipRect`) to prevent label text bleeding during the expand/collapse animation. The collapse toggle `IconButton` sits above the rail destinations in the `leading` slot.
 
 **Content area:**
 - Each tab body renders the existing screen directly inside `IndexedStack`. Flutter permits nested `Scaffold`s, so screens keep their own `AppBar` on web — the web shell does not own an AppBar. This avoids needing a separate "embedded" widget variant for each screen.
@@ -112,7 +117,7 @@ The Overview tab home for org admins. Loads org detail + stats in parallel on `i
 
 **Error/loading:**
 - Full-screen `CircularProgressIndicator` on load
-- `_ErrorView` widget (copy from `OrganizationProfileScreen`) with Retry
+- `_ErrorView` widget extracted to `lib/presentation/common/error_view.dart` and reused here and in `OrganizationProfileScreen` (do not copy — extract once, import everywhere)
 - Stats section degrades gracefully if stats endpoint fails (shows `—` with warning icon)
 
 ### `OrgAdminMoreScreen` — `lib/presentation/more/org_admin_more_screen.dart`
@@ -120,7 +125,7 @@ The Overview tab home for org admins. Loads org detail + stats in parallel on `i
 Used as the 4th tab on both iOS and Android. Web uses the sidebar footer instead (this screen is not shown on web). Adaptive: Cupertino list sections on iOS, Material `ListView` with `ListTile` on Android.
 
 Sections:
-1. **Admin** (orange header on iOS / section divider on Android): Organisation Profile, Facilities, Staff, Invite Staff
+1. **Admin** (orange header on iOS / section divider on Android): Organisation Profile, Invite Staff *(Facilities and Staff are already tab 2 and tab 3 — do not duplicate them here)*
 2. **Account**: Subscription & Billing, Reporting & Compliance, Staff Profile
 3. *(no sync or referrals — not relevant to org admins)*
 4. Sign Out (destructive)
@@ -158,7 +163,8 @@ Android: `ListView` + `ListTile` + `MaterialPageRoute`.
 | `lib/presentation/shell/org_admin_android_shell.dart` | Android bottom-nav shell |
 | `lib/presentation/shell/org_admin_web_shell.dart` | Web collapsible sidebar shell |
 | `lib/presentation/organization/screens/org_dashboard_screen.dart` | Overview tab home |
-| `lib/presentation/more/org_admin_more_screen.dart` | iOS More tab (org admin) |
+| `lib/presentation/more/org_admin_more_screen.dart` | More tab (iOS + Android, org admin) |
+| `lib/presentation/common/error_view.dart` | Shared `ErrorView` widget (extracted from `OrganizationProfileScreen`) |
 
 ## Files to modify
 
@@ -167,7 +173,7 @@ Android: `ListView` + `ListTile` + `MaterialPageRoute`.
 | `lib/main.dart` | Add `kIsWeb` branch; route `isOrgAdmin` to org admin shells |
 | `lib/presentation/shell/ios_shell.dart` | Check `isOrgAdmin` → render `OrgAdminIOSShell` |
 | `lib/presentation/shell/android_shell.dart` | Check `isOrgAdmin` → render `OrgAdminAndroidShell` |
-| `lib/presentation/organization/screens/organization_profile_screen.dart` | Adaptive nav bar, toast on error, correct org type enums |
+| `lib/presentation/organization/screens/organization_profile_screen.dart` | Adaptive nav bar, toast on error, correct org type enums (`state`/`federal`/`private_group`/`ngo`/`standalone`), replace inline `_ErrorView` with shared `ErrorView` |
 | `lib/presentation/facilities/screens/facilities_list_screen.dart` | Adaptive nav bar, adaptive delete action, iOS FAB→nav button |
 
 ---
