@@ -64,8 +64,26 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
 
 // ── Profile Tab ───────────────────────────────────────────────────────────────
 
-class _ProfileTab extends StatelessWidget {
+class _ProfileTab extends StatefulWidget {
   const _ProfileTab();
+
+  @override
+  State<_ProfileTab> createState() => _ProfileTabState();
+}
+
+class _ProfileTabState extends State<_ProfileTab> {
+  bool _nudgeDismissed = false;
+
+  bool _isPrivilegedRole(AuthProvider auth) {
+    final t = auth.staffType;
+    return t == 'doctor' || t == 'org_admin' || auth.isOrgAdmin;
+  }
+
+  void _goTo2FA() {
+    final tabState =
+        context.findAncestorStateOfType<_StaffProfileScreenState>();
+    tabState?._tabs.animateTo(2);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,10 +94,23 @@ class _ProfileTab extends StatelessWidget {
         final rank = membership?.clinicalRank;
         final facility = auth.activeFacility;
 
+        final show2FaNudge = !_nudgeDismissed &&
+            user != null &&
+            user.twoFactorEnabled == false &&
+            _isPrivilegedRole(auth);
+
         return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           child: Column(
             children: [
+              if (show2FaNudge) ...[
+                _TwoFaNudgeCard(
+                  onSetUp: _goTo2FA,
+                  onDismiss: () => setState(() => _nudgeDismissed = true),
+                ),
+                const SizedBox(height: 8),
+              ],
+
               // Avatar
               Container(
                 width: 80,
@@ -1068,6 +1099,77 @@ class _BackupCodesView extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── 2FA nudge card ────────────────────────────────────────────────────────────
+
+class _TwoFaNudgeCard extends StatelessWidget {
+  final VoidCallback onSetUp;
+  final VoidCallback onDismiss;
+
+  const _TwoFaNudgeCard({
+    required this.onSetUp,
+    required this.onDismiss,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8E1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF9A825), width: 1),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.security_outlined,
+              color: Color(0xFFF57F17), size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Enable two-factor authentication',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: Color(0xFF5D4037)),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Your role has access to patient data. 2FA adds a '
+                  'critical layer of protection against unauthorised access.',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF795548)),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: onSetUp,
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    foregroundColor: const Color(0xFFE65100),
+                  ),
+                  child: const Text('Set up 2FA →',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 13)),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 16, color: Color(0xFFA1887F)),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: onDismiss,
           ),
         ],
       ),

@@ -18,6 +18,7 @@ import '../../roster/screens/roster_screen.dart';
 import '../../profile/screens/staff_profile_screen.dart';
 import '../../facilities/screens/facilities_list_screen.dart';
 import '../../organization/screens/organization_profile_screen.dart';
+import '../../sync/widgets/root_warning_banner.dart';
 import '../../providers/screens/provider_invitation_screen.dart';
 import '../../staff/screens/staff_management_screen.dart';
 import '../../../data/repositories/organization_repository.dart';
@@ -215,6 +216,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
       drawer: kIsIOS ? null : _buildDrawer(context),
       body: Column(
         children: [
+          const RootWarningBanner(),
           const TrialStatusBanner(),
           const SyncBanner(),
           Expanded(

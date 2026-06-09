@@ -15,6 +15,7 @@ import '../auth/screens/login_screen.dart';
 import '../more/more_screen.dart';
 import '../patients/screens/patient_list_screen.dart';
 import '../roster/screens/roster_screen.dart';
+import '../sync/widgets/root_warning_banner.dart';
 import '../sync/widgets/sync_banner.dart';
 import 'org_admin_ios_shell.dart';
 
@@ -66,6 +67,7 @@ class _IOSTabs extends StatelessWidget {
     return CupertinoPageScaffold(
       child: Column(
         children: [
+          const RootWarningBanner(),
           const SyncBanner(),
           Expanded(
             child: Consumer<AuthProvider>(

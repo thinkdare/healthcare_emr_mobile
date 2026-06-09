@@ -17,6 +17,7 @@ import '../referrals/screens/referrals_screen.dart';
 import '../roster/screens/roster_screen.dart';
 import '../subscription/screens/subscription_details_screen.dart';
 import '../sync/screens/sync_screen.dart';
+import '../sync/widgets/root_warning_banner.dart';
 import '../sync/widgets/sync_banner.dart';
 
 /// Web shell for clinical staff: collapsible NavigationRail sidebar + IndexedStack.
@@ -45,6 +46,7 @@ class _ClinicalWebShellState extends State<ClinicalWebShell> {
     return Scaffold(
       body: Column(
         children: [
+          const RootWarningBanner(),
           const SyncBanner(),
           Expanded(
             child: Row(
@@ -208,6 +210,17 @@ class _SidebarFooter extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         children: [
+          if (sub.isProfessionalOrHigher == false)
+            _FooterItem(
+              icon: Icons.star_outline,
+              label: 'Upgrade Plan',
+              expanded: expanded,
+              color: const Color(0xFF1565C0),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                    builder: (_) => const SubscriptionDetailsScreen()),
+              ),
+            ),
           if (auth.canEmergencyAccess && sub.isProfessionalOrHigher == true)
             _FooterItem(
               icon: Icons.emergency_outlined,

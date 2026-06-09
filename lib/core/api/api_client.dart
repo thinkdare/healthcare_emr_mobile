@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../config/app_config.dart';
+import '../network/tls_pinning.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -35,6 +36,7 @@ class ApiClient {
     );
 
     _setupInterceptors();
+    applyTlsPinning(_dio);
   }
 
   void _setupInterceptors() {

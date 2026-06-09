@@ -34,6 +34,7 @@ import 'data/providers/sync_provider.dart';
 import 'data/providers/referral_provider.dart';
 import 'core/biometric/biometric_provider.dart';
 import 'core/biometric/biometric_service.dart';
+import 'core/security/root_detection_provider.dart';
 import 'core/notifications/push_notification_service.dart';
 import 'data/providers/intra_grant_provider.dart';
 import 'data/providers/intra_transfer_provider.dart';
@@ -293,6 +294,9 @@ class _MyAppState extends State<MyApp> {
         ),
         ChangeNotifierProvider(
           create: (_) => BiometricProvider(service: biometricService),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => RootDetectionProvider(),
         ),
       ],
       // Platform branch: web → OrgAdminWebShell or ClinicalWebShell (by role)

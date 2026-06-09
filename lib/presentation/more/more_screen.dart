@@ -3,6 +3,7 @@
 // iOS More tab — Settings-style list of secondary destinations.
 // Mirrors the drawer destinations from ProviderDashboardScreen.
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show Colors;
 import 'package:provider/provider.dart';
 
 import '../../config/app_colors.dart';
@@ -36,6 +37,8 @@ class MoreScreen extends StatelessWidget {
     final sub = context.watch<SubscriptionProvider>();
     final showEmergency = auth.canEmergencyAccess && sub.isProfessionalOrHigher == true;
     final isOrgAdmin = auth.isOrgAdmin;
+    final showUpgradeNudge =
+        !isOrgAdmin && sub.isProfessionalOrHigher == false;
 
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
@@ -44,6 +47,10 @@ class MoreScreen extends StatelessWidget {
       child: SafeArea(
         child: ListView(
           children: [
+            if (showUpgradeNudge)
+              _UpgradeNudgeTile(
+                onTap: () => _push(context, const SubscriptionDetailsScreen()),
+              ),
             // Org admins land on the Overview tab (ProviderDashboardScreen);
             // the Clinical section is redundant for them.
             if (!isOrgAdmin)
@@ -279,5 +286,61 @@ class MoreScreen extends StatelessWidget {
         );
       }
     }
+  }
+}
+
+// ── Upgrade nudge ─────────────────────────────────────────────────────────────
+
+class _UpgradeNudgeTile extends StatelessWidget {
+  final VoidCallback onTap;
+  const _UpgradeNudgeTile({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1565C0), Color(0xFF0288D1)],
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: const Row(
+            children: [
+              Icon(CupertinoIcons.star_fill,
+                  color: Colors.white, size: 20),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Upgrade to Professional',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Unlock Emergency Access, Referrals & more',
+                      style: TextStyle(
+                          color: Colors.white70, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(CupertinoIcons.chevron_right,
+                  color: Colors.white70, size: 16),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

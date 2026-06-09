@@ -53,6 +53,7 @@ dependencies:
   # Date/time formatting
   intl: ^0.20.0
   local_auth: ^3.0.1
+  flutter_jailbreak_detection: ^1.7.0
   firebase_core: ^4.9.0
   firebase_messaging: ^16.2.2
   flutter_local_notifications: ^21.0.0
