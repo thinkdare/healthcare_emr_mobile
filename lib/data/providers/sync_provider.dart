@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
+import '../../core/database/local_database.dart';
 import '../models/sync_models.dart';
 import '../repositories/sync_repository.dart';
 
@@ -11,6 +12,7 @@ class SyncProvider extends ChangeNotifier {
 
   SyncProvider({required this.repository}) {
     _subscribeToConnectivity();
+    _checkMigrationPending();
   }
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -21,6 +23,7 @@ class SyncProvider extends ChangeNotifier {
   DateTime? _lastSyncedAt;
   List<SyncConflict> _conflicts = [];
   bool _deviceRegistered = false;
+  bool _migrationPending = false;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   // ── Getters ────────────────────────────────────────────────────────────────
@@ -32,6 +35,14 @@ class SyncProvider extends ChangeNotifier {
   List<SyncConflict> get conflicts => _conflicts;
   bool get isOnline => _status != SyncStatus.offline;
   bool get hasPendingConflicts => _pendingConflicts > 0;
+  /// True after a DB encryption migration wipe; cleared by the first
+  /// successful full server sync. Drives the SyncBanner migration state.
+  bool get isMigrationPending => _migrationPending;
+
+  Future<void> _checkMigrationPending() async {
+    _migrationPending = await LocalDatabase.instance.isMigrationPendingSync();
+    if (_migrationPending) notifyListeners();
+  }
 
   // ── Connectivity ───────────────────────────────────────────────────────────
 
@@ -89,6 +100,11 @@ class SyncProvider extends ChangeNotifier {
 
       _pendingLocalChanges = await repository.getPendingCount();
       _status = SyncStatus.synced;
+
+      if (_migrationPending) {
+        await LocalDatabase.instance.clearMigrationPendingSync();
+        _migrationPending = false;
+      }
     } on Exception catch (e) {
       debugPrint('[SyncProvider] sync error: $e');
       _status = SyncStatus.error;

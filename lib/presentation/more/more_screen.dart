@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../config/app_colors.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/referral_provider.dart';
+import '../../data/providers/subscription_provider.dart';
 import '../../data/providers/sync_provider.dart';
 import '../auth/screens/login_screen.dart';
 import '../dashboard/screens/provider_dashboard_screen.dart';
@@ -32,7 +33,8 @@ class MoreScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final sync = context.watch<SyncProvider>();
-    final showEmergency = auth.canEmergencyAccess;
+    final sub = context.watch<SubscriptionProvider>();
+    final showEmergency = auth.canEmergencyAccess && sub.isProfessionalOrHigher == true;
     final isOrgAdmin = auth.isOrgAdmin;
 
     return CupertinoPageScaffold(
@@ -133,15 +135,16 @@ class MoreScreen extends StatelessWidget {
                   trailing: const CupertinoListTileChevron(),
                   onTap: () => _push(context, const StaffProfileScreen()),
                 ),
-                CupertinoListTile(
-                  leading: const Icon(
-                    CupertinoIcons.chart_bar_square,
-                    color: AppColors.primary,
+                if (isOrgAdmin)
+                  CupertinoListTile(
+                    leading: const Icon(
+                      CupertinoIcons.chart_bar_square,
+                      color: AppColors.primary,
+                    ),
+                    title: const Text('Reporting & Compliance'),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: () => _push(context, const ReportingScreen()),
                   ),
-                  title: const Text('Reporting & Compliance'),
-                  trailing: const CupertinoListTileChevron(),
-                  onTap: () => _push(context, const ReportingScreen()),
-                ),
                 CupertinoListTile(
                   leading: const Icon(
                     CupertinoIcons.creditcard,
@@ -184,40 +187,41 @@ class MoreScreen extends StatelessWidget {
                       : const CupertinoListTileChevron(),
                   onTap: () => _push(context, const SyncScreen()),
                 ),
-                Consumer<ReferralProvider>(
-                  builder: (context, referrals, _) => CupertinoListTile(
-                    leading: const Icon(
-                      CupertinoIcons.arrow_right_arrow_left_circle,
-                      color: AppColors.primary,
+                if (sub.isProfessionalOrHigher == true)
+                  Consumer<ReferralProvider>(
+                    builder: (context, referrals, _) => CupertinoListTile(
+                      leading: const Icon(
+                        CupertinoIcons.arrow_right_arrow_left_circle,
+                        color: AppColors.primary,
+                      ),
+                      title: const Text('Referrals'),
+                      trailing: referrals.pendingActionCount > 0
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.error,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    '${referrals.pendingActionCount}',
+                                    style: const TextStyle(
+                                        color: CupertinoColors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                const CupertinoListTileChevron(),
+                              ],
+                            )
+                          : const CupertinoListTileChevron(),
+                      onTap: () => _push(context, const ReferralsScreen()),
                     ),
-                    title: const Text('Referrals'),
-                    trailing: referrals.pendingActionCount > 0
-                        ? Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: AppColors.error,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  '${referrals.pendingActionCount}',
-                                  style: const TextStyle(
-                                      color: CupertinoColors.white,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              const CupertinoListTileChevron(),
-                            ],
-                          )
-                        : const CupertinoListTileChevron(),
-                    onTap: () => _push(context, const ReferralsScreen()),
                   ),
-                ),
               ],
             ),
             CupertinoListSection.insetGrouped(

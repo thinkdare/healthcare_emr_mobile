@@ -7,6 +7,7 @@ import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/organization_provider.dart';
 import '../../../config/theme.dart';
 import 'facility_picker_screen.dart';
+import 'register_provider_screen.dart';
 import '../../dashboard/screens/provider_dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -313,6 +314,14 @@ class _LoginScreenState extends State<LoginScreen> {
               showAdaptiveToast(context, 'Contact your administrator to reset your password.');
             },
             child: const Text('Forgot Password?'),
+          ),
+          const SizedBox(height: 4),
+          AdaptiveTextButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                  builder: (_) => const RegisterProviderScreen()),
+            ),
+            child: const Text('Register with an invitation'),
           ),
         ],
       ],

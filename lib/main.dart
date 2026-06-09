@@ -4,7 +4,7 @@ import 'dart:io' show Platform;
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/cupertino.dart' show CupertinoPageRoute;
-import 'package:flutter/material.dart' show BuildContext, CircularProgressIndicator, MaterialApp, MaterialPageRoute, Navigator, Scaffold, Text, TextStyle;
+import 'package:flutter/material.dart' show BuildContext, CircularProgressIndicator, MaterialApp, MaterialPageRoute, Navigator, Scaffold;
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -41,9 +41,11 @@ import 'data/repositories/device_token_repository.dart';
 import 'data/repositories/intra_grant_repository.dart';
 import 'data/repositories/intra_transfer_repository.dart';
 import 'presentation/shell/android_shell.dart';
+import 'presentation/shell/clinical_web_shell.dart';
 import 'presentation/shell/ios_shell.dart';
 import 'presentation/shell/org_admin_web_shell.dart';
 import 'presentation/auth/screens/login_screen.dart';
+import 'presentation/auth/screens/register_provider_screen.dart';
 import 'presentation/subscription/screens/payment_return_screen.dart';
 
 // Singleton shared between main() and _MyAppState~
@@ -161,8 +163,25 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _handleDeepLink(Uri uri) {
-    // Only handle voya://payment/return
-    if (uri.scheme != 'voya' || uri.host != 'payment') return;
+    if (uri.scheme != 'voya') return;
+
+    // voya://staff/register?token=<invitation_token>
+    if (uri.host == 'staff' && uri.pathSegments.firstOrNull == 'register') {
+      final token = uri.queryParameters['token'];
+      if (token == null || token.isEmpty) return;
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).push(
+        kIsIOS
+            ? CupertinoPageRoute<void>(
+                builder: (_) => RegisterProviderScreen(initialToken: token))
+            : MaterialPageRoute<void>(
+                builder: (_) => RegisterProviderScreen(initialToken: token)),
+      );
+      return;
+    }
+
+    // voya://payment/return
+    if (uri.host != 'payment') return;
 
     const validStatuses = {'success', 'cancelled', 'pending', 'failed', 'unknown'};
     const validGateways = {'paystack', 'stripe', 'flutterwave'};
@@ -276,7 +295,7 @@ class _MyAppState extends State<MyApp> {
           create: (_) => BiometricProvider(service: biometricService),
         ),
       ],
-      // Platform branch: web → OrgAdminWebShell (org admins only; clinical web TBD)
+      // Platform branch: web → OrgAdminWebShell or ClinicalWebShell (by role)
       // iOS → IOSShell (branches internally on isOrgAdmin)
       // Android → AndroidShell (branches internally on isOrgAdmin)
       child: kIsWeb
@@ -289,7 +308,7 @@ class _MyAppState extends State<MyApp> {
 }
 
 /// Web root — MaterialApp with auth wrapper.
-/// Org admins → OrgAdminWebShell. Clinical staff web shell is a future task.
+/// Org admins → OrgAdminWebShell. Clinical staff → ClinicalWebShell.
 class _WebRoot extends StatelessWidget {
   const _WebRoot();
 
@@ -307,15 +326,7 @@ class _WebRoot extends StatelessWidget {
           }
           if (!auth.isAuthenticated) return const LoginScreen();
           if (auth.isOrgAdmin) return const OrgAdminWebShell();
-          // Clinical staff web shell is not yet implemented.
-          return const Scaffold(
-            body: Center(
-              child: Text(
-                'Web access is available for organisation admins only.',
-                style: TextStyle(fontSize: 16),
-              ),
-            ),
-          );
+          return const ClinicalWebShell();
         },
       ),
     );

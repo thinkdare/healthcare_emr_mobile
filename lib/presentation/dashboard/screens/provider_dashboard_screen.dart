@@ -462,15 +462,16 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       builder: (_) => const SubscriptionDetailsScreen()));
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.analytics_outlined),
-                title: const Text('Reports & Compliance'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const ReportingScreen()));
-                },
-              ),
+              if (isOrgAdmin)
+                ListTile(
+                  leading: const Icon(Icons.analytics_outlined),
+                  title: const Text('Reports & Compliance'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const ReportingScreen()));
+                  },
+                ),
               ListTile(
                 leading: const Icon(Icons.person_outline),
                 title: const Text('My Profile'),

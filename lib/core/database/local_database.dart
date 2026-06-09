@@ -1,5 +1,9 @@
 import 'dart:convert';
-import 'package:sqflite/sqflite.dart';
+import 'dart:io';
+import 'dart:math';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:path/path.dart' as path_helper;
 import '../../data/models/patient_models.dart';
 
@@ -16,12 +20,14 @@ import '../../data/models/patient_models.dart';
 ///    Multi-user support (multiple providers logging in on the same device)
 ///    is handled by scoping every query on provider_id.
 ///
-/// 2. Plaintext cache, not encrypted SQLite (Phase 2 scope).
-///    The data stored here is the same PII that the server decrypts before
-///    sending. Full SQLCipher encryption is Phase 7. For now we mitigate
-///    risk by: (a) caching only the current provider's patients, (b) clearing
-///    all data on logout, (c) relying on device-level encryption (iOS Data
-///    Protection, Android Full Disk Encryption).
+/// 2. Encrypted on mobile (Android + iOS) via SQLCipher.
+///    A 32-byte random key is generated once and stored in
+///    `flutter_secure_storage` under [_kEncryptionKeyName]. On first open
+///    after an upgrade from a plaintext install, opening with the key will
+///    throw; the plaintext file is deleted and a fresh encrypted DB is
+///    created. Cache data re-syncs from the server automatically.
+///    Desktop builds use the sqflite_common_ffi factory (no encryption)
+///    since those run in a trusted dev environment.
 ///
 /// 3. Cache-only — no sync queue in Phase 2.
 ///    Writes go to the server first. On success, the cache is updated.
@@ -39,10 +45,17 @@ import '../../data/models/patient_models.dart';
 class LocalDatabase {
   static const String _kDatabaseName = 'emr_cache.db';
   static const int _kVersion = 2;
+  static const String _kEncryptionKeyName = 'db_encryption_key_v1';
+  static const String _kMigrationPendingSyncKey = 'db_migration_pending_sync';
 
   // Singleton
   static LocalDatabase? _instance;
   static Database? _db;
+
+  final _secureStorage = const FlutterSecureStorage(
+    iOptions: IOSOptions(
+        accessibility: KeychainAccessibility.first_unlock_this_device),
+  );
 
   LocalDatabase._();
 
@@ -62,16 +75,80 @@ class LocalDatabase {
     final dbPath = await getDatabasesPath();
     final fullPath = path_helper.join(dbPath, _kDatabaseName);
 
-    return openDatabase(
-      fullPath,
-      version: _kVersion,
-      onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
-      // Enable WAL mode for better concurrent read performance and crash safety.
-      // PRAGMA journal_mode returns a result row, so rawQuery is required —
-      // execute() is rejected by sqflite on Android for statements with output.
-      onOpen: (db) async => await db.rawQuery('PRAGMA journal_mode=WAL'),
-    );
+    // Web: sqflite has no web support; open without encryption.
+    // Desktop: sqflite_common_ffi factory (set in main.dart); no encryption.
+    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) {
+      return openDatabase(
+        fullPath,
+        version: _kVersion,
+        onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
+        onOpen: (db) async => db.rawQuery('PRAGMA journal_mode=WAL'),
+      );
+    }
+
+    // Mobile: SQLCipher-encrypted database.
+    final key = await _getOrCreateKey();
+    return _openEncrypted(fullPath, key);
+  }
+
+  Future<Database> _openEncrypted(String path, String key) async {
+    try {
+      return await openDatabase(
+        path,
+        password: key,
+        version: _kVersion,
+        onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
+        // Enable WAL mode for better concurrent read performance and crash safety.
+        // PRAGMA journal_mode returns a result row, so rawQuery is required —
+        // execute() is rejected by sqflite on Android for statements with output.
+        onOpen: (db) async => db.rawQuery('PRAGMA journal_mode=WAL'),
+      );
+    } catch (_) {
+      // Pre-existing plaintext DB from a prior install; opening with a key
+      // throws a "file is not a database" error. The cache is not authoritative
+      // (all data re-syncs from the server), so delete and recreate encrypted.
+      // Write a persistent flag before deletion so the sync layer can surface
+      // a "please stay connected" banner until the first full sync completes.
+      try {
+        await _secureStorage.write(
+          key: _kMigrationPendingSyncKey,
+          value: DateTime.now().toIso8601String(),
+        );
+      } catch (_) {}
+      try {
+        await File(path).delete();
+      } catch (_) {}
+      return openDatabase(
+        path,
+        password: key,
+        version: _kVersion,
+        onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
+        onOpen: (db) async => db.rawQuery('PRAGMA journal_mode=WAL'),
+      );
+    }
+  }
+
+  /// True if the DB was wiped and re-created encrypted on this install.
+  /// Remains true until a successful full server sync clears it.
+  Future<bool> isMigrationPendingSync() async {
+    final val = await _secureStorage.read(key: _kMigrationPendingSyncKey);
+    return val != null;
+  }
+
+  Future<void> clearMigrationPendingSync() async {
+    await _secureStorage.delete(key: _kMigrationPendingSyncKey);
+  }
+
+  Future<String> _getOrCreateKey() async {
+    final existing = await _secureStorage.read(key: _kEncryptionKeyName);
+    if (existing != null) return existing;
+    final bytes = List<int>.generate(32, (_) => Random.secure().nextInt(256));
+    final newKey = base64Url.encode(bytes);
+    await _secureStorage.write(key: _kEncryptionKeyName, value: newKey);
+    return newKey;
   }
 
   Future<void> _onCreate(Database db, int version) async {

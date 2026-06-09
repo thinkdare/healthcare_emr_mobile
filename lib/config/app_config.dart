@@ -7,8 +7,14 @@ class AppConfig {
 
   static String get baseUrl {
     const fromEnv = String.fromEnvironment('API_BASE_URL');
-    if (fromEnv.isNotEmpty) return fromEnv;
-    // Dev fallback only — overridden at build time for any real deployment
+    if (fromEnv.isNotEmpty) {
+      assert(
+        kDebugMode || fromEnv.startsWith('https://'),
+        'Production build must use HTTPS. Got: $fromEnv',
+      );
+      return fromEnv;
+    }
+    // Dev fallback only — never present in a production build
     if (Platform.isAndroid) return 'http://10.0.3.2:8000/api/v1';
     return 'http://localhost:8000/api/v1';
   }

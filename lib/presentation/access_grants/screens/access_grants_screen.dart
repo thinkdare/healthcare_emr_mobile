@@ -27,11 +27,17 @@ class _AccessGrantsScreenState extends State<AccessGrantsScreen>
   void initState() {
     super.initState();
     _tabs = TabController(length: 3, vsync: this);
+    // Rebuild on swipe so the iOS CupertinoSlidingSegmentedControl stays in sync.
+    _tabs.addListener(_onTabChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AccessGrantProvider>().loadGrants();
       context.read<IntraGrantProvider>().loadGrants();
       context.read<IntraTransferProvider>().load();
     });
+  }
+
+  void _onTabChanged() {
+    if (!_tabs.indexIsChanging) setState(() {});
   }
 
   @override
@@ -172,6 +178,46 @@ class _AccessGrantsScreenState extends State<AccessGrantsScreen>
       ),
       body: Column(
         children: [
+          if (kIsIOS)
+            Consumer2<AccessGrantProvider, IntraGrantProvider>(
+              builder: (_, cross, intra, child) => Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                child: CupertinoSlidingSegmentedControl<int>(
+                  groupValue: _tabs.index,
+                  onValueChanged: (i) {
+                    if (i != null) _tabs.animateTo(i);
+                  },
+                  children: {
+                    0: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 2),
+                      child: Text(
+                        cross.pendingCount > 0
+                            ? 'Pending (${cross.pendingCount})'
+                            : 'Pending',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                    1: const Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      child: Text('My Requests',
+                          style: TextStyle(fontSize: 13)),
+                    ),
+                    2: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 2),
+                      child: Text(
+                        intra.pendingIncomingCount > 0
+                            ? 'Same Facility (${intra.pendingIncomingCount})'
+                            : 'Same Facility',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  },
+                ),
+              ),
+            ),
           Consumer<AccessGrantProvider>(
             builder: (context, provider, child) => provider.error != null
                 ? _ErrorBanner(

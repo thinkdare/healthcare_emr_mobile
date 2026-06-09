@@ -64,6 +64,7 @@ class _SyncBannerState extends State<SyncBanner> {
   }
 
   bool _shouldShow(SyncProvider sync) {
+    if (sync.isMigrationPending) return true;
     if (sync.status == SyncStatus.idle) return false;
     if (sync.status == SyncStatus.synced && _dismissed) return false;
     return true;
@@ -162,6 +163,14 @@ class _BannerTileState extends State<_BannerTile> {
   }
 
   (Color, Color, IconData, String) _content(SyncProvider sync) {
+    if (sync.isMigrationPending && sync.status != SyncStatus.syncing) {
+      return (
+        const Color(0xFFF3E5F5),
+        const Color(0xFF6A1B9A),
+        Icons.system_update_outlined,
+        'Updating local data — please stay connected',
+      );
+    }
     if (sync.hasPendingConflicts) {
       return (
         const Color(0xFFFFF3E0),
