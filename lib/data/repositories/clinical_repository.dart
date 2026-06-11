@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/database/local_database.dart';
 import '../models/clinical_models.dart';
 import '../models/clinical_record_models.dart';
 
@@ -11,10 +12,26 @@ import '../models/clinical_record_models.dart';
 ///
 /// Route base: /api/v1/patients/{patientId}/...
 /// All routes require the X-Tenant-ID header (set by ApiClient from auth state).
+///
+/// Read methods for cacheable resources (appointments, prescriptions, lab results,
+/// vital signs, diagnoses) follow a cache-aside pattern: successful API responses
+/// are written to SQLite, and on network failure the local cache is returned as a
+/// fallback. A network error with an empty cache re-throws so the caller can surface
+/// a proper error to the user.
 class ClinicalRepository {
   final ApiClient apiClient;
+  final LocalDatabase _db;
 
-  ClinicalRepository({required this.apiClient});
+  ClinicalRepository({required this.apiClient, required LocalDatabase db}) : _db = db;
+
+  bool _isNetworkError(Object e) {
+    final msg = e.toString();
+    return msg.contains('SocketException') ||
+        msg.contains('Connection refused') ||
+        msg.contains('Connection reset') ||
+        msg.contains('Network is unreachable') ||
+        msg.contains('HandshakeException');
+  }
 
   // ── Appointments ──────────────────────────────────────────────────────────
 
@@ -23,21 +40,32 @@ class ClinicalRepository {
     String? status,
     int page = 1,
   }) async {
-    final response = await apiClient.get(
-      '/patients/$patientId/appointments',
-      queryParameters: {
-        'page': page,
-        'status': ?status,
-      },
-    );
-    if (response['success'] != true) {
-      throw Exception(response['message'] ?? 'Failed to load appointments');
+    try {
+      final response = await apiClient.get(
+        '/patients/$patientId/appointments',
+        queryParameters: {
+          'page': page,
+          'status': ?status,
+        },
+      );
+      if (response['success'] != true) {
+        throw Exception(response['message'] ?? 'Failed to load appointments');
+      }
+      final rawData = response['data'];
+      final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
+      final models = list
+          .map((e) => AppointmentModel.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      for (final m in models) {
+        await _db.upsertAppointment(m);
+      }
+      return models;
+    } catch (e) {
+      if (!_isNetworkError(e)) rethrow;
+      final cached = await _db.getAppointmentsByPatient(patientId);
+      if (cached.isEmpty) rethrow;
+      return status != null ? cached.where((a) => a.status == status).toList() : cached;
     }
-    final rawData = response['data'];
-    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
-    return list
-        .map((e) => AppointmentModel.fromJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
   }
 
   Future<AppointmentModel> getAppointment(
@@ -97,21 +125,32 @@ class ClinicalRepository {
     String? status,
     int page = 1,
   }) async {
-    final response = await apiClient.get(
-      '/patients/$patientId/prescriptions',
-      queryParameters: {
-        'page': page,
-        'status': ?status,
-      },
-    );
-    if (response['success'] != true) {
-      throw Exception(response['message'] ?? 'Failed to load prescriptions');
+    try {
+      final response = await apiClient.get(
+        '/patients/$patientId/prescriptions',
+        queryParameters: {
+          'page': page,
+          'status': ?status,
+        },
+      );
+      if (response['success'] != true) {
+        throw Exception(response['message'] ?? 'Failed to load prescriptions');
+      }
+      final rawData = response['data'];
+      final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
+      final models = list
+          .map((e) => PrescriptionModel.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      for (final m in models) {
+        await _db.upsertPrescription(m);
+      }
+      return models;
+    } catch (e) {
+      if (!_isNetworkError(e)) rethrow;
+      final cached = await _db.getPrescriptionsByPatient(patientId);
+      if (cached.isEmpty) rethrow;
+      return status != null ? cached.where((p) => p.status == status).toList() : cached;
     }
-    final rawData = response['data'];
-    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
-    return list
-        .map((e) => PrescriptionModel.fromJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
   }
 
   Future<PrescriptionModel> getPrescription(
@@ -195,21 +234,32 @@ class ClinicalRepository {
     String? status,
     int page = 1,
   }) async {
-    final response = await apiClient.get(
-      '/patients/$patientId/lab-results',
-      queryParameters: {
-        'page': page,
-        'status': ?status,
-      },
-    );
-    if (response['success'] != true) {
-      throw Exception(response['message'] ?? 'Failed to load lab results');
+    try {
+      final response = await apiClient.get(
+        '/patients/$patientId/lab-results',
+        queryParameters: {
+          'page': page,
+          'status': ?status,
+        },
+      );
+      if (response['success'] != true) {
+        throw Exception(response['message'] ?? 'Failed to load lab results');
+      }
+      final rawData = response['data'];
+      final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
+      final models = list
+          .map((e) => LabResultModel.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      for (final m in models) {
+        await _db.upsertLabResult(m);
+      }
+      return models;
+    } catch (e) {
+      if (!_isNetworkError(e)) rethrow;
+      final cached = await _db.getLabResultsByPatient(patientId);
+      if (cached.isEmpty) rethrow;
+      return status != null ? cached.where((l) => l.status == status).toList() : cached;
     }
-    final rawData = response['data'];
-    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
-    return list
-        .map((e) => LabResultModel.fromJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
   }
 
   Future<LabResultModel> getLabResult(
@@ -327,18 +377,29 @@ class ClinicalRepository {
     String patientId, {
     int page = 1,
   }) async {
-    final response = await apiClient.get(
-      '/patients/$patientId/vital-signs',
-      queryParameters: {'page': page},
-    );
-    if (response['success'] != true) {
-      throw Exception(response['message'] ?? 'Failed to load vital signs');
+    try {
+      final response = await apiClient.get(
+        '/patients/$patientId/vital-signs',
+        queryParameters: {'page': page},
+      );
+      if (response['success'] != true) {
+        throw Exception(response['message'] ?? 'Failed to load vital signs');
+      }
+      final rawData = response['data'];
+      final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
+      final models = list
+          .map((e) => VitalSignModel.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      for (final m in models) {
+        await _db.upsertVitalSign(m);
+      }
+      return models;
+    } catch (e) {
+      if (!_isNetworkError(e)) rethrow;
+      final cached = await _db.getVitalSignsByPatient(patientId);
+      if (cached.isEmpty) rethrow;
+      return cached;
     }
-    final rawData = response['data'];
-    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
-    return list
-        .map((e) => VitalSignModel.fromJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
   }
 
   Future<VitalSignModel> createVitalSign(
@@ -367,21 +428,32 @@ class ClinicalRepository {
     String? status,
     int page = 1,
   }) async {
-    final response = await apiClient.get(
-      '/patients/$patientId/diagnoses',
-      queryParameters: {
-        'page': page,
-        'status': ?status,
-      },
-    );
-    if (response['success'] != true) {
-      throw Exception(response['message'] ?? 'Failed to load diagnoses');
+    try {
+      final response = await apiClient.get(
+        '/patients/$patientId/diagnoses',
+        queryParameters: {
+          'page': page,
+          'status': ?status,
+        },
+      );
+      if (response['success'] != true) {
+        throw Exception(response['message'] ?? 'Failed to load diagnoses');
+      }
+      final rawData = response['data'];
+      final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
+      final models = list
+          .map((e) => DiagnosisModel.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      for (final m in models) {
+        await _db.upsertDiagnosis(m);
+      }
+      return models;
+    } catch (e) {
+      if (!_isNetworkError(e)) rethrow;
+      final cached = await _db.getDiagnosesByPatient(patientId);
+      if (cached.isEmpty) rethrow;
+      return status != null ? cached.where((d) => d.status == status).toList() : cached;
     }
-    final rawData = response['data'];
-    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
-    return list
-        .map((e) => DiagnosisModel.fromJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
   }
 
   Future<DiagnosisModel> createDiagnosis(

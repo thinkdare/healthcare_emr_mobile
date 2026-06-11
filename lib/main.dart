@@ -236,7 +236,7 @@ class _MyAppState extends State<MyApp> {
       localDatabase: localDatabase,
     );
     final subscriptionRepository    = SubscriptionRepository(apiClient: apiClient);
-    final clinicalRepository        = ClinicalRepository(apiClient: apiClient);
+    final clinicalRepository        = ClinicalRepository(apiClient: apiClient, db: localDatabase);
     final accessGrantRepository     = AccessGrantRepository(apiClient: apiClient);
     final emergencyAccessRepository = EmergencyAccessRepository(apiClient: apiClient);
     final reportingRepository       = ReportingRepository(apiClient: apiClient);
