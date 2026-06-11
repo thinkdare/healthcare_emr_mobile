@@ -86,9 +86,24 @@ Base URL is platform-aware in `lib/config/app_config.dart`:
 - Android emulator: `http://10.0.3.2:8000/api/v1` (`10.0.3.2` is for Genymotion; use `10.0.2.2` for AVD)
 - iOS/desktop: `http://localhost:8000/api/v1`
 
-### Offline Caching (Phase 2)
+### Offline Caching & Sync
 
-`LocalDatabase` is a singleton SQLite database (`emr_cache.db`, WAL mode). Currently caches the `patients` table. Data is scoped per `provider_id` to support multiple providers on one device. Cache is plaintext (relies on OS-level encryption); full encryption planned for Phase 7.
+`LocalDatabase` is a singleton SQLite database (`emr_cache.db`, WAL mode, SQLCipher-encrypted on Android + iOS). DB schema version 3. Cached tables:
+
+| Table | Scope | Notes |
+|---|---|---|
+| `patients_cache` | per `provider_id` | Full patient record |
+| `appointments_cache` | per `patient_id` | |
+| `prescriptions_cache` | per `patient_id` | |
+| `lab_results_cache` | per `patient_id` | `abnormal_flags` stored as JSON |
+| `vitals_cache` | per `patient_id` | Ready; not yet in backend SYNCABLE_RESOURCES |
+| `diagnoses_cache` | per `patient_id` | Ready; not yet in backend SYNCABLE_RESOURCES |
+| `pending_sync` | global | Offline write queue for push |
+| `cache_metadata` | global | Key-value housekeeping |
+
+`SyncRepository.pull()` applies server-returned resources (`patients`, `appointments`, `prescriptions`, `lab_results`) to the local cache. Soft-deleted server records are removed from cache.
+
+`SyncRepository.push()` sends the `pending_sync` queue to `POST /api/v1/sync/push`. Conflicts are surfaced via `GET /api/v1/sync/conflicts` and resolved in `ConflictCard` / `ConflictDetailSheet`, including delete-vs-update conflicts (`SyncConflict.isDeleteConflict`).
 
 ### Navigation
 
@@ -99,4 +114,4 @@ No named routes or router package. Navigation is fully imperative using `Navigat
 - **JSON models require code gen**: After editing any class annotated with `@JsonSerializable`, run `dart run build_runner build --delete-conflicting-outputs` to regenerate `.g.dart` files.
 - **Android emulator IP**: `10.0.3.2` is configured for Genymotion. Switch to `10.0.2.2` in `app_config.dart` for the standard Android emulator (AVD).
 - **API contract**: `API_CONTRACT.md` at the repo root documents all 39 backend endpoints, request/response shapes, and error codes. Consult it before implementing new API calls.
-- **Phase roadmap**: Current work is Phase 2 (offline SQLite caching). Phase 7 adds SQLCipher encryption and an offline write/sync queue. Do not assume full offline write support exists yet.
+- **Offline writes**: The `pending_sync` table and `SyncRepository.push()` pipeline are active. `queuePendingSync()` on `LocalDatabase` enqueues writes; `push()` sends them to the backend. Full offline write flows (where the UI writes locally first and syncs later) are not yet wired end-to-end in all screens — individual screens still send writes to the server first.
