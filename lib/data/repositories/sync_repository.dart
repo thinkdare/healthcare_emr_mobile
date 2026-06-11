@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/api/api_client.dart';
 import '../../core/database/local_database.dart';
+import '../models/clinical_models.dart';
 import '../models/sync_models.dart';
 
 class SyncRepository {
@@ -96,8 +97,54 @@ class SyncRepository {
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Pull failed');
     }
-    // Server changes in response['data']['resources'] — applying them to local
-    // cache is deferred; pull here primarily advances lastSyncedAt.
+
+    final data = response['data'] as Map? ?? {};
+    final resources = data['resources'] as Map? ?? {};
+
+    await _applyPulledResources(resources);
+
+    final serverTime = data['server_time'] as String?;
+    if (serverTime != null) {
+      await setLastSyncedAt(DateTime.parse(serverTime));
+    }
+  }
+
+  Future<void> _applyPulledResources(Map<dynamic, dynamic> resources) async {
+    // appointments
+    final appointments = resources['appointments'] as List? ?? [];
+    for (final item in appointments) {
+      final m = Map<String, dynamic>.from(item as Map);
+      if (m['deleted_at'] != null) {
+        await _db.deleteAppointment(m['id'] as String);
+      } else {
+        final data = Map<String, dynamic>.from(m['data'] as Map);
+        await _db.upsertAppointment(AppointmentModel.fromJson(data));
+      }
+    }
+
+    // prescriptions
+    final prescriptions = resources['prescriptions'] as List? ?? [];
+    for (final item in prescriptions) {
+      final m = Map<String, dynamic>.from(item as Map);
+      if (m['deleted_at'] != null) {
+        await _db.deletePrescription(m['id'] as String);
+      } else {
+        final data = Map<String, dynamic>.from(m['data'] as Map);
+        await _db.upsertPrescription(PrescriptionModel.fromJson(data));
+      }
+    }
+
+    // lab_results
+    final labResults = resources['lab_results'] as List? ?? [];
+    for (final item in labResults) {
+      final m = Map<String, dynamic>.from(item as Map);
+      if (m['deleted_at'] != null) {
+        await _db.deleteLabResult(m['id'] as String);
+      } else {
+        final data = Map<String, dynamic>.from(m['data'] as Map);
+        await _db.upsertLabResult(LabResultModel.fromJson(data));
+      }
+    }
   }
 
   // ── GET /api/v1/sync/conflicts ────────────────────────────────────────────

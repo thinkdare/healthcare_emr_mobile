@@ -46,6 +46,19 @@ class SyncConflict {
       );
 
   bool get isPending => status == 'pending';
+
+  /// True when the client operation was a delete and the server had since
+  /// updated the record. Inferred from the payload: a delete operation sends
+  /// no user-facing fields, so clientData has nothing beyond internal fields.
+  bool get isDeleteConflict {
+    const internal = {
+      'id', 'version', 'created_at', 'updated_at', 'deleted_at',
+      'user_id', 'membership_id', 'last_modified_by',
+    };
+    final meaningful =
+        clientData.keys.where((k) => !internal.contains(k)).toList();
+    return meaningful.isEmpty && serverData.isNotEmpty;
+  }
 }
 
 class SyncChange {

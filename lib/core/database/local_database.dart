@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:path/path.dart' as path_helper;
+import '../../data/models/clinical_models.dart';
+import '../../data/models/clinical_record_models.dart';
 import '../../data/models/patient_models.dart';
 
 /// LocalDatabase
@@ -44,7 +46,7 @@ import '../../data/models/patient_models.dart';
 ///
 class LocalDatabase {
   static const String _kDatabaseName = 'emr_cache.db';
-  static const int _kVersion = 2;
+  static const int _kVersion = 3;
   static const String _kEncryptionKeyName = 'db_encryption_key_v1';
   static const String _kMigrationPendingSyncKey = 'db_migration_pending_sync';
 
@@ -157,6 +159,7 @@ class LocalDatabase {
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) await _migrateV1toV2(db);
+    if (oldVersion < 3) await _migrateV2toV3(db);
   }
 
   Future<void> _migrateV1toV2(Database db) async {
@@ -171,6 +174,181 @@ class LocalDatabase {
         queued_at      TEXT NOT NULL
       )
     ''');
+  }
+
+  Future<void> _migrateV2toV3(Database db) async {
+    // ── appointments_cache ─────────────────────────────────────────────────
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS appointments_cache (
+        id                   TEXT PRIMARY KEY,
+        patient_id           TEXT NOT NULL,
+        provider_id          TEXT NOT NULL,
+        appointment_date     TEXT NOT NULL,
+        duration_minutes     INTEGER NOT NULL DEFAULT 30,
+        appointment_type     TEXT NOT NULL,
+        status               TEXT NOT NULL,
+        reason               TEXT,
+        notes                TEXT,
+        cancellation_reason  TEXT,
+        reminder_sent        INTEGER NOT NULL DEFAULT 0,
+        checked_in_at        TEXT,
+        completed_at         TEXT,
+        ward_id              TEXT,
+        created_at           TEXT,
+        updated_at           TEXT,
+        cached_at            TEXT NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_appts_patient ON appointments_cache(patient_id)',
+    );
+
+    // ── prescriptions_cache ────────────────────────────────────────────────
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS prescriptions_cache (
+        id                         TEXT PRIMARY KEY,
+        patient_id                 TEXT NOT NULL,
+        prescriber_id              TEXT NOT NULL,
+        medication_name            TEXT NOT NULL,
+        medication_code            TEXT,
+        dosage                     TEXT NOT NULL,
+        frequency                  TEXT NOT NULL,
+        route                      TEXT,
+        duration_days              INTEGER,
+        quantity                   INTEGER,
+        refills_allowed            INTEGER NOT NULL DEFAULT 0,
+        refills_remaining          INTEGER NOT NULL DEFAULT 0,
+        prescribed_date            TEXT,
+        start_date                 TEXT,
+        end_date                   TEXT,
+        expires_date               TEXT,
+        status                     TEXT NOT NULL,
+        special_instructions       TEXT,
+        discontinuation_reason     TEXT,
+        drug_interactions_checked  INTEGER NOT NULL DEFAULT 0,
+        ward_id                    TEXT,
+        medication_coding_system   TEXT,
+        created_at                 TEXT,
+        updated_at                 TEXT,
+        cached_at                  TEXT NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_rx_patient ON prescriptions_cache(patient_id)',
+    );
+
+    // ── lab_results_cache ──────────────────────────────────────────────────
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS lab_results_cache (
+        id                   TEXT PRIMARY KEY,
+        patient_id           TEXT NOT NULL,
+        ordered_by_id        TEXT NOT NULL,
+        performed_by_id      TEXT,
+        reviewed_by_id       TEXT,
+        test_name            TEXT NOT NULL,
+        test_code            TEXT,
+        test_type            TEXT,
+        priority             TEXT NOT NULL DEFAULT 'routine',
+        results              TEXT,
+        interpretation       TEXT,
+        abnormal_flags       TEXT NOT NULL DEFAULT '[]',
+        status               TEXT NOT NULL,
+        ordered_date         TEXT,
+        sample_collected_at  TEXT,
+        completed_at         TEXT,
+        reviewed_at          TEXT,
+        file_path            TEXT,
+        requires_followup    INTEGER NOT NULL DEFAULT 0,
+        ward_id              TEXT,
+        created_at           TEXT,
+        updated_at           TEXT,
+        cached_at            TEXT NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_labs_patient ON lab_results_cache(patient_id)',
+    );
+
+    // ── vitals_cache ───────────────────────────────────────────────────────
+    // Not yet in backend SYNCABLE_RESOURCES; table ready for future inclusion.
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS vitals_cache (
+        id                         TEXT PRIMARY KEY,
+        patient_id                 TEXT NOT NULL,
+        recorded_by_id             TEXT NOT NULL,
+        encounter_id               TEXT,
+        roster_entry_id            TEXT,
+        ward_id                    TEXT,
+        recorded_at                TEXT NOT NULL,
+        blood_pressure_systolic    INTEGER,
+        blood_pressure_diastolic   INTEGER,
+        heart_rate                 INTEGER,
+        respiratory_rate           INTEGER,
+        temperature                REAL,
+        temperature_unit           TEXT,
+        oxygen_saturation          REAL,
+        weight                     REAL,
+        weight_unit                TEXT,
+        height                     REAL,
+        height_unit                TEXT,
+        bmi                        REAL,
+        notes                      TEXT,
+        version                    INTEGER NOT NULL DEFAULT 1,
+        created_at                 TEXT,
+        cached_at                  TEXT NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_vitals_patient ON vitals_cache(patient_id)',
+    );
+
+    // ── diagnoses_cache ────────────────────────────────────────────────────
+    // Not yet in backend SYNCABLE_RESOURCES; table ready for future inclusion.
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS diagnoses_cache (
+        id              TEXT PRIMARY KEY,
+        patient_id      TEXT NOT NULL,
+        diagnosed_by_id TEXT NOT NULL,
+        encounter_id    TEXT,
+        ward_id         TEXT,
+        icd_code        TEXT,
+        icd_version     TEXT,
+        description     TEXT NOT NULL,
+        diagnosis_type  TEXT NOT NULL,
+        status          TEXT NOT NULL,
+        onset_date      TEXT,
+        resolved_date   TEXT,
+        notes           TEXT,
+        version         INTEGER NOT NULL DEFAULT 1,
+        created_at      TEXT,
+        updated_at      TEXT,
+        cached_at       TEXT NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_dx_patient ON diagnoses_cache(patient_id)',
+    );
+  }
+
+  // ── Test helpers ───────────────────────────────────────────────────────────
+
+  /// Opens an already-initialised [Database] as the singleton. For tests only.
+  /// Callers must open the DB (e.g. via databaseFactoryFfi.openDatabase) and
+  /// run schema creation via this method before using LocalDatabase.instance.
+  @visibleForTesting
+  static Future<LocalDatabase> forTesting(Database openedDb) async {
+    final inst = LocalDatabase._();
+    await inst._createV1Tables(openedDb);
+    _instance = inst;
+    _db = openedDb;
+    return inst;
+  }
+
+  @visibleForTesting
+  static Future<void> teardownForTesting() async {
+    await _db?.close();
+    _db = null;
+    _instance = null;
   }
 
   Future<void> _createV1Tables(Database db) async {
@@ -232,8 +410,9 @@ class LocalDatabase {
       )
     ''');
 
-    // Fresh installs also get the v2 table
+    // Fresh installs also get v2 and v3 tables
     await _migrateV1toV2(db);
+    await _migrateV2toV3(db);
   }
 
   // ── PATIENT DAO ────────────────────────────────────────────────────────────
@@ -420,6 +599,181 @@ class LocalDatabase {
     return DateTime.now().difference(lastFetched) > maxAge;
   }
 
+  // ── APPOINTMENT DAO ────────────────────────────────────────────────────────
+
+  Future<void> upsertAppointment(AppointmentModel a) async {
+    final db = await database;
+    await db.insert(
+      'appointments_cache',
+      _appointmentToRow(a),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<AppointmentModel>> getAppointmentsByPatient(
+      String patientId) async {
+    final db = await database;
+    final rows = await db.query(
+      'appointments_cache',
+      where: 'patient_id = ?',
+      whereArgs: [patientId],
+      orderBy: 'appointment_date DESC',
+    );
+    return rows.map(_rowToAppointment).toList();
+  }
+
+  Future<void> deleteAppointment(String id) async {
+    final db = await database;
+    await db.delete('appointments_cache', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> clearAppointmentsForPatient(String patientId) async {
+    final db = await database;
+    await db.delete(
+      'appointments_cache',
+      where: 'patient_id = ?',
+      whereArgs: [patientId],
+    );
+  }
+
+  // ── PRESCRIPTION DAO ───────────────────────────────────────────────────────
+
+  Future<void> upsertPrescription(PrescriptionModel rx) async {
+    final db = await database;
+    await db.insert(
+      'prescriptions_cache',
+      _prescriptionToRow(rx),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<PrescriptionModel>> getPrescriptionsByPatient(
+      String patientId) async {
+    final db = await database;
+    final rows = await db.query(
+      'prescriptions_cache',
+      where: 'patient_id = ?',
+      whereArgs: [patientId],
+      orderBy: 'created_at DESC',
+    );
+    return rows.map(_rowToPrescription).toList();
+  }
+
+  Future<void> deletePrescription(String id) async {
+    final db = await database;
+    await db.delete('prescriptions_cache', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> clearPrescriptionsForPatient(String patientId) async {
+    final db = await database;
+    await db.delete(
+      'prescriptions_cache',
+      where: 'patient_id = ?',
+      whereArgs: [patientId],
+    );
+  }
+
+  // ── LAB RESULT DAO ─────────────────────────────────────────────────────────
+
+  Future<void> upsertLabResult(LabResultModel lab) async {
+    final db = await database;
+    await db.insert(
+      'lab_results_cache',
+      _labResultToRow(lab),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<LabResultModel>> getLabResultsByPatient(
+      String patientId) async {
+    final db = await database;
+    final rows = await db.query(
+      'lab_results_cache',
+      where: 'patient_id = ?',
+      whereArgs: [patientId],
+      orderBy: 'created_at DESC',
+    );
+    return rows.map(_rowToLabResult).toList();
+  }
+
+  Future<void> deleteLabResult(String id) async {
+    final db = await database;
+    await db.delete('lab_results_cache', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> clearLabResultsForPatient(String patientId) async {
+    final db = await database;
+    await db.delete(
+      'lab_results_cache',
+      where: 'patient_id = ?',
+      whereArgs: [patientId],
+    );
+  }
+
+  // ── VITAL SIGN DAO ─────────────────────────────────────────────────────────
+
+  Future<void> upsertVitalSign(VitalSignModel v) async {
+    final db = await database;
+    await db.insert(
+      'vitals_cache',
+      _vitalSignToRow(v),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<VitalSignModel>> getVitalSignsByPatient(
+      String patientId) async {
+    final db = await database;
+    final rows = await db.query(
+      'vitals_cache',
+      where: 'patient_id = ?',
+      whereArgs: [patientId],
+      orderBy: 'recorded_at DESC',
+    );
+    return rows.map(_rowToVitalSign).toList();
+  }
+
+  Future<void> clearVitalSignsForPatient(String patientId) async {
+    final db = await database;
+    await db.delete(
+      'vitals_cache',
+      where: 'patient_id = ?',
+      whereArgs: [patientId],
+    );
+  }
+
+  // ── DIAGNOSIS DAO ──────────────────────────────────────────────────────────
+
+  Future<void> upsertDiagnosis(DiagnosisModel dx) async {
+    final db = await database;
+    await db.insert(
+      'diagnoses_cache',
+      _diagnosisToRow(dx),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<DiagnosisModel>> getDiagnosesByPatient(
+      String patientId) async {
+    final db = await database;
+    final rows = await db.query(
+      'diagnoses_cache',
+      where: 'patient_id = ?',
+      whereArgs: [patientId],
+      orderBy: 'created_at DESC',
+    );
+    return rows.map(_rowToDiagnosis).toList();
+  }
+
+  Future<void> clearDiagnosesForPatient(String patientId) async {
+    final db = await database;
+    await db.delete(
+      'diagnoses_cache',
+      where: 'patient_id = ?',
+      whereArgs: [patientId],
+    );
+  }
+
   // ── HOUSEKEEPING ──────────────────────────────────────────────────────────
 
   /// Clear all data for a specific provider — called on logout.
@@ -431,6 +785,20 @@ class LocalDatabase {
         where: 'primary_provider_id = ?',
         whereArgs: [providerId],
       );
+      // Clinical cache is patient-scoped; delete rows for patients of this provider.
+      for (final table in [
+        'appointments_cache',
+        'prescriptions_cache',
+        'lab_results_cache',
+        'vitals_cache',
+        'diagnoses_cache',
+      ]) {
+        await txn.rawDelete(
+          'DELETE FROM $table WHERE patient_id IN '
+          '(SELECT id FROM patients_cache WHERE primary_provider_id = ?)',
+          [providerId],
+        );
+      }
       // Remove provider-specific metadata keys
       await txn.delete(
         'cache_metadata',
@@ -445,8 +813,18 @@ class LocalDatabase {
   Future<void> clearAll() async {
     final db = await database;
     await db.transaction((txn) async {
-      await txn.delete('patients_cache');
-      await txn.delete('cache_metadata');
+      for (final table in [
+        'patients_cache',
+        'appointments_cache',
+        'prescriptions_cache',
+        'lab_results_cache',
+        'vitals_cache',
+        'diagnoses_cache',
+        'cache_metadata',
+        'pending_sync',
+      ]) {
+        await txn.delete(table);
+      }
     });
   }
 
@@ -578,6 +956,260 @@ class LocalDatabase {
       return null;
     }
   }
+
+  // ── APPOINTMENT SERIALISATION ─────────────────────────────────────────────
+
+  Map<String, dynamic> _appointmentToRow(AppointmentModel a) => {
+        'id':                  a.id,
+        'patient_id':          a.patientId,
+        'provider_id':         a.providerId,
+        'appointment_date':    a.appointmentDate.toIso8601String(),
+        'duration_minutes':    a.durationMinutes,
+        'appointment_type':    a.appointmentType,
+        'status':              a.status,
+        'reason':              a.reason,
+        'notes':               a.notes,
+        'cancellation_reason': a.cancellationReason,
+        'reminder_sent':       a.reminderSent ? 1 : 0,
+        'checked_in_at':       a.checkedInAt?.toIso8601String(),
+        'completed_at':        a.completedAt?.toIso8601String(),
+        'ward_id':             a.wardId,
+        'created_at':          a.createdAt?.toIso8601String(),
+        'updated_at':          a.updatedAt?.toIso8601String(),
+        'cached_at':           DateTime.now().toIso8601String(),
+      };
+
+  AppointmentModel _rowToAppointment(Map<String, dynamic> r) => AppointmentModel(
+        id:                 r['id'] as String,
+        patientId:          r['patient_id'] as String,
+        providerId:         r['provider_id'] as String,
+        appointmentDate:    DateTime.parse(r['appointment_date'] as String),
+        durationMinutes:    r['duration_minutes'] as int? ?? 30,
+        appointmentType:    r['appointment_type'] as String,
+        status:             r['status'] as String,
+        reason:             r['reason'] as String?,
+        notes:              r['notes'] as String?,
+        cancellationReason: r['cancellation_reason'] as String?,
+        reminderSent:       (r['reminder_sent'] as int? ?? 0) == 1,
+        checkedInAt:        _parseDate(r['checked_in_at']),
+        completedAt:        _parseDate(r['completed_at']),
+        wardId:             r['ward_id'] as String?,
+        createdAt:          _parseDate(r['created_at']),
+        updatedAt:          _parseDate(r['updated_at']),
+      );
+
+  // ── PRESCRIPTION SERIALISATION ─────────────────────────────────────────────
+
+  Map<String, dynamic> _prescriptionToRow(PrescriptionModel rx) => {
+        'id':                        rx.id,
+        'patient_id':                rx.patientId,
+        'prescriber_id':             rx.prescriberId,
+        'medication_name':           rx.medicationName,
+        'medication_code':           rx.medicationCode,
+        'dosage':                    rx.dosage,
+        'frequency':                 rx.frequency,
+        'route':                     rx.route,
+        'duration_days':             rx.durationDays,
+        'quantity':                  rx.quantity,
+        'refills_allowed':           rx.refillsAllowed,
+        'refills_remaining':         rx.refillsRemaining,
+        'prescribed_date':           rx.prescribedDate?.toIso8601String(),
+        'start_date':                rx.startDate?.toIso8601String(),
+        'end_date':                  rx.endDate?.toIso8601String(),
+        'expires_date':              rx.expiresDate?.toIso8601String(),
+        'status':                    rx.status,
+        'special_instructions':      rx.specialInstructions,
+        'discontinuation_reason':    rx.discontinuationReason,
+        'drug_interactions_checked': rx.drugInteractionsChecked ? 1 : 0,
+        'ward_id':                   rx.wardId,
+        'medication_coding_system':  rx.medicationCodingSystem,
+        'created_at':                rx.createdAt?.toIso8601String(),
+        'updated_at':                rx.updatedAt?.toIso8601String(),
+        'cached_at':                 DateTime.now().toIso8601String(),
+      };
+
+  PrescriptionModel _rowToPrescription(Map<String, dynamic> r) =>
+      PrescriptionModel(
+        id:                       r['id'] as String,
+        patientId:                r['patient_id'] as String,
+        prescriberId:             r['prescriber_id'] as String,
+        medicationName:           r['medication_name'] as String,
+        medicationCode:           r['medication_code'] as String?,
+        dosage:                   r['dosage'] as String? ?? '',
+        frequency:                r['frequency'] as String? ?? '',
+        route:                    r['route'] as String?,
+        durationDays:             r['duration_days'] as int?,
+        quantity:                 r['quantity'] as int?,
+        refillsAllowed:           r['refills_allowed'] as int? ?? 0,
+        refillsRemaining:         r['refills_remaining'] as int? ?? 0,
+        prescribedDate:           _parseDate(r['prescribed_date']),
+        startDate:                _parseDate(r['start_date']),
+        endDate:                  _parseDate(r['end_date']),
+        expiresDate:              _parseDate(r['expires_date']),
+        status:                   r['status'] as String? ?? 'active',
+        specialInstructions:      r['special_instructions'] as String?,
+        discontinuationReason:    r['discontinuation_reason'] as String?,
+        drugInteractionsChecked:  (r['drug_interactions_checked'] as int? ?? 0) == 1,
+        wardId:                   r['ward_id'] as String?,
+        medicationCodingSystem:   r['medication_coding_system'] as String?,
+        createdAt:                _parseDate(r['created_at']),
+        updatedAt:                _parseDate(r['updated_at']),
+      );
+
+  // ── LAB RESULT SERIALISATION ───────────────────────────────────────────────
+
+  Map<String, dynamic> _labResultToRow(LabResultModel lab) => {
+        'id':                  lab.id,
+        'patient_id':          lab.patientId,
+        'ordered_by_id':       lab.orderedById,
+        'performed_by_id':     lab.performedById,
+        'reviewed_by_id':      lab.reviewedById,
+        'test_name':           lab.testName,
+        'test_code':           lab.testCode,
+        'test_type':           lab.testType,
+        'priority':            lab.priority,
+        'results':             lab.results,
+        'interpretation':      lab.interpretation,
+        'abnormal_flags':      jsonEncode(lab.abnormalFlags),
+        'status':              lab.status,
+        'ordered_date':        lab.orderedDate?.toIso8601String(),
+        'sample_collected_at': lab.sampleCollectedAt?.toIso8601String(),
+        'completed_at':        lab.completedAt?.toIso8601String(),
+        'reviewed_at':         lab.reviewedAt?.toIso8601String(),
+        'file_path':           lab.filePath,
+        'requires_followup':   lab.requiresFollowup ? 1 : 0,
+        'ward_id':             lab.wardId,
+        'created_at':          lab.createdAt?.toIso8601String(),
+        'updated_at':          lab.updatedAt?.toIso8601String(),
+        'cached_at':           DateTime.now().toIso8601String(),
+      };
+
+  LabResultModel _rowToLabResult(Map<String, dynamic> r) {
+    List<String> flags = [];
+    try {
+      final raw = jsonDecode(r['abnormal_flags'] as String? ?? '[]') as List;
+      flags = raw.map((e) => e as String).toList();
+    } catch (_) {}
+
+    return LabResultModel(
+      id:                 r['id'] as String,
+      patientId:          r['patient_id'] as String,
+      orderedById:        r['ordered_by_id'] as String,
+      performedById:      r['performed_by_id'] as String?,
+      reviewedById:       r['reviewed_by_id'] as String?,
+      testName:           r['test_name'] as String,
+      testCode:           r['test_code'] as String?,
+      testType:           r['test_type'] as String?,
+      priority:           r['priority'] as String? ?? 'routine',
+      results:            r['results'] as String?,
+      interpretation:     r['interpretation'] as String?,
+      abnormalFlags:      flags,
+      status:             r['status'] as String? ?? 'pending',
+      orderedDate:        _parseDate(r['ordered_date']),
+      sampleCollectedAt:  _parseDate(r['sample_collected_at']),
+      completedAt:        _parseDate(r['completed_at']),
+      reviewedAt:         _parseDate(r['reviewed_at']),
+      filePath:           r['file_path'] as String?,
+      requiresFollowup:   (r['requires_followup'] as int? ?? 0) == 1,
+      wardId:             r['ward_id'] as String?,
+      createdAt:          _parseDate(r['created_at']),
+      updatedAt:          _parseDate(r['updated_at']),
+    );
+  }
+
+  // ── VITAL SIGN SERIALISATION ───────────────────────────────────────────────
+
+  Map<String, dynamic> _vitalSignToRow(VitalSignModel v) => {
+        'id':                       v.id,
+        'patient_id':               v.patientId,
+        'recorded_by_id':           v.recordedById,
+        'encounter_id':             v.encounterId,
+        'roster_entry_id':          v.rosterEntryId,
+        'ward_id':                  v.wardId,
+        'recorded_at':              v.recordedAt.toIso8601String(),
+        'blood_pressure_systolic':  v.bloodPressureSystolic,
+        'blood_pressure_diastolic': v.bloodPressureDiastolic,
+        'heart_rate':               v.heartRate,
+        'respiratory_rate':         v.respiratoryRate,
+        'temperature':              v.temperature,
+        'temperature_unit':         v.temperatureUnit,
+        'oxygen_saturation':        v.oxygenSaturation,
+        'weight':                   v.weight,
+        'weight_unit':              v.weightUnit,
+        'height':                   v.height,
+        'height_unit':              v.heightUnit,
+        'bmi':                      v.bmi,
+        'notes':                    v.notes,
+        'version':                  v.version,
+        'created_at':               v.createdAt?.toIso8601String(),
+        'cached_at':                DateTime.now().toIso8601String(),
+      };
+
+  VitalSignModel _rowToVitalSign(Map<String, dynamic> r) => VitalSignModel(
+        id:                      r['id'] as String,
+        patientId:               r['patient_id'] as String,
+        recordedById:            r['recorded_by_id'] as String,
+        encounterId:             r['encounter_id'] as String?,
+        rosterEntryId:           r['roster_entry_id'] as String?,
+        wardId:                  r['ward_id'] as String?,
+        recordedAt:              DateTime.parse(r['recorded_at'] as String),
+        bloodPressureSystolic:   r['blood_pressure_systolic'] as int?,
+        bloodPressureDiastolic:  r['blood_pressure_diastolic'] as int?,
+        heartRate:               r['heart_rate'] as int?,
+        respiratoryRate:         r['respiratory_rate'] as int?,
+        temperature:             r['temperature'] as double?,
+        temperatureUnit:         r['temperature_unit'] as String?,
+        oxygenSaturation:        r['oxygen_saturation'] as double?,
+        weight:                  r['weight'] as double?,
+        weightUnit:              r['weight_unit'] as String?,
+        height:                  r['height'] as double?,
+        heightUnit:              r['height_unit'] as String?,
+        bmi:                     r['bmi'] as double?,
+        notes:                   r['notes'] as String?,
+        version:                 r['version'] as int? ?? 1,
+        createdAt:               _parseDate(r['created_at']),
+      );
+
+  // ── DIAGNOSIS SERIALISATION ────────────────────────────────────────────────
+
+  Map<String, dynamic> _diagnosisToRow(DiagnosisModel dx) => {
+        'id':              dx.id,
+        'patient_id':      dx.patientId,
+        'diagnosed_by_id': dx.diagnosedById,
+        'encounter_id':    dx.encounterId,
+        'ward_id':         dx.wardId,
+        'icd_code':        dx.icdCode,
+        'icd_version':     dx.icdVersion,
+        'description':     dx.description,
+        'diagnosis_type':  dx.diagnosisType,
+        'status':          dx.status,
+        'onset_date':      dx.onsetDate?.toIso8601String(),
+        'resolved_date':   dx.resolvedDate?.toIso8601String(),
+        'notes':           dx.notes,
+        'version':         dx.version,
+        'created_at':      dx.createdAt?.toIso8601String(),
+        'updated_at':      dx.updatedAt?.toIso8601String(),
+        'cached_at':       DateTime.now().toIso8601String(),
+      };
+
+  DiagnosisModel _rowToDiagnosis(Map<String, dynamic> r) => DiagnosisModel(
+        id:             r['id'] as String,
+        patientId:      r['patient_id'] as String,
+        diagnosedById:  r['diagnosed_by_id'] as String,
+        encounterId:    r['encounter_id'] as String?,
+        wardId:         r['ward_id'] as String?,
+        icdCode:        r['icd_code'] as String?,
+        icdVersion:     r['icd_version'] as String?,
+        description:    r['description'] as String,
+        diagnosisType:  r['diagnosis_type'] as String? ?? 'primary',
+        status:         r['status'] as String? ?? 'active',
+        onsetDate:      _parseDate(r['onset_date']),
+        resolvedDate:   _parseDate(r['resolved_date']),
+        notes:          r['notes'] as String?,
+        version:        r['version'] as int? ?? 1,
+        createdAt:      _parseDate(r['created_at']),
+        updatedAt:      _parseDate(r['updated_at']),
+      );
 
   // ── PENDING SYNC DAO ───────────────────────────────────────────────────────
 

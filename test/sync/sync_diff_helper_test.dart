@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:healthcare_emr_mobile/core/sync/sync_diff_helper.dart';
+import 'package:healthcare_emr_mobile/data/models/sync_models.dart';
 
 void main() {
   group('SyncDiffHelper', () {
@@ -82,6 +83,69 @@ void main() {
       expect(diff.mergedData, isNotNull);
       expect(diff.mergedData!['dosage'], '750mg');
       expect(diff.mergedData!['notes'], 'take with food');
+    });
+  });
+
+  group('SyncDiffHelper.deleteConflictDiff', () {
+    test('returns server_wins with delete narrative', () {
+      final diff = SyncDiffHelper.deleteConflictDiff(
+        serverData: {
+          'dosage': '500mg',
+          'status': 'active',
+          'medication_name': 'Amoxicillin',
+        },
+        resourceType: 'prescriptions',
+      );
+      expect(diff.strategy, 'server_wins');
+      expect(diff.narrative.toLowerCase(), contains('delet'));
+      expect(diff.changedByClient, isEmpty);
+      expect(diff.mergedData, isNull);
+    });
+
+    test('suggestion tells user to keep server version', () {
+      final diff = SyncDiffHelper.deleteConflictDiff(
+        serverData: {'status': 'active'},
+        resourceType: 'appointments',
+      );
+      expect(diff.suggestion.toLowerCase(), contains('server'));
+    });
+  });
+
+  group('SyncConflict.isDeleteConflict', () {
+    test('returns true when clientData has no user-facing fields', () {
+      final conflict = SyncConflict(
+        id: 'c-1',
+        resourceType: 'prescriptions',
+        clientData: {'id': 'rx-1', 'deleted_at': '2026-06-01'},
+        serverData: {'dosage': '500mg', 'status': 'active'},
+        status: 'pending',
+        createdAt: '2026-06-10T00:00:00Z',
+      );
+      expect(conflict.isDeleteConflict, isTrue);
+    });
+
+    test('returns false when clientData has user-facing fields', () {
+      final conflict = SyncConflict(
+        id: 'c-2',
+        resourceType: 'prescriptions',
+        clientData: {'id': 'rx-1', 'dosage': '750mg'},
+        serverData: {'dosage': '500mg', 'status': 'active'},
+        status: 'pending',
+        createdAt: '2026-06-10T00:00:00Z',
+      );
+      expect(conflict.isDeleteConflict, isFalse);
+    });
+
+    test('returns false when serverData is empty', () {
+      final conflict = SyncConflict(
+        id: 'c-3',
+        resourceType: 'prescriptions',
+        clientData: {'id': 'rx-1'},
+        serverData: {},
+        status: 'pending',
+        createdAt: '2026-06-10T00:00:00Z',
+      );
+      expect(conflict.isDeleteConflict, isFalse);
     });
   });
 }

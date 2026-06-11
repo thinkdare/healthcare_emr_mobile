@@ -143,4 +143,25 @@ class SyncDiffHelper {
   }
 
   static String _label(String field) => field.replaceAll('_', ' ');
+
+  /// Produces a SyncDiff for delete-vs-update conflicts (client tried to
+  /// delete a resource the server had since updated). Resolution options are
+  /// binary: accept deletion (client_wins) or restore server version
+  /// (server_wins). Merging is not applicable.
+  static SyncDiff deleteConflictDiff({
+    required Map<String, dynamic> serverData,
+    required String resourceType,
+  }) {
+    final label = resourceType.replaceAll('_', ' ');
+    return SyncDiff(
+      narrative:
+          'You deleted this $label while the server had updated it. '
+          'The current server version is shown below.',
+      suggestion: 'Keep server version (discard deletion)',
+      strategy: 'server_wins',
+      changedByClient: [],
+      changedByServer: [],
+      overlappingFields: [],
+    );
+  }
 }

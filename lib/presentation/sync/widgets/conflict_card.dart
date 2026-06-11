@@ -18,11 +18,17 @@ class ConflictCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final diff = SyncDiffHelper.diff(
-      clientData: conflict.clientData,
-      serverData: conflict.serverData,
-      resourceType: conflict.resourceType,
-    );
+    final isDelete = conflict.isDeleteConflict;
+    final diff = isDelete
+        ? SyncDiffHelper.deleteConflictDiff(
+            serverData: conflict.serverData,
+            resourceType: conflict.resourceType,
+          )
+        : SyncDiffHelper.diff(
+            clientData: conflict.clientData,
+            serverData: conflict.serverData,
+            resourceType: conflict.resourceType,
+          );
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -33,14 +39,29 @@ class ConflictCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(_resourceIcon(conflict.resourceType),
-                    size: 16, color: Colors.orange.shade700),
+                Icon(
+                  isDelete ? Icons.delete_outline : _resourceIcon(conflict.resourceType),
+                  size: 16,
+                  color: isDelete ? Colors.red.shade700 : Colors.orange.shade700,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(_resourceTitle(conflict),
                       style: const TextStyle(
                           fontWeight: FontWeight.w600, fontSize: 14)),
                 ),
+                if (isDelete)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Delete conflict',
+                      style: TextStyle(fontSize: 10, color: Colors.red.shade700),
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 8),

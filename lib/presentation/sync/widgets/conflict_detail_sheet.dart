@@ -171,45 +171,47 @@ class _ConflictDetailSheetState extends State<ConflictDetailSheet> {
                 12 + MediaQuery.of(context).viewInsets.bottom),
             child: _isSubmitting
                 ? const Center(child: CircularProgressIndicator())
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _ResolutionButton(
-                        label: 'Keep mine',
-                        subtitle:
-                            'Apply your offline changes to the server',
-                        color: Colors.green,
-                        onTap: () => _submit('client_wins'),
+                : conflict.isDeleteConflict
+                    ? _DeleteConflictButtons(onSubmit: _submit)
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _ResolutionButton(
+                            label: 'Keep mine',
+                            subtitle:
+                                'Apply your offline changes to the server',
+                            color: Colors.green,
+                            onTap: () => _submit('client_wins'),
+                          ),
+                          const SizedBox(height: 8),
+                          _ResolutionButton(
+                            label: 'Use server',
+                            subtitle:
+                                'Discard your changes, keep server version',
+                            color: Colors.blue,
+                            onTap: () => _submit('server_wins'),
+                          ),
+                          if (notesOnlyMerge != null) ...[
+                            const SizedBox(height: 8),
+                            _ResolutionButton(
+                              label: 'Use server + keep my notes',
+                              subtitle:
+                                  'Server data with your ${notesField!.replaceAll('_', ' ')} preserved',
+                              color: Colors.purple,
+                              onTap: () => _submit('merged',
+                                  mergedData: notesOnlyMerge),
+                            ),
+                          ],
+                          const SizedBox(height: 8),
+                          _ResolutionButton(
+                            label: "I'll type it",
+                            subtitle:
+                                'Submit manual resolution with notes above',
+                            color: Colors.grey,
+                            onTap: () => _submit('manual'),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      _ResolutionButton(
-                        label: 'Use server',
-                        subtitle:
-                            'Discard your changes, keep server version',
-                        color: Colors.blue,
-                        onTap: () => _submit('server_wins'),
-                      ),
-                      if (notesOnlyMerge != null) ...[
-                        const SizedBox(height: 8),
-                        _ResolutionButton(
-                          label: 'Use server + keep my notes',
-                          subtitle:
-                              'Server data with your ${notesField!.replaceAll('_', ' ')} preserved',
-                          color: Colors.purple,
-                          onTap: () => _submit('merged',
-                              mergedData: notesOnlyMerge),
-                        ),
-                      ],
-                      const SizedBox(height: 8),
-                      _ResolutionButton(
-                        label: "I'll type it",
-                        subtitle:
-                            'Submit manual resolution with notes above',
-                        color: Colors.grey,
-                        onTap: () => _submit('manual'),
-                      ),
-                    ],
-                  ),
           ),
         ],
       ),
@@ -226,6 +228,34 @@ class _ConflictDetailSheetState extends State<ConflictDetailSheet> {
       .split(' ')
       .map((w) => w.isEmpty ? '' : w[0].toUpperCase() + w.substring(1))
       .join(' ');
+}
+
+class _DeleteConflictButtons extends StatelessWidget {
+  final Future<void> Function(String strategy, {Map<String, dynamic>? mergedData}) onSubmit;
+
+  const _DeleteConflictButtons({required this.onSubmit});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _ResolutionButton(
+          label: 'Restore server version',
+          subtitle: 'Keep the server copy — your deletion will be discarded',
+          color: Colors.blue,
+          onTap: () => onSubmit('server_wins'),
+        ),
+        const SizedBox(height: 8),
+        _ResolutionButton(
+          label: 'Accept deletion',
+          subtitle: 'Delete the record on the server as you intended',
+          color: Colors.red,
+          onTap: () => onSubmit('client_wins'),
+        ),
+      ],
+    );
+  }
 }
 
 class _ResolutionButton extends StatelessWidget {
