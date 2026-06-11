@@ -780,26 +780,37 @@ class LocalDatabase {
   Future<void> clearProviderData(String providerId) async {
     final db = await database;
     await db.transaction((txn) async {
+      // Collect patient IDs first — before deleting the patients rows that
+      // the clinical subquery depends on.
+      final patientRows = await txn.query(
+        'patients_cache',
+        columns: ['id'],
+        where: 'primary_provider_id = ?',
+        whereArgs: [providerId],
+      );
+      final patientIds = patientRows.map((r) => r['id'] as String).toList();
+
+      if (patientIds.isNotEmpty) {
+        final placeholders = List.filled(patientIds.length, '?').join(',');
+        for (final table in [
+          'appointments_cache',
+          'prescriptions_cache',
+          'lab_results_cache',
+          'vitals_cache',
+          'diagnoses_cache',
+        ]) {
+          await txn.rawDelete(
+            'DELETE FROM $table WHERE patient_id IN ($placeholders)',
+            patientIds,
+          );
+        }
+      }
+
       await txn.delete(
         'patients_cache',
         where: 'primary_provider_id = ?',
         whereArgs: [providerId],
       );
-      // Clinical cache is patient-scoped; delete rows for patients of this provider.
-      for (final table in [
-        'appointments_cache',
-        'prescriptions_cache',
-        'lab_results_cache',
-        'vitals_cache',
-        'diagnoses_cache',
-      ]) {
-        await txn.rawDelete(
-          'DELETE FROM $table WHERE patient_id IN '
-          '(SELECT id FROM patients_cache WHERE primary_provider_id = ?)',
-          [providerId],
-        );
-      }
-      // Remove provider-specific metadata keys
       await txn.delete(
         'cache_metadata',
         where: "key LIKE ?",

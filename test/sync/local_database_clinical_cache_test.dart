@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:healthcare_emr_mobile/core/database/local_database.dart';
 import 'package:healthcare_emr_mobile/data/models/clinical_models.dart';
 import 'package:healthcare_emr_mobile/data/models/clinical_record_models.dart';
+import 'package:healthcare_emr_mobile/data/models/patient_models.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
@@ -272,4 +273,83 @@ void main() {
       expect(results.first.status, 'active');
     });
   });
+
+  // ── clearProviderData ──────────────────────────────────────────────────────
+
+  group('clearProviderData', () {
+    test('clears clinical tables for provider patients before patients row is deleted',
+        () async {
+      // Seed patient owned by prov-1
+      await LocalDatabase.instance.upsertPatient(_makePatient('pat-1', 'prov-1'));
+      await LocalDatabase.instance.upsertAppointment(AppointmentModel(
+        id: 'appt-1',
+        patientId: 'pat-1',
+        providerId: 'prov-1',
+        appointmentDate: DateTime(2026, 7, 1, 9, 0),
+        durationMinutes: 30,
+        appointmentType: 'consultation',
+        status: 'scheduled',
+        reminderSent: false,
+      ));
+      await LocalDatabase.instance.upsertPrescription(PrescriptionModel(
+        id: 'rx-1',
+        patientId: 'pat-1',
+        prescriberId: 'doc-1',
+        medicationName: 'Amoxicillin',
+        dosage: '500mg',
+        frequency: 'TID',
+        refillsAllowed: 0,
+        refillsRemaining: 0,
+        status: 'active',
+        drugInteractionsChecked: false,
+      ));
+
+      // Seed patient owned by prov-2 — should NOT be touched
+      await LocalDatabase.instance.upsertPatient(_makePatient('pat-2', 'prov-2'));
+      await LocalDatabase.instance.upsertAppointment(AppointmentModel(
+        id: 'appt-2',
+        patientId: 'pat-2',
+        providerId: 'prov-2',
+        appointmentDate: DateTime(2026, 8, 1, 9, 0),
+        durationMinutes: 30,
+        appointmentType: 'consultation',
+        status: 'scheduled',
+        reminderSent: false,
+      ));
+
+      await LocalDatabase.instance.clearProviderData('prov-1');
+
+      // prov-1 data gone
+      final p1Patients = await LocalDatabase.instance.getPatients(providerId: 'prov-1');
+      expect(p1Patients, isEmpty);
+      final p1Appts = await LocalDatabase.instance.getAppointmentsByPatient('pat-1');
+      expect(p1Appts, isEmpty);
+      final p1Rx = await LocalDatabase.instance.getPrescriptionsByPatient('pat-1');
+      expect(p1Rx, isEmpty);
+
+      // prov-2 data intact
+      final p2Patients = await LocalDatabase.instance.getPatients(providerId: 'prov-2');
+      expect(p2Patients, hasLength(1));
+      final p2Appts = await LocalDatabase.instance.getAppointmentsByPatient('pat-2');
+      expect(p2Appts, hasLength(1));
+    });
+  });
 }
+
+// ── Test helpers ──────────────────────────────────────────────────────────────
+
+PatientModel _makePatient(String id, String providerId) => PatientModel(
+      id: id,
+      primaryProviderId: providerId,
+      firstName: 'Test',
+      lastName: 'Patient',
+      dateOfBirth: '1990-01-01',
+      gender: 'male',
+      emergencyContactName: 'Contact',
+      emergencyContactPhone: '000',
+      allergies: [],
+      currentMedications: [],
+      chronicConditions: [],
+      patientPortalEnabled: false,
+      isActive: true,
+    );
