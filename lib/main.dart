@@ -251,8 +251,10 @@ class _MyAppState extends State<MyApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) =>
-              AuthProvider(repository: authRepository)..initialize(),
+          create: (_) => AuthProvider(
+            repository: authRepository,
+            localDatabase: localDatabase,
+          )..initialize(),
         ),
         ChangeNotifierProvider(
           create: (_) =>

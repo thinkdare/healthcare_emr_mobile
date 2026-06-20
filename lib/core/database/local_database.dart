@@ -1269,9 +1269,4 @@ class LocalDatabase {
         await db.rawQuery('SELECT COUNT(*) as count FROM pending_sync');
     return Sqflite.firstIntValue(result) ?? 0;
   }
-
-  Future<void> clearPendingSync() async {
-    final db = await database;
-    await db.delete('pending_sync');
-  }
 }

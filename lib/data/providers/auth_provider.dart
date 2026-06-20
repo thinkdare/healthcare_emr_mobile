@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../models/auth_models.dart';
 import '../repositories/auth_repository.dart';
+import '../../core/database/local_database.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AuthState — the current login / session state
@@ -21,8 +22,9 @@ enum AuthState {
 
 class AuthProvider extends ChangeNotifier {
   final AuthRepository repository;
+  final LocalDatabase localDatabase;
 
-  AuthProvider({required this.repository});
+  AuthProvider({required this.repository, required this.localDatabase});
 
   // ── State ──────────────────────────────────────────────────────────────────
 
@@ -203,6 +205,18 @@ class AuthProvider extends ChangeNotifier {
   Future<void> selectFacility(AuthFacilityModel facility) async {
     try {
       final result = await repository.selectFacility(facility.id);
+
+      // patients_cache (and the per-patient clinical tables) are scoped by
+      // primary_provider_id only, not facility — current_facility_id is
+      // stored but never filtered on in any read query. Without clearing
+      // here, a provider with cross-facility access switching facilities
+      // would keep seeing the previous facility's cached patients mixed
+      // into the new facility's list. Pending offline writes are untouched
+      // — clearProviderData() never deletes from pending_sync.
+      if (_currentUser != null) {
+        await localDatabase.clearProviderData(_currentUser!.id);
+      }
+
       _activeFacility = facility;
       _activeMembership = result.membership;
       _state = AuthState.authenticated;
@@ -216,6 +230,18 @@ class AuthProvider extends ChangeNotifier {
   // ── Logout ────────────────────────────────────────────────────────────────
 
   Future<void> logout() async {
+    // Clear the cached clinical data for this user before tearing down the
+    // session — repository.logout()/apiClient.clearAll() only clear the
+    // auth token and tenant ID, never the local SQLite cache, so PHI from
+    // this session would otherwise sit readable on-device indefinitely
+    // (and risk bleeding into the next user's session on a shared device).
+    // Pending offline writes are deliberately preserved — clearProviderData()
+    // never touches pending_sync — so an edit made offline and not yet
+    // synced isn't silently lost just because the user logged out first.
+    if (_currentUser != null) {
+      await localDatabase.clearProviderData(_currentUser!.id);
+    }
+
     await repository.logout();
     _currentUser = null;
     _activeFacility = null;

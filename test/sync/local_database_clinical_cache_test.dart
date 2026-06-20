@@ -333,6 +333,24 @@ void main() {
       final p2Appts = await LocalDatabase.instance.getAppointmentsByPatient('pat-2');
       expect(p2Appts, hasLength(1));
     });
+
+    test('does not delete queued offline writes', () async {
+      // AuthProvider.logout() relies on this: a clinician who edited a
+      // patient offline and logs out before it syncs must not lose that
+      // edit just because the cache gets cleared.
+      await LocalDatabase.instance.upsertPatient(_makePatient('pat-1', 'prov-1'));
+      await LocalDatabase.instance.queuePendingSync(
+        id: 'sync-1',
+        resourceType: 'patients',
+        resourceId: 'pat-1',
+        operation: 'update',
+        payload: {'medical_history': 'Edited offline'},
+      );
+
+      await LocalDatabase.instance.clearProviderData('prov-1');
+
+      expect(await LocalDatabase.instance.getPendingSyncCount(), 1);
+    });
   });
 }
 
