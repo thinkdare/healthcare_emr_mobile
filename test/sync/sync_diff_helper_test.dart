@@ -147,5 +147,106 @@ void main() {
       );
       expect(conflict.isDeleteConflict, isFalse);
     });
+
+    test(
+        'returns true when serverData has deleted_at, even with a real client edit',
+        () {
+      // Server-deleted shape: client tried to update a soft-deleted
+      // resource (SyncController::surfaceDeleteConflict()). clientData has
+      // genuine user-facing fields here, which the old heuristic alone
+      // would have misread as a normal (non-delete) conflict.
+      final conflict = SyncConflict(
+        id: 'c-4',
+        resourceType: 'prescriptions',
+        clientData: {'id': 'rx-1', 'dosage': '750mg'},
+        serverData: {'dosage': '500mg', 'deleted_at': '2026-06-15T00:00:00Z'},
+        status: 'pending',
+        createdAt: '2026-06-10T00:00:00Z',
+      );
+      expect(conflict.isDeleteConflict, isTrue);
+    });
+
+    test('returns true when serverData is the hard-deleted marker', () {
+      // Hard-deleted/missing shape: no row existed at all server-side.
+      final conflict = SyncConflict(
+        id: 'c-5',
+        resourceType: 'prescriptions',
+        clientData: {'id': 'rx-1', 'dosage': '750mg'},
+        serverData: {'deleted': true, 'id': 'rx-1'},
+        status: 'pending',
+        createdAt: '2026-06-10T00:00:00Z',
+      );
+      expect(conflict.isDeleteConflict, isTrue);
+    });
+  });
+
+  group('SyncDiffHelper.createConflictDiff', () {
+    test('returns server_wins with a duplicate-patient narrative', () {
+      final diff = SyncDiffHelper.createConflictDiff(
+        serverData: {
+          'reason': 'potential_duplicate_patient',
+          'matches': [
+            {
+              'global_patient_id': 'gp-1',
+              'confidence': 90,
+              'match_reason': 'Name and date of birth exact match',
+            },
+          ],
+        },
+        resourceType: 'patients',
+      );
+      expect(diff.strategy, 'server_wins');
+      expect(diff.narrative.toLowerCase(), contains('duplicate'));
+      expect(diff.narrative, contains('90'));
+      expect(diff.mergedData, isNull);
+    });
+
+    test('returns server_wins with a scheduling-conflict narrative', () {
+      final diff = SyncDiffHelper.createConflictDiff(
+        serverData: {'reason': 'scheduling_conflict', 'provider_id': 'doc-1'},
+        resourceType: 'appointments',
+      );
+      expect(diff.strategy, 'server_wins');
+      expect(diff.narrative.toLowerCase(), contains('overlap'));
+    });
+  });
+
+  group('SyncConflict.isCreateConflict', () {
+    test('returns true for a duplicate-patient conflict', () {
+      final conflict = SyncConflict(
+        id: 'c-6',
+        resourceType: 'patients',
+        clientData: {'first_name': 'Jane', 'last_name': 'Doe'},
+        serverData: {'reason': 'potential_duplicate_patient', 'matches': []},
+        status: 'pending',
+        createdAt: '2026-06-10T00:00:00Z',
+      );
+      expect(conflict.isCreateConflict, isTrue);
+      expect(conflict.isDeleteConflict, isFalse);
+    });
+
+    test('returns true for a scheduling conflict', () {
+      final conflict = SyncConflict(
+        id: 'c-7',
+        resourceType: 'appointments',
+        clientData: {'appointment_type': 'checkup'},
+        serverData: {'reason': 'scheduling_conflict', 'provider_id': 'doc-1'},
+        status: 'pending',
+        createdAt: '2026-06-10T00:00:00Z',
+      );
+      expect(conflict.isCreateConflict, isTrue);
+    });
+
+    test('returns false for an ordinary update conflict', () {
+      final conflict = SyncConflict(
+        id: 'c-8',
+        resourceType: 'prescriptions',
+        clientData: {'dosage': '750mg'},
+        serverData: {'dosage': '500mg', 'status': 'active'},
+        status: 'pending',
+        createdAt: '2026-06-10T00:00:00Z',
+      );
+      expect(conflict.isCreateConflict, isFalse);
+    });
   });
 }

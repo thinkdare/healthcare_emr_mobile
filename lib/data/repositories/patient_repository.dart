@@ -197,7 +197,10 @@ class PatientRepository {
 
   // ── WRITE ──────────────────────────────────────────────────────────────────
 
-  Future<PatientModel> createPatient(Map<String, dynamic> data) async {
+  Future<PatientModel> createPatient(
+    Map<String, dynamic> data, {
+    required String providerId,
+  }) async {
     try {
       final response = await apiClient.post('/patients', data: data);
       if (response['success'] != true) {
@@ -209,7 +212,48 @@ class PatientRepository {
       return patient;
     } catch (e) {
       if (_isNetworkError(e)) {
-        await _queueOfflineWrite(operation: 'create', payload: data);
+        // The server assigns ids on success, but there's no server
+        // round-trip here — generate the id client-side and use it as the
+        // actual eventual server id (see SyncController::createOfflinePatient()
+        // on the backend, which creates the record with this exact id).
+        // Without this, the patient would be invisible everywhere — not
+        // shown locally (nothing was ever cached) and not created
+        // server-side — until the device reconnects AND a pull() happens to
+        // bring it back, which is what used to happen here.
+        final newId = const Uuid().v4();
+
+        final placeholder = PatientModel(
+          id: newId,
+          primaryProviderId: providerId,
+          firstName: data['first_name'] as String,
+          lastName: data['last_name'] as String,
+          dateOfBirth: data['date_of_birth'] as String,
+          gender: data['gender'] as String,
+          bloodType: data['blood_type'] as String?,
+          phone: data['phone'] as String?,
+          email: data['email'] as String?,
+          address: data['address'] as String?,
+          emergencyContactName: data['emergency_contact_name'] as String? ?? '',
+          emergencyContactPhone: data['emergency_contact_phone'] as String? ?? '',
+          // Allergies in particular must never be silently dropped from the
+          // local cache — a provider relying on the cached record while
+          // still offline needs to see them, not just whatever syncs back
+          // later.
+          allergies: (data['allergies'] as List? ?? [])
+              .map((a) => AllergyModel.fromJson(Map<String, dynamic>.from(a as Map)))
+              .toList(),
+          currentMedications: (data['current_medications'] as List? ?? [])
+              .map((m) => MedicationModel.fromJson(Map<String, dynamic>.from(m as Map)))
+              .toList(),
+          chronicConditions: List<String>.from(data['chronic_conditions'] as List? ?? []),
+          insuranceProvider: data['insurance_provider'] as String?,
+          insuranceNumber: data['insurance_number'] as String?,
+          medicalHistory: data['medical_history'] as String?,
+        );
+        await _db.upsertPatient(placeholder);
+
+        await _queueOfflineWrite(
+            operation: 'create', resourceId: newId, payload: data);
         throw Exception(
             'Offline — patient will be created when you reconnect.');
       }
@@ -266,13 +310,6 @@ class PatientRepository {
       lastRefreshed:  lastFetched,
       isFromCache:    true,
     );
-  }
-
-  // ── CACHE MANAGEMENT ──────────────────────────────────────────────────────
-
-  /// Clear cache for a specific provider — call on logout.
-  Future<void> clearCache(String providerId) async {
-    await _db.clearProviderData(providerId);
   }
 
   // ── OFFLINE WRITE HELPERS ─────────────────────────────────────────────────

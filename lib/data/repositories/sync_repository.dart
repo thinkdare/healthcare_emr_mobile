@@ -63,6 +63,7 @@ class SyncRepository {
     }
 
     final changes = pending.map((row) => SyncChange(
+      id:              row['id'] as String,
       resourceType:    row['resource_type'] as String,
       resourceId:      row['resource_id'] as String?,
       operation:       row['operation'] as String,
@@ -80,10 +81,23 @@ class SyncRepository {
       throw Exception(response['message'] ?? 'Push failed');
     }
 
-    await _db.clearPendingSync();
-
-    return SyncPushResult.fromJson(
+    final result = SyncPushResult.fromJson(
         Map<String, dynamic>.from(response['data'] as Map));
+
+    // Only drop items the server durably resolved (applied, or tracked as
+    // a SyncConflict). Forbidden/rejected items are left queued — clearing
+    // the whole table unconditionally here used to silently discard any
+    // edit that came back forbidden or rejected, with no record anywhere
+    // that it was ever attempted. Leaving them queued costs nothing extra
+    // on the next push: the server only reprocesses non-completed outcomes,
+    // so a still-forbidden item is just re-checked, not redone.
+    for (final item in result.items) {
+      if (item.isResolved) {
+        await _db.removePendingSyncItem(item.id);
+      }
+    }
+
+    return result;
   }
 
   // ── GET /api/v1/sync/pull ─────────────────────────────────────────────────

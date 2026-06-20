@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
 import '../../../core/platform.dart';
 import '../../../data/models/patient_models.dart';
+import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/patient_provider.dart';
 
 /// Patient create / edit form.
@@ -154,7 +155,8 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
     if (widget.isEditing) {
       result = await provider.updatePatient(widget.patient!.id, data);
     } else {
-      result = await provider.createPatient(data);
+      final providerId = context.read<AuthProvider>().currentUserId!;
+      result = await provider.createPatient(data, providerId: providerId);
     }
 
     if (!mounted) return;

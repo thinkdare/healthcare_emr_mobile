@@ -136,11 +136,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
     if (confirmed && context.mounted) {
       final auth = context.read<AuthProvider>();
-      final userId = auth.currentUserId;
-
-      if (userId != null) {
-        await context.read<PatientProvider>().clearCacheOnLogout(userId);
-      }
+      // AuthProvider.logout() clears the disk cache itself now (guaranteed
+      // for every logout call site, not just this screen). This only resets
+      // PatientProvider's in-memory state so it doesn't flash stale data.
+      context.read<PatientProvider>().clearCacheOnLogout();
       await auth.logout();
 
       if (context.mounted) {

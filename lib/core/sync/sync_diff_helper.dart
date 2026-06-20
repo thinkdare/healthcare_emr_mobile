@@ -164,4 +164,65 @@ class SyncDiffHelper {
       overlappingFields: [],
     );
   }
+
+  /// Produces a SyncDiff for a withheld offline *create* — a duplicate
+  /// patient match or an appointment scheduling conflict (see
+  /// SyncController::surfaceCreateConflict() server-side). serverData here
+  /// is `{reason, matches}` or `{reason, provider_id}` metadata, not a
+  /// record snapshot, so the normal diff() (which assumes both sides
+  /// describe the same record's fields) would treat these as unrelated
+  /// fields and wrongly suggest merging them. Defaults to server_wins
+  /// (discard the create) since the conflict exists specifically to avoid
+  /// creating a record by mistake — creating anyway is a deliberate,
+  /// separate choice, not the suggested default.
+  static SyncDiff createConflictDiff({
+    required Map<String, dynamic> serverData,
+    required String resourceType,
+  }) {
+    final reason = serverData['reason'] as String?;
+    final label = resourceType.replaceAll('_', ' ');
+
+    if (reason == 'potential_duplicate_patient') {
+      final matches =
+          (serverData['matches'] as List? ?? []).cast<Map<String, dynamic>>();
+      final top = matches.isNotEmpty ? matches.first : null;
+      final confidence = top?['confidence'];
+      final matchReason = top?['match_reason'] as String?;
+      final detail = (confidence != null && matchReason != null)
+          ? ' ($matchReason, $confidence% confidence)'
+          : '';
+      return SyncDiff(
+        narrative:
+            'This may already exist — a similar patient record was found$detail. '
+            'Review before creating a duplicate.',
+        suggestion: 'Discard — likely a duplicate',
+        strategy: 'server_wins',
+        changedByClient: [],
+        changedByServer: [],
+        overlappingFields: [],
+      );
+    }
+
+    if (reason == 'scheduling_conflict') {
+      return SyncDiff(
+        narrative:
+            'This $label overlaps with another appointment already on the '
+            "provider's schedule.",
+        suggestion: 'Discard — scheduling conflict',
+        strategy: 'server_wins',
+        changedByClient: [],
+        changedByServer: [],
+        overlappingFields: [],
+      );
+    }
+
+    return SyncDiff(
+      narrative: 'This $label could not be created — $reason.',
+      suggestion: 'Discard',
+      strategy: 'server_wins',
+      changedByClient: [],
+      changedByServer: [],
+      overlappingFields: [],
+    );
+  }
 }

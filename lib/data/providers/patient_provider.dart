@@ -187,13 +187,16 @@ class PatientProvider extends ChangeNotifier {
 
   // ── CREATE / UPDATE / DELETE ───────────────────────────────────────────────
 
-  Future<PatientModel?> createPatient(Map<String, dynamic> data) async {
+  Future<PatientModel?> createPatient(
+    Map<String, dynamic> data, {
+    required String providerId,
+  }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final patient = await repository.createPatient(data);
+      final patient = await repository.createPatient(data, providerId: providerId);
       // Prepend to the list so it appears at the top immediately
       _patients = [patient, ..._patients];
       // Bump stats
@@ -281,8 +284,13 @@ class PatientProvider extends ChangeNotifier {
 
   // ── HOUSEKEEPING ──────────────────────────────────────────────────────────
 
-  Future<void> clearCacheOnLogout(String providerId) async {
-    await repository.clearCache(providerId);
+  /// Reset in-memory patient state on logout. The disk cache itself is
+  /// cleared by AuthProvider.logout() (via LocalDatabase.clearProviderData())
+  /// so it's guaranteed to run for every logout call site, not just this
+  /// provider's consumers — this only needs to drop what's held in memory
+  /// here, so a freshly logged-in user on the same device never has a stale
+  /// previous-session patient flash into view before the next load completes.
+  void clearCacheOnLogout() {
     _patients = [];
     _searchResults = [];
     _searchQuery = '';

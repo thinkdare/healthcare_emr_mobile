@@ -67,7 +67,10 @@ class _ConflictDetailSheetState extends State<ConflictDetailSheet> {
     final notesField = _notesFieldName();
 
     Map<String, dynamic>? notesOnlyMerge;
-    if (notesField != null &&
+    // Doesn't apply to create-conflicts: there's no existing server record
+    // to merge notes into — serverData is conflict metadata, not a record.
+    if (!conflict.isCreateConflict &&
+        notesField != null &&
         conflict.clientData.containsKey(notesField) &&
         conflict.clientData[notesField] != null) {
       notesOnlyMerge = {
@@ -105,47 +108,50 @@ class _ConflictDetailSheetState extends State<ConflictDetailSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ...conflict.serverData.entries
-                      .where((e) => !_isInternal(e.key))
-                      .map((e) {
-                    final clientVal = conflict.clientData[e.key];
-                    final changed =
-                        diff.changedByClient.contains(e.key);
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: 130,
-                            child: Text(_label(e.key),
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade600)),
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(e.value?.toString() ?? '—',
-                                    style:
-                                        const TextStyle(fontSize: 13)),
-                                if (changed && clientVal != null) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                      'Your version: ${clientVal.toString()}',
-                                      style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.orange.shade700,
-                                          fontStyle: FontStyle.italic)),
-                                ],
-                              ],
+                  if (conflict.isCreateConflict)
+                    ..._buildCreateConflictBody(diff)
+                  else
+                    ...conflict.serverData.entries
+                        .where((e) => !_isInternal(e.key))
+                        .map((e) {
+                      final clientVal = conflict.clientData[e.key];
+                      final changed =
+                          diff.changedByClient.contains(e.key);
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 130,
+                              child: Text(_label(e.key),
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600)),
                             ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(e.value?.toString() ?? '—',
+                                      style:
+                                          const TextStyle(fontSize: 13)),
+                                  if (changed && clientVal != null) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                        'Your version: ${clientVal.toString()}',
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.orange.shade700,
+                                            fontStyle: FontStyle.italic)),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
                   const SizedBox(height: 16),
                   const Text('Resolution notes (optional)',
                       style: TextStyle(
@@ -173,7 +179,9 @@ class _ConflictDetailSheetState extends State<ConflictDetailSheet> {
                 ? const Center(child: CircularProgressIndicator())
                 : conflict.isDeleteConflict
                     ? _DeleteConflictButtons(onSubmit: _submit)
-                    : Column(
+                    : conflict.isCreateConflict
+                        ? _CreateConflictButtons(onSubmit: _submit)
+                        : Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _ResolutionButton(
@@ -228,6 +236,107 @@ class _ConflictDetailSheetState extends State<ConflictDetailSheet> {
       .split(' ')
       .map((w) => w.isEmpty ? '' : w[0].toUpperCase() + w.substring(1))
       .join(' ');
+
+  /// Renders the withheld-create case: explanation of why it was blocked,
+  /// the candidate matches (or the conflicting provider) from serverData,
+  /// then the record the user actually entered, sourced from clientData —
+  /// there's no existing server record here, so serverData has nothing
+  /// field-shaped to show.
+  List<Widget> _buildCreateConflictBody(SyncDiff diff) {
+    final conflict = widget.conflict;
+    final reason = conflict.serverData['reason'] as String?;
+    final widgets = <Widget>[
+      Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.amber.shade50,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(diff.narrative,
+            style: TextStyle(fontSize: 13, color: Colors.amber.shade900)),
+      ),
+      const SizedBox(height: 12),
+    ];
+
+    if (reason == 'potential_duplicate_patient') {
+      final matches = (conflict.serverData['matches'] as List? ?? [])
+          .cast<Map<String, dynamic>>();
+      if (matches.isNotEmpty) {
+        widgets.add(const Text('Matching record(s) found',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)));
+        widgets.add(const SizedBox(height: 4));
+        widgets.addAll(matches.map((m) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text(
+                '• ${m['match_reason'] ?? 'Match'} — ${m['confidence']}% confidence',
+                style: const TextStyle(fontSize: 12),
+              ),
+            )));
+        widgets.add(const SizedBox(height: 12));
+      }
+    } else if (reason == 'scheduling_conflict') {
+      final providerId = conflict.serverData['provider_id'] as String?;
+      if (providerId != null) {
+        widgets.add(Text('Provider: $providerId',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade700)));
+        widgets.add(const SizedBox(height: 12));
+      }
+    }
+
+    widgets.add(const Text('What you entered',
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)));
+    widgets.add(const SizedBox(height: 4));
+    widgets.addAll(conflict.clientData.entries
+        .where((e) => !_isInternal(e.key) && e.value != null)
+        .map((e) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 130,
+                    child: Text(_label(e.key),
+                        style: TextStyle(
+                            fontSize: 12, color: Colors.grey.shade600)),
+                  ),
+                  Expanded(
+                    child: Text(e.value.toString(),
+                        style: const TextStyle(fontSize: 13)),
+                  ),
+                ],
+              ),
+            )));
+
+    return widgets;
+  }
+}
+
+class _CreateConflictButtons extends StatelessWidget {
+  final Future<void> Function(String strategy, {Map<String, dynamic>? mergedData}) onSubmit;
+
+  const _CreateConflictButtons({required this.onSubmit});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _ResolutionButton(
+          label: "Discard — don't create",
+          subtitle: 'Likely a duplicate or conflict — nothing will be created',
+          color: Colors.blue,
+          onTap: () => onSubmit('server_wins'),
+        ),
+        const SizedBox(height: 8),
+        _ResolutionButton(
+          label: 'Create anyway',
+          subtitle: "I've confirmed this is not a duplicate / conflict",
+          color: Colors.red,
+          onTap: () => onSubmit('client_wins'),
+        ),
+      ],
+    );
+  }
 }
 
 class _DeleteConflictButtons extends StatelessWidget {

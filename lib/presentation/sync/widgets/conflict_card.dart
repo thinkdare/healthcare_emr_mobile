@@ -19,16 +19,22 @@ class ConflictCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDelete = conflict.isDeleteConflict;
+    final isCreate = conflict.isCreateConflict;
     final diff = isDelete
         ? SyncDiffHelper.deleteConflictDiff(
             serverData: conflict.serverData,
             resourceType: conflict.resourceType,
           )
-        : SyncDiffHelper.diff(
-            clientData: conflict.clientData,
-            serverData: conflict.serverData,
-            resourceType: conflict.resourceType,
-          );
+        : isCreate
+            ? SyncDiffHelper.createConflictDiff(
+                serverData: conflict.serverData,
+                resourceType: conflict.resourceType,
+              )
+            : SyncDiffHelper.diff(
+                clientData: conflict.clientData,
+                serverData: conflict.serverData,
+                resourceType: conflict.resourceType,
+              );
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -40,9 +46,17 @@ class ConflictCard extends StatelessWidget {
             Row(
               children: [
                 Icon(
-                  isDelete ? Icons.delete_outline : _resourceIcon(conflict.resourceType),
+                  isDelete
+                      ? Icons.delete_outline
+                      : isCreate
+                          ? Icons.warning_amber_outlined
+                          : _resourceIcon(conflict.resourceType),
                   size: 16,
-                  color: isDelete ? Colors.red.shade700 : Colors.orange.shade700,
+                  color: isDelete
+                      ? Colors.red.shade700
+                      : isCreate
+                          ? Colors.amber.shade800
+                          : Colors.orange.shade700,
                 ),
                 const SizedBox(width: 6),
                 Expanded(
@@ -60,6 +74,20 @@ class ConflictCard extends StatelessWidget {
                     child: Text(
                       'Delete conflict',
                       style: TextStyle(fontSize: 10, color: Colors.red.shade700),
+                    ),
+                  ),
+                if (isCreate)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      conflict.serverData['reason'] == 'scheduling_conflict'
+                          ? 'Scheduling conflict'
+                          : 'Possible duplicate',
+                      style: TextStyle(fontSize: 10, color: Colors.amber.shade900),
                     ),
                   ),
               ],
@@ -144,6 +172,16 @@ class ConflictCard extends StatelessWidget {
         .split(' ')
         .map((w) => w.isEmpty ? '' : w[0].toUpperCase() + w.substring(1))
         .join(' ');
+    if (c.isCreateConflict) {
+      // serverData has no record fields here (it's conflict metadata) — the
+      // record being created only exists in clientData.
+      final firstName = c.clientData['first_name'] as String?;
+      final lastName = c.clientData['last_name'] as String?;
+      final name = (firstName != null || lastName != null)
+          ? [firstName, lastName].whereType<String>().join(' ')
+          : c.clientData['appointment_type'] as String?;
+      return name != null ? '$type — $name' : type;
+    }
     final name = c.serverData['full_name'] as String? ??
         c.serverData['name'] as String? ??
         c.serverData['test_name'] as String? ??
