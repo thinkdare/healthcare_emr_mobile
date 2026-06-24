@@ -379,6 +379,24 @@ class ClinicalProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> completeAppointment(String appointmentId, {String? notes}) async {
+    if (_patientId == null) return false;
+    try {
+      final updated = await repository.completeAppointment(
+          _patientId!, appointmentId,
+          notes: notes);
+      _appointments = _appointments
+          .map((a) => a.id == appointmentId ? updated : a)
+          .toList();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<InteractionCheckResult> checkInteractions(String medicationName) async {
     if (_patientId == null) return InteractionCheckResult.unavailable();
     return repository.checkInteractions(_patientId!, medicationName);
@@ -437,6 +455,52 @@ class ClinicalProvider extends ChangeNotifier {
     }
   }
 
+  Future<PrescriptionModel?> updatePrescription(
+      String prescriptionId, Map<String, dynamic> data) async {
+    if (_patientId == null) return null;
+    try {
+      final updated =
+          await repository.updatePrescription(_patientId!, prescriptionId, data);
+      _prescriptions = _prescriptions
+          .map((p) => p.id == prescriptionId ? updated : p)
+          .toList();
+      notifyListeners();
+      return updated;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<PrescriptionModel?> refillPrescription(String prescriptionId) async {
+    if (_patientId == null) return null;
+    try {
+      final updated =
+          await repository.refillPrescription(_patientId!, prescriptionId);
+      _prescriptions = _prescriptions
+          .map((p) => p.id == prescriptionId ? updated : p)
+          .toList();
+      notifyListeners();
+      return updated;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> printPrescription(String prescriptionId) async {
+    if (_patientId == null) return null;
+    try {
+      return await repository.printPrescription(_patientId!, prescriptionId);
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<LabResultModel?> createLabOrder(Map<String, dynamic> data) async {
     if (_patientId == null) return null;
     try {
@@ -462,6 +526,33 @@ class ClinicalProvider extends ChangeNotifier {
           .toList();
       notifyListeners();
       return updated;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<LabResultModel?> cancelLabResult(String labResultId) async {
+    if (_patientId == null) return null;
+    try {
+      final updated = await repository.cancelLabResult(_patientId!, labResultId);
+      _labResults = _labResults
+          .map((l) => l.id == labResultId ? updated : l)
+          .toList();
+      notifyListeners();
+      return updated;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> printLabOrder(String labResultId) async {
+    if (_patientId == null) return null;
+    try {
+      return await repository.printLabOrder(_patientId!, labResultId);
     } catch (e) {
       _error = _friendlyError(e);
       notifyListeners();

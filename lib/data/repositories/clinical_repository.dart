@@ -118,6 +118,20 @@ class ClinicalRepository {
         Map<String, dynamic>.from(response['data'] as Map));
   }
 
+  Future<AppointmentModel> completeAppointment(
+      String patientId, String appointmentId,
+      {String? notes}) async {
+    final response = await apiClient.post(
+      '/patients/$patientId/appointments/$appointmentId/complete',
+      data: {'notes': ?notes},
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to complete appointment');
+    }
+    return AppointmentModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
   // ── Prescriptions ─────────────────────────────────────────────────────────
 
   Future<List<PrescriptionModel>> getPrescriptions(
@@ -196,6 +210,42 @@ class ClinicalRepository {
     }
     return PrescriptionModel.fromJson(
         Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  Future<PrescriptionModel> updatePrescription(
+      String patientId, String prescriptionId, Map<String, dynamic> data) async {
+    final response = await apiClient.put(
+      '/patients/$patientId/prescriptions/$prescriptionId',
+      data: data,
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to update prescription');
+    }
+    return PrescriptionModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  Future<PrescriptionModel> refillPrescription(
+      String patientId, String prescriptionId) async {
+    final response = await apiClient.post(
+      '/patients/$patientId/prescriptions/$prescriptionId/refill',
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to issue refill');
+    }
+    return PrescriptionModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  Future<Map<String, dynamic>> printPrescription(
+      String patientId, String prescriptionId) async {
+    final response = await apiClient.post(
+      '/patients/$patientId/prescriptions/$prescriptionId/print',
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to load print payload');
+    }
+    return Map<String, dynamic>.from(response['data'] as Map);
   }
 
   Future<PrescriptionModel> fillPrescription(
@@ -295,6 +345,29 @@ class ClinicalRepository {
     }
     return LabResultModel.fromJson(
         Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  Future<LabResultModel> cancelLabResult(
+      String patientId, String labResultId) async {
+    final response = await apiClient.post(
+      '/patients/$patientId/lab-results/$labResultId/cancel',
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to cancel lab test');
+    }
+    return LabResultModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  Future<Map<String, dynamic>> printLabOrder(
+      String patientId, String labResultId) async {
+    final response = await apiClient.post(
+      '/patients/$patientId/lab-results/$labResultId/print',
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to load print payload');
+    }
+    return Map<String, dynamic>.from(response['data'] as Map);
   }
 
   // ── Medical Documents ─────────────────────────────────────────────────────
