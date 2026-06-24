@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../config/theme.dart';
@@ -12,7 +13,14 @@ import '../../../data/providers/patient_provider.dart';
 import '../../../data/models/intra_grant_models.dart';
 import '../../../data/providers/intra_grant_provider.dart';
 import '../../../data/providers/referral_provider.dart';
+import '../../../data/models/ward_models.dart';
+import '../../../data/providers/ward_workflow_provider.dart';
+import '../../../data/providers/patient_message_provider.dart';
+import '../../../data/providers/patient_consent_provider.dart';
 import '../../referrals/widgets/create_referral_sheet.dart';
+import '../widgets/ward_request_sheets.dart';
+import 'patient_messages_screen.dart';
+import 'patient_consent_screen.dart';
 import '../widgets/clinical_forms.dart';
 import '../widgets/clinical_record_tab.dart';
 import '../widgets/clinical_record_forms.dart';
@@ -28,11 +36,11 @@ class PatientDetailScreen extends StatefulWidget {
 }
 
 // Tabs available to each staff type (by index into _allTabs).
-// 0=Overview 1=Appointments 2=Prescriptions 3=Lab Results 4=Documents 5=Clinical Record 6=Notes
-const _nurseTabIndices      = [0, 1, 5, 6];
+// 0=Overview 1=Appointments 2=Prescriptions 3=Lab Results 4=Documents 5=Clinical Record 6=Notes 7=Ward
+const _nurseTabIndices      = [0, 1, 5, 6, 7];
 const _pharmacistTabIndices = [0, 2, 6];
 const _labTechTabIndices    = [0, 3, 6];
-const _doctorTabIndices     = [0, 1, 2, 3, 4, 5, 6];
+const _doctorTabIndices     = [0, 1, 2, 3, 4, 5, 6, 7];
 
 List<int> _tabIndicesFor(String staffType) => switch (staffType) {
       'nurse' => _nurseTabIndices,
@@ -64,6 +72,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     _currentTab = _visibleIndices.first;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ClinicalProvider>().loadAll(_patient.id);
+      if (_visibleIndices.contains(7)) {
+        context.read<WardWorkflowProvider>().loadAll(_patient.id);
+      }
     });
   }
 
@@ -282,6 +293,88 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     }
   }
 
+  Future<void> _activateRecord() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Activate Patient Record'),
+        content: const Text(
+            'Records department staff only. This opens a time-limited window '
+            'for clinical write access to this patient.'),
+        actions: [
+          AdaptiveTextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel')),
+          AdaptiveFilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Activate'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final ok = await context.read<PatientProvider>().activatePatient(_patient.id);
+    if (!mounted) return;
+    showAdaptiveToast(
+      context,
+      ok
+          ? 'Patient record activated'
+          : context.read<PatientProvider>().error ?? 'Failed to activate record',
+      type: ok ? ToastType.success : ToastType.error,
+    );
+  }
+
+  Future<void> _showAuditLog() async {
+    final logs = await context.read<PatientProvider>().getAuditLog(_patient.id);
+    if (!mounted) return;
+    if (logs == null) {
+      showAdaptiveToast(
+        context,
+        context.read<PatientProvider>().error ?? 'Failed to load audit log',
+        type: ToastType.error,
+      );
+      return;
+    }
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => _PatientAuditLogSheet(logs: logs),
+    );
+  }
+
+  Future<void> _showMoreActions(bool canViewAuditLog) async {
+    String? choice;
+    await showCupertinoModalPopup<void>(
+      context: context,
+      builder: (_) => CupertinoActionSheet(
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
+              choice = 'activate';
+              Navigator.of(context).pop();
+            },
+            child: const Text('Activate Record'),
+          ),
+          if (canViewAuditLog)
+            CupertinoActionSheetAction(
+              onPressed: () {
+                choice = 'audit_log';
+                Navigator.of(context).pop();
+              },
+              child: const Text('View Audit Log'),
+            ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+      ),
+    );
+    if (choice == 'activate') _activateRecord();
+    if (choice == 'audit_log') _showAuditLog();
+  }
+
   @override
   void dispose() {
     _tabs.dispose();
@@ -294,6 +387,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     final auth = context.read<AuthProvider>();
     final canEdit = auth.staffType == 'doctor' || auth.staffType == 'admin' ||
         auth.staffType == 'nurse';
+    final isSuperAdmin = auth.currentUser?.isSuperAdmin ?? false;
+    final canViewAuditLog =
+        isSuperAdmin || auth.currentUserId == p.primaryProviderId;
 
     if (kIsIOS) {
       final iosTabIndex = _visibleIndices[_iosSegment];
@@ -328,6 +424,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                     context.read<ClinicalProvider>().loadAll(p.id),
                 child: const Icon(CupertinoIcons.refresh),
               ),
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () => _showMoreActions(canViewAuditLog),
+                child: const Icon(CupertinoIcons.ellipsis_circle),
+              ),
             ],
           ),
         ),
@@ -351,6 +452,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                 _DocumentsTab(patientId: _patient.id),
                 const ClinicalRecordTab(),
                 _NotesTab(patient: _patient),
+                _WardTab(patientId: _patient.id),
               ];
               return Column(
                 children: [
@@ -375,6 +477,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                                 'Docs',
                                 'Clinical',
                                 'Notes',
+                                'Ward',
                               ][_visibleIndices[i]],
                               style: const TextStyle(fontSize: 12),
                             ),
@@ -439,6 +542,35 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
             onPressed: () =>
                 context.read<ClinicalProvider>().loadAll(p.id),
           ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'activate') _activateRecord();
+              if (value == 'audit_log') _showAuditLog();
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'activate',
+                child: Row(
+                  children: [
+                    Icon(Icons.lock_open_outlined, size: 20),
+                    SizedBox(width: 8),
+                    Text('Activate Record'),
+                  ],
+                ),
+              ),
+              if (canViewAuditLog)
+                const PopupMenuItem(
+                  value: 'audit_log',
+                  child: Row(
+                    children: [
+                      Icon(Icons.history, size: 20),
+                      SizedBox(width: 8),
+                      Text('View Audit Log'),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ],
         bottom: TabBar(
           controller: _tabs,
@@ -454,6 +586,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                 'Documents',
                 'Clinical Record',
                 'Notes',
+                'Ward',
               ][i]),
           ],
         ),
@@ -477,12 +610,84 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
             _DocumentsTab(patientId: _patient.id),
             const ClinicalRecordTab(),
             _NotesTab(patient: _patient),
+            _WardTab(patientId: _patient.id),
           ];
           return TabBarView(
             controller: _tabs,
             children: [for (final i in _visibleIndices) allTabViews[i]],
           );
         },
+      ),
+    );
+  }
+}
+
+// ── Patient Audit Log ─────────────────────────────────────────────────────────
+
+class _PatientAuditLogSheet extends StatelessWidget {
+  final List<Map<String, dynamic>> logs;
+  const _PatientAuditLogSheet({required this.logs});
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) => Column(
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppTheme.gray600.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text('Audit Log',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          ),
+          Expanded(
+            child: logs.isEmpty
+                ? Center(
+                    child: Text('No audit entries',
+                        style: TextStyle(color: AppTheme.gray600)))
+                : ListView.separated(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: logs.length,
+                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    itemBuilder: (context, i) {
+                      final log = logs[i];
+                      return ListTile(
+                        dense: true,
+                        leading: Icon(
+                          log['was_emergency'] == true
+                              ? Icons.warning_amber
+                              : Icons.fingerprint,
+                          color: log['was_emergency'] == true
+                              ? AppTheme.errorColor
+                              : AppTheme.gray600,
+                          size: 20,
+                        ),
+                        title: Text(
+                          '${log['action'] ?? ''} · ${log['resource_type'] ?? ''}',
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text(
+                          '${log['access_authority'] ?? ''} · ${log['accessed_at'] ?? ''}'
+                          '${log['was_offline'] == true ? ' · offline' : ''}',
+                          style: TextStyle(fontSize: 11, color: AppTheme.gray600),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -550,6 +755,46 @@ class _OverviewTab extends StatelessWidget {
                   if (p.phone != null) _InfoRow('Phone', p.phone!),
                   if (p.email != null) _InfoRow('Email', p.email!),
                   if (p.address != null) _InfoRow('Address', p.address!),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.message_outlined, size: 18),
+                          label: const Text('Messages'),
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ChangeNotifierProvider.value(
+                                value: context.read<PatientMessageProvider>(),
+                                child: PatientMessagesScreen(
+                                  patientId: p.id,
+                                  patientName: p.fullName,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.privacy_tip_outlined, size: 18),
+                          label: const Text('Consent'),
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ChangeNotifierProvider.value(
+                                value: context.read<PatientConsentProvider>(),
+                                child: PatientConsentScreen(
+                                  patientId: p.id,
+                                  patientName: p.fullName,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -710,12 +955,105 @@ class _AppointmentsTab extends StatelessWidget {
   }
 }
 
-class _AppointmentCard extends StatelessWidget {
+class _AppointmentCard extends StatefulWidget {
   final AppointmentModel appt;
   const _AppointmentCard({required this.appt});
 
   @override
+  State<_AppointmentCard> createState() => _AppointmentCardState();
+}
+
+class _AppointmentCardState extends State<_AppointmentCard> {
+  bool _cancelling = false;
+  bool _completing = false;
+
+  Future<void> _cancel() async {
+    final reasonCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel Appointment'),
+        content: TextField(
+          controller: reasonCtrl,
+          decoration: const InputDecoration(labelText: 'Reason (optional)'),
+        ),
+        actions: [
+          AdaptiveTextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('No')),
+          AdaptiveFilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Cancel Appointment'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _cancelling = true);
+    final ok = await context.read<ClinicalProvider>().cancelAppointment(
+          widget.appt.id,
+          reason: reasonCtrl.text.trim().isEmpty ? null : reasonCtrl.text.trim(),
+        );
+    if (!mounted) return;
+    setState(() => _cancelling = false);
+
+    showAdaptiveToast(
+      context,
+      ok ? 'Appointment cancelled' : context.read<ClinicalProvider>().error ?? 'Failed to cancel',
+      type: ok ? ToastType.success : ToastType.error,
+    );
+  }
+
+  Future<void> _complete() async {
+    final notesCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Complete Appointment'),
+        content: TextField(
+          controller: notesCtrl,
+          maxLines: 3,
+          decoration: const InputDecoration(labelText: 'Notes (optional)'),
+        ),
+        actions: [
+          AdaptiveTextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel')),
+          AdaptiveFilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Mark Complete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _completing = true);
+    final ok = await context.read<ClinicalProvider>().completeAppointment(
+          widget.appt.id,
+          notes: notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
+        );
+    if (!mounted) return;
+    setState(() => _completing = false);
+
+    showAdaptiveToast(
+      context,
+      ok ? 'Appointment marked complete' : context.read<ClinicalProvider>().error ?? 'Failed to complete',
+      type: ok ? ToastType.success : ToastType.error,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final appt = widget.appt;
+    final auth = context.read<AuthProvider>();
+    final canModify = (auth.currentUser?.isSuperAdmin ?? false) ||
+        auth.currentUserId == appt.providerId;
+    final isOpen = !['completed', 'cancelled', 'no_show'].contains(appt.status);
+    final canCancel = canModify && isOpen;
+    final canComplete = canModify && isOpen;
+
     Color statusColor;
     switch (appt.status) {
       case 'completed':
@@ -740,54 +1078,91 @@ class _AppointmentCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 4,
-              height: 56,
-              decoration: BoxDecoration(
-                color: statusColor,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    appt.appointmentType.replaceAll('_', ' ').toUpperCase(),
-                    style: const TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w600),
+            Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  const SizedBox(height: 2),
-                  Text(dateStr,
-                      style: TextStyle(
-                          color: AppTheme.gray600, fontSize: 13)),
-                  if (appt.reason != null) ...[
-                    const SizedBox(height: 2),
-                    Text(appt.reason!,
-                        style: TextStyle(
-                            fontSize: 12, color: AppTheme.gray600)),
-                  ],
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        appt.appointmentType.replaceAll('_', ' ').toUpperCase(),
+                        style: const TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(dateStr,
+                          style: TextStyle(
+                              color: AppTheme.gray600, fontSize: 13)),
+                      if (appt.reason != null) ...[
+                        const SizedBox(height: 2),
+                        Text(appt.reason!,
+                            style: TextStyle(
+                                fontSize: 12, color: AppTheme.gray600)),
+                      ],
+                    ],
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    appt.status.replaceAll('_', ' ').toUpperCase(),
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: statusColor),
+                  ),
+                ),
+              ],
+            ),
+            if (canCancel || canComplete) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                children: [
+                  if (canComplete)
+                    OutlinedButton.icon(
+                      onPressed: _completing ? null : _complete,
+                      icon: _completing
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.check_circle_outline, size: 16),
+                      label: Text(_completing ? 'Saving…' : 'Mark Complete'),
+                    ),
+                  if (canCancel)
+                    OutlinedButton.icon(
+                      onPressed: _cancelling ? null : _cancel,
+                      style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.errorColor),
+                      icon: _cancelling
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.event_busy, size: 16),
+                      label: Text(_cancelling ? 'Cancelling…' : 'Cancel'),
+                    ),
                 ],
               ),
-            ),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                appt.status.replaceAll('_', ' ').toUpperCase(),
-                style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: statusColor),
-              ),
-            ),
+            ],
           ],
         ),
       ),
@@ -832,6 +1207,112 @@ class _PrescriptionCard extends StatefulWidget {
 
 class _PrescriptionCardState extends State<_PrescriptionCard> {
   bool _filling = false;
+  bool _refilling = false;
+  bool _printing = false;
+
+  Future<void> _refill() async {
+    setState(() => _refilling = true);
+    final result =
+        await context.read<ClinicalProvider>().refillPrescription(widget.rx.id);
+    if (!mounted) return;
+    setState(() => _refilling = false);
+
+    showAdaptiveToast(
+      context,
+      result != null
+          ? 'Refill issued — ${result.refillsRemaining} remaining'
+          : context.read<ClinicalProvider>().error ?? 'Failed to issue refill',
+      type: result != null ? ToastType.success : ToastType.error,
+    );
+  }
+
+  Future<void> _print() async {
+    setState(() => _printing = true);
+    final payload =
+        await context.read<ClinicalProvider>().printPrescription(widget.rx.id);
+    if (!mounted) return;
+    setState(() => _printing = false);
+
+    if (payload == null) {
+      showAdaptiveToast(
+        context,
+        context.read<ClinicalProvider>().error ?? 'Failed to load print payload',
+        type: ToastType.error,
+      );
+      return;
+    }
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => _PrescriptionPrintDialog(payload: payload),
+    );
+  }
+
+  Future<void> _showEditDialog() async {
+    final dosageCtrl = TextEditingController(text: widget.rx.dosage);
+    final frequencyCtrl = TextEditingController(text: widget.rx.frequency);
+    final instructionsCtrl =
+        TextEditingController(text: widget.rx.specialInstructions ?? '');
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Prescription'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: dosageCtrl,
+              decoration: const InputDecoration(labelText: 'Dosage'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: frequencyCtrl,
+              decoration: const InputDecoration(labelText: 'Frequency'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: instructionsCtrl,
+              maxLines: 2,
+              decoration:
+                  const InputDecoration(labelText: 'Special instructions'),
+            ),
+          ],
+        ),
+        actions: [
+          AdaptiveTextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel')),
+          AdaptiveFilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final result = await context.read<ClinicalProvider>().updatePrescription(
+      widget.rx.id,
+      {
+        'dosage': dosageCtrl.text.trim(),
+        'frequency': frequencyCtrl.text.trim(),
+        'special_instructions': instructionsCtrl.text.trim().isEmpty
+            ? null
+            : instructionsCtrl.text.trim(),
+      },
+    );
+    if (!mounted) return;
+
+    showAdaptiveToast(
+      context,
+      result != null
+          ? 'Prescription updated'
+          : context.read<ClinicalProvider>().error ?? 'Failed to update prescription',
+      type: result != null ? ToastType.success : ToastType.error,
+    );
+  }
 
   Future<void> _showFillDialog() async {
     final qtyCtrl = TextEditingController(
@@ -896,10 +1377,17 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
   @override
   Widget build(BuildContext context) {
     final rx = widget.rx;
-    final isPharmacist =
-        context.read<AuthProvider>().staffType == 'pharmacist';
+    final auth = context.read<AuthProvider>();
+    final isPharmacist = auth.staffType == 'pharmacist';
     final canFill = isPharmacist &&
         (rx.status == 'pending' || rx.status == 'partially_filled');
+    final isOpen = !['cancelled', 'discontinued'].contains(rx.status);
+    final canRefill =
+        auth.canPrescribe && rx.refillsRemaining > 0 && isOpen;
+    final canEdit = isOpen &&
+        ((auth.currentUser?.isSuperAdmin ?? false) ||
+            auth.currentUserId == rx.prescriberId);
+    final canPrint = auth.canPrescribe;
     final color = rx.isActive ? AppTheme.successColor : AppTheme.gray600;
 
     return Card(
@@ -971,9 +1459,110 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
                 ),
               ),
             ],
+            if (canRefill || canEdit || canPrint) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  if (canRefill)
+                    OutlinedButton.icon(
+                      onPressed: _refilling ? null : _refill,
+                      icon: _refilling
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.autorenew, size: 16),
+                      label: Text(_refilling ? 'Refilling…' : 'Refill'),
+                    ),
+                  if (canEdit)
+                    OutlinedButton.icon(
+                      onPressed: _showEditDialog,
+                      icon: const Icon(Icons.edit_outlined, size: 16),
+                      label: const Text('Edit'),
+                    ),
+                  if (canPrint)
+                    OutlinedButton.icon(
+                      onPressed: _printing ? null : _print,
+                      icon: _printing
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.print_outlined, size: 16),
+                      label: Text(_printing ? 'Loading…' : 'Print'),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PrescriptionPrintDialog extends StatelessWidget {
+  final Map<String, dynamic> payload;
+  const _PrescriptionPrintDialog({required this.payload});
+
+  String get _formatted {
+    final facility = payload['facility'] as Map?;
+    final patient = payload['patient'] as Map?;
+    final rx = payload['prescription'] as Map?;
+    final buffer = StringBuffer();
+    if (facility != null) {
+      buffer.writeln(facility['name'] ?? '');
+      if (facility['address'] != null) buffer.writeln(facility['address']);
+      if (facility['phone'] != null) buffer.writeln(facility['phone']);
+      buffer.writeln('');
+    }
+    buffer.writeln('Patient: ${patient?['name'] ?? ''}');
+    if (patient?['date_of_birth'] != null) {
+      buffer.writeln('DOB: ${patient?['date_of_birth']}');
+    }
+    if (patient?['mrn'] != null) buffer.writeln('MRN: ${patient?['mrn']}');
+    buffer.writeln('');
+    buffer.writeln('Medication: ${rx?['medication_name'] ?? ''}');
+    buffer.writeln('Dosage: ${rx?['dosage'] ?? ''}');
+    buffer.writeln('Frequency: ${rx?['frequency'] ?? ''}');
+    if (rx?['route'] != null) buffer.writeln('Route: ${rx?['route']}');
+    if (rx?['quantity'] != null) buffer.writeln('Quantity: ${rx?['quantity']}');
+    if (rx?['refills_allowed'] != null) {
+      buffer.writeln('Refills allowed: ${rx?['refills_allowed']}');
+    }
+    if (rx?['special_instructions'] != null) {
+      buffer.writeln('Instructions: ${rx?['special_instructions']}');
+    }
+    buffer.writeln('Status: ${rx?['status'] ?? ''}');
+    buffer.writeln('');
+    buffer.writeln('Printed: ${payload['printed_at'] ?? ''}');
+    return buffer.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Prescription'),
+      content: SingleChildScrollView(
+        child: Text(_formatted, style: const TextStyle(fontFamily: 'monospace')),
+      ),
+      actions: [
+        AdaptiveTextButton(
+          onPressed: () async {
+            await Clipboard.setData(ClipboardData(text: _formatted));
+            if (context.mounted) {
+              showAdaptiveToast(context, 'Copied to clipboard',
+                  type: ToastType.success);
+            }
+          },
+          child: const Text('Copy'),
+        ),
+        AdaptiveFilledButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
+      ],
     );
   }
 }
@@ -1014,6 +1603,64 @@ class _LabResultCard extends StatefulWidget {
 
 class _LabResultCardState extends State<_LabResultCard> {
   bool _recording = false;
+  bool _cancelling = false;
+  bool _printing = false;
+
+  Future<void> _cancel() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel Lab Test'),
+        content: Text(
+            'Cancel the "${widget.lab.testName}" order? This cannot be undone.'),
+        actions: [
+          AdaptiveTextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('No')),
+          AdaptiveFilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Cancel Test'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _cancelling = true);
+    final result =
+        await context.read<ClinicalProvider>().cancelLabResult(widget.lab.id);
+    if (!mounted) return;
+    setState(() => _cancelling = false);
+
+    showAdaptiveToast(
+      context,
+      result != null
+          ? 'Lab test cancelled'
+          : context.read<ClinicalProvider>().error ?? 'Failed to cancel test',
+      type: result != null ? ToastType.success : ToastType.error,
+    );
+  }
+
+  Future<void> _print() async {
+    setState(() => _printing = true);
+    final payload =
+        await context.read<ClinicalProvider>().printLabOrder(widget.lab.id);
+    if (!mounted) return;
+    setState(() => _printing = false);
+
+    if (payload == null) {
+      showAdaptiveToast(
+        context,
+        context.read<ClinicalProvider>().error ?? 'Failed to load print payload',
+        type: ToastType.error,
+      );
+      return;
+    }
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => _LabOrderPrintDialog(payload: payload),
+    );
+  }
 
   Future<void> _showRecordDialog() async {
     final resultsCtrl = TextEditingController();
@@ -1126,9 +1773,15 @@ class _LabResultCardState extends State<_LabResultCard> {
   @override
   Widget build(BuildContext context) {
     final lab = widget.lab;
-    final isLabTech = context.read<AuthProvider>().staffType == 'lab_technician' ||
-        context.read<AuthProvider>().staffType == 'lab_tech';
+    final auth = context.read<AuthProvider>();
+    final isLabTech = auth.staffType == 'lab_technician' ||
+        auth.staffType == 'lab_tech';
     final canRecord = isLabTech && lab.isPending;
+    final isOpen = lab.status != 'completed' && lab.status != 'cancelled';
+    final canCancel = isOpen &&
+        ((auth.currentUser?.isSuperAdmin ?? false) ||
+            auth.currentUserId == lab.orderedById);
+    final canPrint = auth.canOrderLabs;
 
     Color statusColor;
     switch (lab.status) {
@@ -1245,9 +1898,101 @@ class _LabResultCardState extends State<_LabResultCard> {
                 ),
               ),
             ],
+            if (canCancel || canPrint) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  if (canCancel)
+                    OutlinedButton.icon(
+                      onPressed: _cancelling ? null : _cancel,
+                      style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.errorColor),
+                      icon: _cancelling
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.cancel_outlined, size: 16),
+                      label: Text(_cancelling ? 'Cancelling…' : 'Cancel Test'),
+                    ),
+                  if (canPrint)
+                    OutlinedButton.icon(
+                      onPressed: _printing ? null : _print,
+                      icon: _printing
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.print_outlined, size: 16),
+                      label: Text(_printing ? 'Loading…' : 'Print'),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+}
+
+class _LabOrderPrintDialog extends StatelessWidget {
+  final Map<String, dynamic> payload;
+  const _LabOrderPrintDialog({required this.payload});
+
+  String get _formatted {
+    final facility = payload['facility'] as Map?;
+    final patient = payload['patient'] as Map?;
+    final order = payload['lab_order'] as Map?;
+    final buffer = StringBuffer();
+    if (facility != null) {
+      buffer.writeln(facility['name'] ?? '');
+      if (facility['address'] != null) buffer.writeln(facility['address']);
+      if (facility['phone'] != null) buffer.writeln(facility['phone']);
+      buffer.writeln('');
+    }
+    buffer.writeln('Patient: ${patient?['name'] ?? ''}');
+    if (patient?['date_of_birth'] != null) {
+      buffer.writeln('DOB: ${patient?['date_of_birth']}');
+    }
+    if (patient?['mrn'] != null) buffer.writeln('MRN: ${patient?['mrn']}');
+    buffer.writeln('');
+    buffer.writeln('Test: ${order?['test_name'] ?? ''}');
+    if (order?['test_type'] != null) buffer.writeln('Type: ${order?['test_type']}');
+    buffer.writeln('Priority: ${order?['priority'] ?? ''}');
+    if (order?['ordered_date'] != null) {
+      buffer.writeln('Ordered: ${order?['ordered_date']}');
+    }
+    buffer.writeln('Status: ${order?['status'] ?? ''}');
+    buffer.writeln('');
+    buffer.writeln('Printed: ${payload['printed_at'] ?? ''}');
+    return buffer.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Lab Order'),
+      content: SingleChildScrollView(
+        child: Text(_formatted, style: const TextStyle(fontFamily: 'monospace')),
+      ),
+      actions: [
+        AdaptiveTextButton(
+          onPressed: () async {
+            await Clipboard.setData(ClipboardData(text: _formatted));
+            if (context.mounted) {
+              showAdaptiveToast(context, 'Copied to clipboard',
+                  type: ToastType.success);
+            }
+          },
+          child: const Text('Copy'),
+        ),
+        AdaptiveFilledButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
+      ],
     );
   }
 }
@@ -1667,4 +2412,410 @@ class _ClinicalNoteCard extends StatelessWidget {
       '${dt.day.toString().padLeft(2, '0')}/'
       '${dt.month.toString().padLeft(2, '0')}/'
       '${dt.year}';
+}
+
+// ── Ward Tab — admission, transfer, and discharge request workflows ────────
+
+class _WardTab extends StatelessWidget {
+  final String patientId;
+
+  const _WardTab({required this.patientId});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<WardWorkflowProvider>(
+      builder: (context, ward, _) {
+        if (ward.isLoading && ward.admissionRequests.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return RefreshIndicator(
+          onRefresh: () => ward.loadAll(patientId),
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (ward.error != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(ward.error!,
+                      style: TextStyle(color: Colors.red.shade700, fontSize: 12)),
+                ),
+              _WardSection(
+                title: 'Admission Requests',
+                onRequest: () => _openSheet(
+                  context,
+                  RequestAdmissionSheet(patientId: patientId, wards: ward.wards),
+                ),
+                onForce: () => _openSheet(
+                  context,
+                  RequestAdmissionSheet(
+                      patientId: patientId, wards: ward.wards, force: true),
+                ),
+                children: ward.admissionRequests.isEmpty
+                    ? [const _EmptyHint(text: 'No admission requests yet.')]
+                    : ward.admissionRequests
+                        .map((r) => _AdmissionCard(patientId: patientId, request: r))
+                        .toList(),
+              ),
+              const SizedBox(height: 20),
+              _WardSection(
+                title: 'Transfer Requests',
+                onRequest: () => _openSheet(
+                  context,
+                  RequestTransferSheet(patientId: patientId, wards: ward.wards),
+                ),
+                onForce: () => _openSheet(
+                  context,
+                  RequestTransferSheet(
+                      patientId: patientId, wards: ward.wards, force: true),
+                ),
+                children: ward.transferRequests.isEmpty
+                    ? [const _EmptyHint(text: 'No transfer requests yet.')]
+                    : ward.transferRequests
+                        .map((r) => _TransferCard(patientId: patientId, request: r))
+                        .toList(),
+              ),
+              const SizedBox(height: 20),
+              _WardSection(
+                title: 'Discharge',
+                onRequest: () => _openSheet(
+                  context,
+                  RequestDischargeSheet(patientId: patientId),
+                ),
+                onForce: () => _openSheet(
+                  context,
+                  RequestDischargeSheet(patientId: patientId, force: true),
+                ),
+                children: ward.dischargeRequests.isEmpty
+                    ? [const _EmptyHint(text: 'No discharge requests yet.')]
+                    : ward.dischargeRequests
+                        .map((r) => _DischargeCard(patientId: patientId, request: r))
+                        .toList(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openSheet(BuildContext context, Widget sheet) async {
+    final provider = context.read<WardWorkflowProvider>();
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => ChangeNotifierProvider.value(value: provider, child: sheet),
+    );
+  }
+}
+
+class _WardSection extends StatelessWidget {
+  final String title;
+  final VoidCallback onRequest;
+  final VoidCallback onForce;
+  final List<Widget> children;
+
+  const _WardSection({
+    required this.title,
+    required this.onRequest,
+    required this.onForce,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(title,
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+            ),
+            TextButton(onPressed: onForce, child: const Text('Force')),
+            FilledButton.tonal(onPressed: onRequest, child: const Text('Request')),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ...children,
+      ],
+    );
+  }
+}
+
+class _EmptyHint extends StatelessWidget {
+  final String text;
+  const _EmptyHint({required this.text});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Text(text, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+      );
+}
+
+class _StatusBadge extends StatelessWidget {
+  final String status;
+  const _StatusBadge({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (status) {
+      'pending' => Colors.amber,
+      'accepted' || 'records_approved' => Colors.blue,
+      'rejected' => Colors.red,
+      'cancelled' => Colors.grey,
+      'discharged' => Colors.green,
+      _ => Colors.grey,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.shade100,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        status.replaceAll('_', ' '),
+        style: TextStyle(
+            color: color.shade800, fontSize: 11, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
+class _AdmissionCard extends StatelessWidget {
+  final String patientId;
+  final AdmissionRequestModel request;
+
+  const _AdmissionCard({required this.patientId, required this.request});
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.read<WardWorkflowProvider>();
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                      '${request.admissionType[0].toUpperCase()}${request.admissionType.substring(1)} admission',
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                ),
+                _StatusBadge(status: request.status),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(request.reason, style: const TextStyle(fontSize: 13)),
+            if (request.rejectionReason != null) ...[
+              const SizedBox(height: 4),
+              Text('Rejected: ${request.rejectionReason}',
+                  style: TextStyle(fontSize: 12, color: Colors.red.shade700)),
+            ],
+            if (request.isPending) ...[
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () async {
+                      final reason = await showReasonPrompt(context,
+                          title: 'Reject admission request');
+                      if (reason != null) {
+                        provider.rejectAdmission(patientId, request.id, reason);
+                      }
+                    },
+                    child: const Text('Reject'),
+                  ),
+                  const SizedBox(width: 4),
+                  FilledButton(
+                    onPressed: () => provider.acceptAdmission(patientId, request.id),
+                    child: const Text('Accept'),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TransferCard extends StatelessWidget {
+  final String patientId;
+  final WardTransferRequestModel request;
+
+  const _TransferCard({required this.patientId, required this.request});
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.read<WardWorkflowProvider>();
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Text('Ward transfer', style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
+                _StatusBadge(status: request.status),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(request.reason, style: const TextStyle(fontSize: 13)),
+            if (request.rejectionReason != null) ...[
+              const SizedBox(height: 4),
+              Text('Rejected: ${request.rejectionReason}',
+                  style: TextStyle(fontSize: 12, color: Colors.red.shade700)),
+            ],
+            if (request.isPending) ...[
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () async {
+                      final reason = await showReasonPrompt(context,
+                          title: 'Reject transfer request');
+                      if (reason != null) {
+                        provider.rejectTransfer(patientId, request.id, reason);
+                      }
+                    },
+                    child: const Text('Reject'),
+                  ),
+                  const SizedBox(width: 4),
+                  FilledButton(
+                    onPressed: () => provider.acceptTransfer(patientId, request.id),
+                    child: const Text('Accept'),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DischargeCard extends StatelessWidget {
+  final String patientId;
+  final DischargeRequestModel request;
+
+  const _DischargeCard({required this.patientId, required this.request});
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.read<WardWorkflowProvider>();
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(request.dischargeType.replaceAll('_', ' '),
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                ),
+                _StatusBadge(status: request.status),
+              ],
+            ),
+            if (request.dischargeSummary != null) ...[
+              const SizedBox(height: 6),
+              Text(request.dischargeSummary!, style: const TextStyle(fontSize: 13)),
+            ],
+            if (request.signoffs.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              const Divider(height: 1),
+              const SizedBox(height: 6),
+              const Text('Sign-offs', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+              ...request.signoffs.map((s) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(s.departmentType,
+                              style: const TextStyle(fontSize: 12)),
+                        ),
+                        _StatusBadge(status: s.status),
+                        if (s.status == 'pending') ...[
+                          const SizedBox(width: 4),
+                          IconButton(
+                            icon: const Icon(Icons.check, size: 18, color: Colors.green),
+                            tooltip: 'Approve',
+                            onPressed: () =>
+                                provider.approveSignoff(patientId, request.id, s.id),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, size: 18, color: Colors.red),
+                            tooltip: 'Reject',
+                            onPressed: () async {
+                              final reason = await showReasonPrompt(context,
+                                  title: 'Reject sign-off');
+                              if (reason != null) {
+                                provider.rejectSignoff(
+                                    patientId, request.id, s.id, reason);
+                              }
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.gpp_maybe_outlined, size: 18),
+                            tooltip: 'Override',
+                            onPressed: () async {
+                              final reason = await showReasonPrompt(context,
+                                  title: 'Override sign-off',
+                                  label: 'Override reason');
+                              if (reason != null) {
+                                provider.overrideSignoff(
+                                    patientId, request.id, s.id, reason);
+                              }
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
+                  )),
+            ],
+            if (request.canRecordsApprove || request.canExecute) ...[
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (request.canRecordsApprove)
+                    FilledButton.tonal(
+                      onPressed: () => provider.recordsApprove(patientId, request.id),
+                      child: const Text('Records Approve'),
+                    ),
+                  if (request.canExecute) ...[
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: () => provider.executeDischarge(patientId, request.id),
+                      child: const Text('Discharge Now'),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 }

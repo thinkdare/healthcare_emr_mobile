@@ -22,6 +22,9 @@ import 'data/repositories/reporting_repository.dart';
 import 'data/repositories/subscription_repository.dart';
 import 'data/repositories/sync_repository.dart';
 import 'data/repositories/referral_repository.dart';
+import 'data/repositories/ward_workflow_repository.dart';
+import 'data/repositories/patient_message_repository.dart';
+import 'data/repositories/patient_consent_repository.dart';
 import 'data/providers/access_grant_provider.dart';
 import 'data/providers/auth_provider.dart';
 import 'data/providers/clinical_provider.dart';
@@ -32,6 +35,9 @@ import 'data/providers/reporting_provider.dart';
 import 'data/providers/subscription_provider.dart';
 import 'data/providers/sync_provider.dart';
 import 'data/providers/referral_provider.dart';
+import 'data/providers/ward_workflow_provider.dart';
+import 'data/providers/patient_message_provider.dart';
+import 'data/providers/patient_consent_provider.dart';
 import 'core/biometric/biometric_provider.dart';
 import 'core/biometric/biometric_service.dart';
 import 'core/security/root_detection_provider.dart';
@@ -244,6 +250,9 @@ class _MyAppState extends State<MyApp> {
     final referralRepository        = ReferralRepository(apiClient: apiClient);
     final intraGrantRepository      = IntraGrantRepository(apiClient: apiClient);
     final intraTransferRepository   = IntraTransferRepository(apiClient: apiClient);
+    final wardWorkflowRepository    = WardWorkflowRepository(apiClient: apiClient);
+    final patientMessageRepository  = PatientMessageRepository(apiClient: apiClient);
+    final patientConsentRepository = PatientConsentRepository(apiClient: apiClient);
     final deviceTokenRepository     = DeviceTokenRepository(apiClient: apiClient);
     _deviceTokenRepo                = deviceTokenRepository; // for push token registration
     final biometricService          = BiometricService();
@@ -293,6 +302,15 @@ class _MyAppState extends State<MyApp> {
         ),
         ChangeNotifierProvider(
           create: (_) => IntraTransferProvider(repository: intraTransferRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => WardWorkflowProvider(repository: wardWorkflowRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => PatientMessageProvider(repository: patientMessageRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => PatientConsentProvider(repository: patientConsentRepository),
         ),
         ChangeNotifierProvider(
           create: (_) => BiometricProvider(service: biometricService),
