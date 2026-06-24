@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
 import '../../../data/models/auth_models.dart';
 import '../../../data/repositories/staff_repository.dart';
+import '../../../data/providers/ward_workflow_provider.dart';
+import '../widgets/ward_access_sheet.dart';
 
 class StaffManagementScreen extends StatefulWidget {
   final StaffRepository repository;
@@ -614,6 +617,29 @@ class _EditSheetState extends State<_EditSheet> {
                     contentPadding: EdgeInsets.zero,
                   ),
                   const SizedBox(height: 16),
+
+                  // Ward access
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.meeting_room_outlined),
+                      label: const Text('Manage Ward Access'),
+                      style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14)),
+                      onPressed: () => showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        builder: (_) => ChangeNotifierProvider.value(
+                          value: context.read<WardWorkflowProvider>(),
+                          child: WardAccessSheet(
+                            membershipId: widget.member.membershipId,
+                            staffName: widget.member.fullName,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
 
                   // Save
                   SizedBox(
