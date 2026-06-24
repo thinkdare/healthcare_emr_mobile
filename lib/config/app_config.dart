@@ -19,6 +19,22 @@ class AppConfig {
     return 'http://localhost:8000/api/v1';
   }
 
+  /// Base URL for the password-reset web flow (routes/auth.php on the
+  /// auth.{APP_DOMAIN} subdomain) — opened in an external browser, not called
+  /// via the API client, since the backend only exposes it as a Blade form.
+  static String get authBaseUrl {
+    const fromEnv = String.fromEnvironment('AUTH_BASE_URL');
+    if (fromEnv.isNotEmpty) {
+      assert(
+        kDebugMode || fromEnv.startsWith('https://'),
+        'Production build must use HTTPS. Got: $fromEnv',
+      );
+      return fromEnv;
+    }
+    // Dev fallback only — never present in a production build.
+    return 'http://auth.localhost:8000';
+  }
+
   // Timeout configurations
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);

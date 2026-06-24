@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/platform.dart';
 import '../../../data/models/auth_models.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/organization_provider.dart';
+import '../../../config/app_config.dart';
 import '../../../config/theme.dart';
 import 'facility_picker_screen.dart';
 import 'register_provider_screen.dart';
@@ -83,6 +85,18 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ── Step 2: login with password ───────────────────────────────────────────
+
+  /// Password reset is a Blade web form (routes/auth.php on the auth.*
+  /// subdomain), not a JSON API — so this opens it in the device's browser
+  /// rather than building a duplicate native flow.
+  Future<void> _openForgotPassword(BuildContext context) async {
+    final uri = Uri.parse('${AppConfig.authBaseUrl}/staff/password/forgot');
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && context.mounted) {
+      showAdaptiveToast(context, 'Could not open the password reset page.',
+          type: ToastType.error);
+    }
+  }
 
   Future<void> _login() async {
     final facilities = context.read<OrganizationProvider>().facilities;
@@ -310,9 +324,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 16),
           AdaptiveTextButton(
-            onPressed: () {
-              showAdaptiveToast(context, 'Contact your administrator to reset your password.');
-            },
+            onPressed: () => _openForgotPassword(context),
             child: const Text('Forgot Password?'),
           ),
           const SizedBox(height: 4),
