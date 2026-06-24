@@ -151,6 +151,36 @@ class AuthRepository {
     }
   }
 
+  /// Revokes every active session/token for this user, not just the current one.
+  Future<void> logoutAll() async {
+    try {
+      await apiClient.post('/auth/logout-all');
+    } catch (_) {
+      // Even if the API call fails, clear local state.
+    } finally {
+      await apiClient.clearAll();
+    }
+  }
+
+  Future<Map<String, dynamic>> updatePreferences({
+    String? currency,
+    String? theme,
+    String? locale,
+  }) async {
+    final response = await apiClient.put('/auth/preferences', data: {
+      'currency': ?currency,
+      'theme': ?theme,
+      'locale': ?locale,
+    });
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to update preferences');
+    }
+    final data = response['data'] as Map;
+    return data['preferences'] != null
+        ? Map<String, dynamic>.from(data['preferences'] as Map)
+        : {};
+  }
+
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,

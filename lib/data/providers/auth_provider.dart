@@ -253,6 +253,46 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Revokes every active session/token for this account, not just the
+  /// current device — use when the user suspects a token has leaked.
+  Future<void> logoutAll() async {
+    if (_currentUser != null) {
+      await localDatabase.clearProviderData(_currentUser!.id);
+    }
+
+    await repository.logoutAll();
+    _currentUser = null;
+    _activeFacility = null;
+    _activeMembership = null;
+    _availableFacilities = [];
+    _twoFactorChallengeToken = null;
+    _preferences = null;
+    _error = null;
+    _state = AuthState.unauthenticated;
+    notifyListeners();
+  }
+
+  // ── Preferences ───────────────────────────────────────────────────────────
+
+  Map<String, dynamic>? _preferences;
+  Map<String, dynamic>? get preferences => _preferences ?? _currentUser?.preferences;
+
+  Future<bool> updatePreferences({String? currency, String? theme, String? locale}) async {
+    try {
+      _preferences = await repository.updatePreferences(
+        currency: currency,
+        theme: theme,
+        locale: locale,
+      );
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = _friendlyError(e.toString());
+      notifyListeners();
+      return false;
+    }
+  }
+
   // ── Misc ──────────────────────────────────────────────────────────────────
 
   // ── 2FA management ────────────────────────────────────────────────────────

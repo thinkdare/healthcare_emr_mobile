@@ -31,6 +31,9 @@ class UserModel {
   final String? primaryOrganizationId;
   final String? primaryOrganizationName;
 
+  /// Account-level preferences (currency/theme/locale) — see PUT /auth/preferences.
+  final Map<String, dynamic>? preferences;
+
   UserModel({
     required this.id,
     required this.email,
@@ -41,6 +44,7 @@ class UserModel {
     this.updatedAt,
     this.primaryOrganizationId,
     this.primaryOrganizationName,
+    this.preferences,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) =>

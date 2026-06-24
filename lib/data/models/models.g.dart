@@ -6,27 +6,22 @@ part of 'models.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-UserModel _$UserModelFromJson(Map<String, dynamic> json) {
-  final orgs = json['organizations'] as List?;
-  final firstOrg = (orgs?.isNotEmpty ?? false)
-      ? orgs!.first as Map<String, dynamic>?
-      : null;
-  return UserModel(
-    id: json['id'] as String,
-    email: json['email'] as String,
-    name: json['full_name'] as String,
-    userType: json['user_type'] as String,
-    twoFactorEnabled: json['two_factor_enabled'] as bool? ?? false,
-    createdAt: json['created_at'] == null
-        ? null
-        : DateTime.parse(json['created_at'] as String),
-    updatedAt: json['updated_at'] == null
-        ? null
-        : DateTime.parse(json['updated_at'] as String),
-    primaryOrganizationId: firstOrg?['id'] as String?,
-    primaryOrganizationName: firstOrg?['name'] as String?,
-  );
-}
+UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
+  id: json['id'] as String,
+  email: json['email'] as String,
+  name: json['full_name'] as String,
+  userType: json['user_type'] as String,
+  twoFactorEnabled: json['two_factor_enabled'] as bool? ?? false,
+  createdAt: json['created_at'] == null
+      ? null
+      : DateTime.parse(json['created_at'] as String),
+  updatedAt: json['updated_at'] == null
+      ? null
+      : DateTime.parse(json['updated_at'] as String),
+  primaryOrganizationId: json['primaryOrganizationId'] as String?,
+  primaryOrganizationName: json['primaryOrganizationName'] as String?,
+  preferences: json['preferences'] as Map<String, dynamic>?,
+);
 
 Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
   'id': instance.id,
@@ -36,6 +31,9 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
   'two_factor_enabled': instance.twoFactorEnabled,
   'created_at': instance.createdAt?.toIso8601String(),
   'updated_at': instance.updatedAt?.toIso8601String(),
+  'primaryOrganizationId': instance.primaryOrganizationId,
+  'primaryOrganizationName': instance.primaryOrganizationName,
+  'preferences': instance.preferences,
 };
 
 OrganizationModel _$OrganizationModelFromJson(Map<String, dynamic> json) =>

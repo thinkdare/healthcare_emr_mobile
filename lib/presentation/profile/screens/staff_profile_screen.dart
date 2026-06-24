@@ -7,6 +7,7 @@ import '../../../core/biometric/biometric_provider.dart';
 import '../../../core/biometric/biometric_service.dart';
 import '../../../core/platform.dart';
 import '../../../data/providers/auth_provider.dart';
+import '../../auth/screens/login_screen.dart';
 
 class StaffProfileScreen extends StatefulWidget {
   final int initialTab;
@@ -63,6 +64,77 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
 }
 
 // ── Profile Tab ───────────────────────────────────────────────────────────────
+
+class _PreferencesSection extends StatefulWidget {
+  final AuthProvider auth;
+  const _PreferencesSection({required this.auth});
+
+  @override
+  State<_PreferencesSection> createState() => _PreferencesSectionState();
+}
+
+class _PreferencesSectionState extends State<_PreferencesSection> {
+  static const _currencies = ['USD', 'EUR', 'GBP', 'NGN', 'CAD'];
+  static const _themes = [
+    ('light', 'Light'),
+    ('dark', 'Dark'),
+    ('system', 'System'),
+  ];
+
+  bool _saving = false;
+
+  Future<void> _update({String? currency, String? theme}) async {
+    setState(() => _saving = true);
+    final ok = await widget.auth.updatePreferences(currency: currency, theme: theme);
+    if (mounted) {
+      setState(() => _saving = false);
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(widget.auth.error ?? 'Failed to update preferences')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final prefs = widget.auth.preferences ?? {};
+    final currency = (prefs['currency'] as String?) ?? 'USD';
+    final theme = (prefs['theme'] as String?) ?? 'system';
+
+    return _SectionCard(
+      title: 'Preferences',
+      icon: Icons.tune,
+      children: [
+        Row(
+          children: [
+            const Expanded(child: Text('Currency')),
+            DropdownButton<String>(
+              value: currency,
+              items: _currencies
+                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                  .toList(),
+              onChanged: _saving ? null : (v) => _update(currency: v),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            const Expanded(child: Text('Theme')),
+            DropdownButton<String>(
+              value: theme,
+              items: _themes
+                  .map((t) => DropdownMenuItem(value: t.$1, child: Text(t.$2)))
+                  .toList(),
+              onChanged: _saving ? null : (v) => _update(theme: v),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
 
 class _ProfileTab extends StatefulWidget {
   const _ProfileTab();
@@ -166,6 +238,9 @@ class _ProfileTabState extends State<_ProfileTab> {
                   ],
                 ],
               ),
+
+              // Preferences
+              _PreferencesSection(auth: auth),
 
               // Membership info
               if (membership != null)
@@ -524,7 +599,20 @@ class _SecurityTabState extends State<_SecurityTab> {
                     foregroundColor: AppTheme.errorColor,
                     side: const BorderSide(color: AppTheme.errorColor),
                   ),
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => _signOut(context),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.phonelink_erase_outlined, size: 18),
+                  label: const Text('Sign out of all devices'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.errorColor,
+                    side: const BorderSide(color: AppTheme.errorColor),
+                  ),
+                  onPressed: () => _signOutAllDevices(context),
                 ),
               ),
             ],
@@ -532,6 +620,49 @@ class _SecurityTabState extends State<_SecurityTab> {
         ],
       ),
     );
+  }
+
+  Future<void> _signOut(BuildContext context) async {
+    await context.read<AuthProvider>().logout();
+    if (context.mounted) {
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (_) => false,
+      );
+    }
+  }
+
+  Future<void> _signOutAllDevices(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Sign out of all devices?'),
+        content: const Text(
+            'This will end every active session for your account, including '
+            'this one. You will need to sign in again everywhere.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Sign Out Everywhere'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    await context.read<AuthProvider>().logoutAll();
+    if (context.mounted) {
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (_) => false,
+      );
+    }
   }
 }
 
