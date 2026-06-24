@@ -43,6 +43,22 @@ class ReportingProvider extends ChangeNotifier {
   String? auditAuthorityFilter;
   bool? auditEmergencyFilter;
 
+  // ── Audit summary ─────────────────────────────────────────────────────────
+
+  Map<String, dynamic>? _auditSummary;
+  Map<String, dynamic>? get auditSummary => _auditSummary;
+
+  bool _loadingAuditSummary = false;
+  bool get loadingAuditSummary => _loadingAuditSummary;
+
+  // ── DSAR ──────────────────────────────────────────────────────────────────
+
+  Map<String, dynamic>? _dsarReport;
+  Map<String, dynamic>? get dsarReport => _dsarReport;
+
+  bool _loadingDsar = false;
+  bool get loadingDsar => _loadingDsar;
+
   // ── Error ─────────────────────────────────────────────────────────────────
 
   String? _error;
@@ -138,6 +154,40 @@ class ReportingProvider extends ChangeNotifier {
     auditAuthorityFilter = authority;
     auditEmergencyFilter = emergency;
     loadAuditLog(tenantId, refresh: true);
+  }
+
+  Future<void> loadAuditSummary(String tenantId, String from, String to) async {
+    _loadingAuditSummary = true;
+    _error = null;
+    notifyListeners();
+    try {
+      _auditSummary = await repository.auditSummary(tenantId, from, to);
+    } on Exception catch (e) {
+      _error = _msg(e);
+    } finally {
+      _loadingAuditSummary = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadDsar(String masterPatientId) async {
+    _loadingDsar = true;
+    _error = null;
+    _dsarReport = null;
+    notifyListeners();
+    try {
+      _dsarReport = await repository.dsar(masterPatientId);
+    } on Exception catch (e) {
+      _error = _msg(e);
+    } finally {
+      _loadingDsar = false;
+      notifyListeners();
+    }
+  }
+
+  void clearDsarReport() {
+    _dsarReport = null;
+    notifyListeners();
   }
 
   String _msg(Exception e) {

@@ -21,7 +21,7 @@ class _ReportingScreenState extends State<ReportingScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 3, vsync: this);
+    _tabs = TabController(length: 5, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadAll());
   }
 
@@ -67,10 +67,13 @@ class _ReportingScreenState extends State<ReportingScreen>
               ],
               bottom: TabBar(
                 controller: _tabs,
+                isScrollable: true,
                 tabs: const [
                   Tab(text: 'Organisation'),
                   Tab(text: 'Facility'),
                   Tab(text: 'Audit Log'),
+                  Tab(text: 'Audit Summary'),
+                  Tab(text: 'Data Requests'),
                 ],
               ),
             ),
@@ -87,6 +90,8 @@ class _ReportingScreenState extends State<ReportingScreen>
               _OrgDashboardTab(rp: rp),
               _TenantDashboardTab(rp: rp),
               _AuditLogTab(rp: rp),
+              _AuditSummaryTab(rp: rp),
+              _DsarTab(rp: rp),
             ],
           );
         },
@@ -655,6 +660,246 @@ class _AuditEntryCard extends StatelessWidget {
         'access_denied'    => Icons.block,
         _                  => Icons.receipt_long_outlined,
       };
+}
+
+// ── Audit Summary Tab ─────────────────────────────────────────────────────────
+
+class _AuditSummaryTab extends StatefulWidget {
+  final ReportingProvider rp;
+  const _AuditSummaryTab({required this.rp});
+
+  @override
+  State<_AuditSummaryTab> createState() => _AuditSummaryTabState();
+}
+
+class _AuditSummaryTabState extends State<_AuditSummaryTab> {
+  DateTime _from = DateTime.now().subtract(const Duration(days: 30));
+  DateTime _to = DateTime.now();
+
+  Future<void> _load() async {
+    final auth = context.read<AuthProvider>();
+    final tenantId = auth.activeFacility?.id;
+    if (tenantId == null) return;
+    await widget.rp.loadAuditSummary(
+      tenantId,
+      _from.toIso8601String().split('T').first,
+      _to.toIso8601String().split('T').first,
+    );
+  }
+
+  Future<void> _pickRange() async {
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDateRange: DateTimeRange(start: _from, end: _to),
+    );
+    if (range != null) {
+      setState(() {
+        _from = range.start;
+        _to = range.end;
+      });
+      _load();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final summary = widget.rp.auditSummary;
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${_formatTs(_from.toIso8601String())} — ${_formatTs(_to.toIso8601String())}',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                TextButton.icon(
+                  icon: const Icon(Icons.date_range, size: 18),
+                  label: const Text('Change'),
+                  onPressed: _pickRange,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (widget.rp.loadingAuditSummary)
+              const Center(child: CircularProgressIndicator())
+            else if (summary == null)
+              FilledButton(onPressed: _load, child: const Text('Generate Summary'))
+            else ...[
+              _StatsGrid([
+                _StatItem('Total Events', _str(summary['total_events']), Icons.bar_chart),
+                _StatItem('Emergency Events', _str(summary['emergency_events']),
+                    Icons.warning_amber, color: AppTheme.errorColor),
+                _StatItem('Denied Events', _str(summary['denied_events']), Icons.block),
+              ]),
+              const SizedBox(height: 24),
+              const _SectionHeader('By Action'),
+              ..._buildBreakdown(summary['by_action']),
+              const SizedBox(height: 24),
+              const _SectionHeader('By Access Authority'),
+              ..._buildBreakdown(summary['by_authority']),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildBreakdown(dynamic raw) {
+    if (raw is! Map || raw.isEmpty) {
+      return [Text('No data.', style: TextStyle(color: Colors.grey.shade600))];
+    }
+    return raw.entries
+        .map((e) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Expanded(child: Text(e.key.toString().replaceAll('_', ' '))),
+                  Text(e.value.toString(), style: const TextStyle(fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ))
+        .toList();
+  }
+}
+
+// ── DSAR (Data Subject Access Request) Tab ────────────────────────────────────
+
+class _DsarTab extends StatefulWidget {
+  final ReportingProvider rp;
+  const _DsarTab({required this.rp});
+
+  @override
+  State<_DsarTab> createState() => _DsarTabState();
+}
+
+class _DsarTabState extends State<_DsarTab> {
+  final _idCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _idCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final report = widget.rp.dsarReport;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Generate a data subject access request report covering all recorded '
+            'activity for a patient across facilities. Requires the patient\'s '
+            'master patient ID.',
+            style: TextStyle(fontSize: 13, color: AppTheme.gray600),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _idCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Master Patient ID',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: widget.rp.loadingDsar
+                ? null
+                : () {
+                    if (_idCtrl.text.trim().isNotEmpty) {
+                      widget.rp.loadDsar(_idCtrl.text.trim());
+                    }
+                  },
+            child: widget.rp.loadingDsar
+                ? const SizedBox(
+                    height: 18, width: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Text('Generate Report'),
+          ),
+          const SizedBox(height: 24),
+          if (report != null) ..._buildReport(report),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildReport(Map<String, dynamic> report) {
+    final master = report['master_patient'] as Map? ?? {};
+    final sources = report['sources'] as Map? ?? {};
+    final summary = report['summary'] as Map? ?? {};
+
+    return [
+      _SectionHeader('Patient'),
+      Text('${master['first_name'] ?? ''} ${master['last_name'] ?? ''}'.trim()),
+      Text('DOB: ${master['date_of_birth'] ?? '—'}', style: const TextStyle(fontSize: 12)),
+      const SizedBox(height: 16),
+      _SectionHeader('Summary'),
+      _StatsGrid([
+        _StatItem('Total Access Events', _str(summary['total_access_events']), Icons.history),
+        _StatItem('Tenants Queried', _str(summary['tenants_queried']), Icons.business),
+      ]),
+      const SizedBox(height: 16),
+      _SectionHeader('Cross-Tenant Accesses (${(sources['cross_tenant_accesses'] as List? ?? []).length})'),
+      ...(sources['cross_tenant_accesses'] as List? ?? [])
+          .map((e) => _RawEntryCard(entry: e as Map)),
+      const SizedBox(height: 16),
+      _SectionHeader('Emergency Accesses (${(sources['emergency_accesses'] as List? ?? []).length})'),
+      ...(sources['emergency_accesses'] as List? ?? [])
+          .map((e) => _RawEntryCard(entry: e as Map)),
+      const SizedBox(height: 16),
+      _SectionHeader('Consent Events (${(sources['consent_events'] as List? ?? []).length})'),
+      ...(sources['consent_events'] as List? ?? [])
+          .map((e) => _RawEntryCard(entry: e as Map)),
+      const SizedBox(height: 16),
+      _SectionHeader('Facility Audit Logs'),
+      if ((sources['facility_audit_logs'] as Map? ?? {}).isEmpty)
+        Text('No facility audit logs.', style: TextStyle(color: Colors.grey.shade600))
+      else
+        ...((sources['facility_audit_logs'] as Map).entries.map((tenantEntry) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(tenantEntry.key.toString(),
+                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                  ...(tenantEntry.value as List)
+                      .map((e) => _RawEntryCard(entry: e as Map)),
+                ],
+              ),
+            ))),
+    ];
+  }
+}
+
+class _RawEntryCard extends StatelessWidget {
+  final Map entry;
+  const _RawEntryCard({required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Text(
+          entry.entries.map((e) => '${e.key}: ${e.value}').join('  ·  '),
+          style: const TextStyle(fontSize: 11),
+        ),
+      ),
+    );
+  }
 }
 
 // ── Shared helpers ────────────────────────────────────────────────────────────

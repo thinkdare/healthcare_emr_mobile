@@ -146,4 +146,14 @@ class ReportingRepository {
     }
     return Map<String, dynamic>.from(response['data'] as Map);
   }
+
+  // ── DSAR (data subject access request) ───────────────────────────────────
+
+  Future<Map<String, dynamic>> dsar(String masterPatientId) async {
+    final response = await apiClient.get('/reporting/dsar/$masterPatientId');
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to generate DSAR report');
+    }
+    return Map<String, dynamic>.from(response['data'] as Map);
+  }
 }
