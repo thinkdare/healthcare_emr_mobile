@@ -1,5 +1,6 @@
 import '../../core/api/api_client.dart';
 import '../models/access_grant_models.dart';
+import '../models/cross_tenant_patient_models.dart';
 
 class AccessGrantRepository {
   final ApiClient apiClient;
@@ -78,5 +79,61 @@ class AccessGrantRepository {
     }
     return AccessGrantModel.fromJson(
         Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  // ── Cross-tenant patient view — read-only, via an approved grant ─────────
+
+  Future<CrossTenantPatientModel> getCrossTenantPatient(String globalPatientId) async {
+    final response = await apiClient.get('/cross-tenant-patients/$globalPatientId');
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to load patient');
+    }
+    return CrossTenantPatientModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  Future<List<CrossTenantPrescriptionModel>> getCrossTenantPrescriptions(
+      String globalPatientId) async {
+    final response =
+        await apiClient.get('/cross-tenant-patients/$globalPatientId/prescriptions');
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to load prescriptions');
+    }
+    final raw = response['data'] as List? ?? [];
+    return raw
+        .map((e) => CrossTenantPrescriptionModel.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ))
+        .toList();
+  }
+
+  Future<List<CrossTenantLabResultModel>> getCrossTenantLabResults(
+      String globalPatientId) async {
+    final response =
+        await apiClient.get('/cross-tenant-patients/$globalPatientId/lab-results');
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to load lab results');
+    }
+    final raw = response['data'] as List? ?? [];
+    return raw
+        .map((e) => CrossTenantLabResultModel.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ))
+        .toList();
+  }
+
+  Future<List<CrossTenantAppointmentModel>> getCrossTenantAppointments(
+      String globalPatientId) async {
+    final response =
+        await apiClient.get('/cross-tenant-patients/$globalPatientId/appointments');
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to load appointments');
+    }
+    final raw = response['data'] as List? ?? [];
+    return raw
+        .map((e) => CrossTenantAppointmentModel.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ))
+        .toList();
   }
 }

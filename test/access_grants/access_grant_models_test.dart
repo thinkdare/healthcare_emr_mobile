@@ -13,6 +13,8 @@ void main() {
       'status': 'approved',
       'access_level': 'view_only',
       'accessible_data_types': ['lab_results', 'prescriptions', 'appointments'],
+      'global_patient_id': 'global-patient-1',
+      'patient_name': 'Jane Doe',
       'request_reason': 'Patient transferred for specialist review',
       'auto_approved': false,
       'approver_authority': 'medical_director',
@@ -35,6 +37,8 @@ void main() {
       expect(model.accessLevel, equals('view_only'));
       expect(model.accessibleDataTypes,
           equals(['lab_results', 'prescriptions', 'appointments']));
+      expect(model.globalPatientId, equals('global-patient-1'));
+      expect(model.patientName, equals('Jane Doe'));
       expect(model.requestReason,
           equals('Patient transferred for specialist review'));
       expect(model.autoApproved, isFalse);
@@ -61,6 +65,8 @@ void main() {
       final model = AccessGrantModel.fromJson(minimalJson);
 
       expect(model.accessibleDataTypes, isEmpty);      // default
+      expect(model.globalPatientId, isNull);
+      expect(model.patientName, isNull);
       expect(model.requestReason, isNull);
       expect(model.autoApproved, isFalse);             // default
       expect(model.approverAuthority, isNull);

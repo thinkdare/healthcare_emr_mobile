@@ -10,6 +10,7 @@ import '../../../data/providers/intra_grant_provider.dart';
 import '../../../data/providers/intra_transfer_provider.dart';
 import '../widgets/create_intra_grant_sheet.dart';
 import '../widgets/transfer_request_card.dart';
+import 'cross_tenant_patient_screen.dart';
 import 'request_access_screen.dart';
 
 class AccessGrantsScreen extends StatefulWidget {
@@ -519,6 +520,10 @@ class _MyGrantCard extends StatelessWidget {
               ],
             ),
             const Divider(height: 20),
+            if (grant.patientName != null) ...[
+              _InfoRow('Patient', grant.patientName!),
+              const SizedBox(height: 8),
+            ],
             _InfoRow('Access level', grant.accessLevelDisplay),
             const SizedBox(height: 8),
             _InfoRow('Requested', _formatDate(grant.createdAt)),
@@ -544,9 +549,36 @@ class _MyGrantCard extends StatelessWidget {
                         fontSize: 12, color: AppTheme.successColor)),
               ]),
             ],
+            if (grant.isActive && grant.globalPatientId != null) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: AdaptiveFilledButton(
+                  icon: const Icon(Icons.visibility_outlined, size: 18),
+                  onPressed: () => Navigator.of(context).push(
+                    kIsIOS
+                        ? CupertinoPageRoute(
+                            builder: (_) => CrossTenantPatientScreen(
+                              repository:
+                                  context.read<AccessGrantProvider>().repository,
+                              grant: grant,
+                            ),
+                          )
+                        : MaterialPageRoute(
+                            builder: (_) => CrossTenantPatientScreen(
+                              repository:
+                                  context.read<AccessGrantProvider>().repository,
+                              grant: grant,
+                            ),
+                          ),
+                  ),
+                  child: Text('View ${grant.patientName ?? 'Patient'}'),
+                ),
+              ),
+            ],
             // Revoke button — only for pending or active grants
             if (grant.isPending || grant.isActive) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(

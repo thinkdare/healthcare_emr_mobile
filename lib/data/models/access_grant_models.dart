@@ -7,6 +7,8 @@ class AccessGrantModel {
   final String status; // pending | approved | denied | revoked
   final String accessLevel; // view_only | view_and_update | full_access
   final List<String> accessibleDataTypes;
+  final String? globalPatientId;
+  final String? patientName;
   final String? requestReason;
   final bool autoApproved;
   final String? approverAuthority;
@@ -23,6 +25,8 @@ class AccessGrantModel {
     required this.status,
     required this.accessLevel,
     required this.accessibleDataTypes,
+    this.globalPatientId,
+    this.patientName,
     this.requestReason,
     this.autoApproved = false,
     this.approverAuthority,
@@ -77,6 +81,8 @@ class AccessGrantModel {
                                  ?.map((e) => e.toString())
                                  .toList() ??
                              [],
+      globalPatientId:       json['global_patient_id'] as String?,
+      patientName:           json['patient_name'] as String?,
       requestReason:         json['request_reason'] as String?,
       autoApproved:          (json['auto_approved'] as bool?) ?? false,
       approverAuthority:     json['approver_authority'] as String?,
