@@ -275,3 +275,48 @@ class InvoiceModel {
     )}';
   }
 }
+
+class PaymentModel {
+  final String id;
+  final String invoiceId;
+  final int amount;
+  final String currency;
+  final String paymentMethod;
+  final String? paymentProvider;
+  final String status;
+  final String? receiptNumber;
+  final DateTime? paymentDate;
+  final DateTime? processedAt;
+
+  const PaymentModel({
+    required this.id,
+    required this.invoiceId,
+    required this.amount,
+    required this.currency,
+    required this.paymentMethod,
+    this.paymentProvider,
+    required this.status,
+    this.receiptNumber,
+    this.paymentDate,
+    this.processedAt,
+  });
+
+  factory PaymentModel.fromJson(Map<String, dynamic> json) {
+    return PaymentModel(
+      id: json['id'] as String,
+      invoiceId: json['invoice_id'] as String,
+      amount: (json['amount'] as num?)?.toInt() ?? 0,
+      currency: json['currency'] as String? ?? 'NGN',
+      paymentMethod: json['payment_method'] as String? ?? 'other',
+      paymentProvider: json['payment_provider'] as String?,
+      status: json['status'] as String? ?? 'pending',
+      receiptNumber: json['receipt_number'] as String?,
+      paymentDate: json['payment_date'] != null
+          ? DateTime.tryParse(json['payment_date'] as String)
+          : null,
+      processedAt: json['processed_at'] != null
+          ? DateTime.tryParse(json['processed_at'] as String)
+          : null,
+    );
+  }
+}

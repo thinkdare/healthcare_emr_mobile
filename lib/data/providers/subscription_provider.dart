@@ -153,6 +153,35 @@ class SubscriptionProvider extends ChangeNotifier {
     }
   }
 
+  Future<PaymentModel?> recordPayment(
+    String orgId,
+    String invoiceId, {
+    required int amount,
+    required String method,
+    String? reference,
+  }) async {
+    try {
+      final payment = await repository.recordPayment(
+        orgId,
+        invoiceId,
+        amount: amount,
+        method: method,
+        reference: reference,
+      );
+      // Refresh the invoice so its balance_due/status reflects the new payment.
+      final updated = await repository.getInvoice(orgId, invoiceId);
+      _invoices =
+          _invoices.map((i) => i.id == invoiceId ? updated : i).toList();
+      _error = null;
+      notifyListeners();
+      return payment;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return null;
+    }
+  }
+
   // ── Payment gateway checkout ──────────────────────────────────────────────
 
   /// Returns { checkout_url, reference, gateway } or null on error.

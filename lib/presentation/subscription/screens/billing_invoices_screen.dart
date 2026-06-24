@@ -473,10 +473,10 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                   child: AdaptiveFilledButton(
                     onPressed: () {
                       Navigator.of(context).pop();
-                      showAdaptiveToast(context, 'Payment feature coming soon');
+                      _showRecordPaymentDialog(invoice);
                     },
                     icon: const Icon(Icons.payment),
-                    child: const Text('Pay Now'),
+                    child: const Text('Record Payment'),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -497,6 +497,96 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _showRecordPaymentDialog(InvoiceModel invoice) async {
+    if (_orgId == null) return;
+    final amountCtrl = TextEditingController(
+        text: (invoice.balanceDue / 100).toStringAsFixed(2));
+    final referenceCtrl = TextEditingController();
+    String method = 'bank_transfer';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: const Text('Record Payment'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Invoice ${invoice.invoiceNumber}',
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text('Balance due: ${invoice.formattedTotal}',
+                  style: TextStyle(color: AppTheme.gray600, fontSize: 13)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: amountCtrl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                    labelText: 'Amount (${invoice.currency})'),
+              ),
+              const SizedBox(height: 12),
+              AdaptiveDropdown<String>(
+                value: method,
+                decoration: const InputDecoration(labelText: 'Payment method'),
+                items: const [
+                  DropdownMenuItem(value: 'bank_transfer', child: Text('Bank Transfer')),
+                  DropdownMenuItem(value: 'card', child: Text('Card')),
+                  DropdownMenuItem(value: 'ussd', child: Text('USSD')),
+                  DropdownMenuItem(value: 'mobile_money', child: Text('Mobile Money')),
+                  DropdownMenuItem(value: 'paypal_wallet', child: Text('PayPal Wallet')),
+                  DropdownMenuItem(value: 'other', child: Text('Other')),
+                ],
+                onChanged: (v) => setLocal(() => method = v!),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: referenceCtrl,
+                decoration: const InputDecoration(
+                    labelText: 'Reference (optional)',
+                    hintText: 'Transaction ref / receipt number'),
+              ),
+            ],
+          ),
+          actions: [
+            AdaptiveTextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel')),
+            AdaptiveFilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Record'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final majorAmount = double.tryParse(amountCtrl.text.trim());
+    if (majorAmount == null || majorAmount <= 0) {
+      showAdaptiveToast(context, 'Enter a valid amount', type: ToastType.error);
+      return;
+    }
+
+    final result = await context.read<SubscriptionProvider>().recordPayment(
+          _orgId!,
+          invoice.id,
+          amount: (majorAmount * 100).round(),
+          method: method,
+          reference: referenceCtrl.text.trim().isEmpty ? null : referenceCtrl.text.trim(),
+        );
+    if (!mounted) return;
+
+    showAdaptiveToast(
+      context,
+      result != null
+          ? 'Payment recorded successfully'
+          : context.read<SubscriptionProvider>().error ?? 'Failed to record payment',
+      type: result != null ? ToastType.success : ToastType.error,
     );
   }
 

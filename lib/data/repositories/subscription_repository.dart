@@ -145,6 +145,29 @@ class SubscriptionRepository {
         Map<String, dynamic>.from(response['data'] as Map));
   }
 
+  /// POST /billing/organizations/{orgId}/invoices/{id}/payments
+  Future<PaymentModel> recordPayment(
+    String orgId,
+    String invoiceId, {
+    required int amount,
+    required String method,
+    String? reference,
+  }) async {
+    final response = await apiClient.post(
+      '/billing/organizations/$orgId/invoices/$invoiceId/payments',
+      data: {
+        'amount': amount,
+        'method': method,
+        'reference': ?reference,
+      },
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to record payment');
+    }
+    return PaymentModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
   /// POST /billing/organizations/{orgId}/checkout-session
   /// Returns { checkout_url, reference, gateway }
   Future<Map<String, dynamic>> createCheckoutSession(
