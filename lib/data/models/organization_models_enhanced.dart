@@ -73,51 +73,76 @@ class OrganizationEnhancedModel {
 }
 
 // Facility Model
-@JsonSerializable()
+/// Manually maintained (not codegen) — mirrors TenantController::formatTenant()'s
+/// exact response shape, which nests organization as {id, name} rather than a
+/// flat organization_id, and has no updated_at field.
 class FacilityModel {
   final String id;
-  
-  @JsonKey(name: 'organization_id')
-  final String organizationId;
-  
   final String name;
-  final String type; // 'main_hospital', 'branch', 'pharmacy', 'lab'
-  final String address;
+  final String slug;
+  final String type; // hospital | clinic | pharmacy | lab
+  final String country;
+  final String? stateProvince;
+  final String? address;
   final String? phone;
-  
-  @JsonKey(name: 'operating_hours')
-  final Map<String, dynamic>? operatingHours;
-  
-  @JsonKey(name: 'supports_emergency_access')
+  final String? email;
   final bool supportsEmergencyAccess;
-  
-  @JsonKey(name: 'is_active')
   final bool isActive;
-  
-  @JsonKey(name: 'created_at')
+  final String? organizationId;
+  final String? organizationName;
   final DateTime createdAt;
-  
-  @JsonKey(name: 'updated_at')
-  final DateTime updatedAt;
+
+  // Only present when fetched via show() (detailed: true)
+  final Map<String, dynamic>? operatingHours;
+  final Map<String, dynamic>? settings;
+  final bool? isOpenNow;
 
   FacilityModel({
     required this.id,
-    required this.organizationId,
     required this.name,
+    required this.slug,
     required this.type,
-    required this.address,
+    required this.country,
+    this.stateProvince,
+    this.address,
     this.phone,
-    this.operatingHours,
+    this.email,
     required this.supportsEmergencyAccess,
     required this.isActive,
+    this.organizationId,
+    this.organizationName,
     required this.createdAt,
-    required this.updatedAt,
+    this.operatingHours,
+    this.settings,
+    this.isOpenNow,
   });
 
-  factory FacilityModel.fromJson(Map<String, dynamic> json) =>
-      _$FacilityModelFromJson(json);
-
-  Map<String, dynamic> toJson() => _$FacilityModelToJson(this);
+  factory FacilityModel.fromJson(Map<String, dynamic> json) {
+    final org = json['organization'] as Map?;
+    return FacilityModel(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      slug: json['slug'] as String? ?? '',
+      type: json['type'] as String,
+      country: json['country'] as String? ?? '',
+      stateProvince: json['state_province'] as String?,
+      address: json['address'] as String?,
+      phone: json['phone'] as String?,
+      email: json['email'] as String?,
+      supportsEmergencyAccess: (json['supports_emergency_access'] as bool?) ?? false,
+      isActive: (json['is_active'] as bool?) ?? true,
+      organizationId: org?['id'] as String?,
+      organizationName: org?['name'] as String?,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      operatingHours: json['operating_hours'] != null
+          ? Map<String, dynamic>.from(json['operating_hours'] as Map)
+          : null,
+      settings: json['settings'] != null
+          ? Map<String, dynamic>.from(json['settings'] as Map)
+          : null,
+      isOpenNow: json['is_open_now'] as bool?,
+    );
+  }
 }
 
 // ─── OrgStatsModel ─────────────────────────────────────────────────────────

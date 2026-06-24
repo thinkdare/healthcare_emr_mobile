@@ -25,11 +25,12 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
-  
-  String _selectedType = 'branch';
+  final _countryController = TextEditingController();
+
+  String _selectedType = 'clinic';
   bool _supportsEmergencyAccess = false;
   bool _isLoading = false;
-  
+
   bool get _isEditing => widget.facility != null;
 
   @override
@@ -38,13 +39,14 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
     _repository = FacilityRepository(
       apiClient: context.read<ApiClient>(),
     );
-    
+
     // Populate form if editing
     if (_isEditing) {
       final facility = widget.facility!;
       _nameController.text = facility.name;
-      _addressController.text = facility.address;
+      _addressController.text = facility.address ?? '';
       _phoneController.text = facility.phone ?? '';
+      _countryController.text = facility.country;
       _selectedType = facility.type;
       _supportsEmergencyAccess = facility.supportsEmergencyAccess;
     }
@@ -55,6 +57,7 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
     _nameController.dispose();
     _addressController.dispose();
     _phoneController.dispose();
+    _countryController.dispose();
     super.dispose();
   }
 
@@ -70,9 +73,10 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
           id: widget.facility!.id,
           name: _nameController.text.trim(),
           type: _selectedType,
+          country: _countryController.text.trim().toUpperCase(),
           address: _addressController.text.trim(),
-          phone: _phoneController.text.trim().isEmpty 
-              ? null 
+          phone: _phoneController.text.trim().isEmpty
+              ? null
               : _phoneController.text.trim(),
           supportsEmergencyAccess: _supportsEmergencyAccess,
         );
@@ -82,9 +86,10 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
           organizationId: context.read<AuthProvider>().organizationId ?? '',
           name: _nameController.text.trim(),
           type: _selectedType,
+          country: _countryController.text.trim().toUpperCase(),
           address: _addressController.text.trim(),
-          phone: _phoneController.text.trim().isEmpty 
-              ? null 
+          phone: _phoneController.text.trim().isEmpty
+              ? null
               : _phoneController.text.trim(),
           supportsEmergencyAccess: _supportsEmergencyAccess,
         );
@@ -198,12 +203,12 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
                             ),
                             items: const [
                               DropdownMenuItem(
-                                value: 'main_hospital',
-                                child: Text('Main Hospital'),
+                                value: 'hospital',
+                                child: Text('Hospital'),
                               ),
                               DropdownMenuItem(
-                                value: 'branch',
-                                child: Text('Branch'),
+                                value: 'clinic',
+                                child: Text('Clinic'),
                               ),
                               DropdownMenuItem(
                                 value: 'pharmacy',
@@ -213,13 +218,29 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
                                 value: 'lab',
                                 child: Text('Laboratory'),
                               ),
-                              DropdownMenuItem(
-                                value: 'diagnostic_center',
-                                child: Text('Diagnostic Center'),
-                              ),
                             ],
                             onChanged: (value) {
                               setState(() => _selectedType = value!);
+                            },
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Country
+                          TextFormField(
+                            controller: _countryController,
+                            maxLength: 2,
+                            textCapitalization: TextCapitalization.characters,
+                            decoration: const InputDecoration(
+                              labelText: 'Country Code *',
+                              hintText: 'e.g., NG, US, GB',
+                              prefixIcon: Icon(Icons.public),
+                              counterText: '',
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().length != 2) {
+                                return 'Enter a 2-letter ISO country code';
+                              }
+                              return null;
                             },
                           ),
                           const SizedBox(height: 20),

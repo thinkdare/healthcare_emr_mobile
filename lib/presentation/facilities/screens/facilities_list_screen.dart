@@ -76,6 +76,37 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
     }
   }
 
+  Future<void> _suspendAllStaff(FacilityModel facility) async {
+    bool confirmed = false;
+    await showAdaptiveActionSheet(
+      context: context,
+      title: 'Suspend All Staff',
+      message:
+          'This will immediately deactivate every active staff membership at '
+          '"${facility.name}". This cannot be undone — each staff member would '
+          'need to be re-added individually. Are you sure?',
+      destructiveLabel: 'Suspend All Staff',
+      onConfirm: () => confirmed = true,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      final affected = await _repository.bulkSuspendStaff(facility.id);
+      if (mounted) {
+        showAdaptiveToast(
+          context,
+          '$affected staff membership${affected == 1 ? '' : 's'} suspended.',
+          type: ToastType.success,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        showAdaptiveToast(context, 'Failed to suspend staff: $e', type: ToastType.error);
+      }
+    }
+  }
+
   Future<void> _navigateToAdd() async {
     final result = await Navigator.of(context).push(
       kIsIOS
@@ -239,11 +270,10 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
   }
 
   static const _facilityTypeLabels = {
-    'main_hospital': 'Main Hospital',
-    'branch': 'Branch',
+    'hospital': 'Hospital',
+    'clinic': 'Clinic',
     'pharmacy': 'Pharmacy',
     'lab': 'Laboratory',
-    'diagnostic_center': 'Diagnostic Center',
   };
 
   Widget _buildFacilityCard(FacilityModel facility, {required bool isGrid}) {
@@ -296,7 +326,7 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              _buildInfoRow(Icons.location_on, facility.address),
+              _buildInfoRow(Icons.location_on, facility.address ?? 'No address on file'),
               if (facility.phone != null) ...[
                 const SizedBox(height: 8),
                 _buildInfoRow(Icons.phone, facility.phone!),
@@ -358,6 +388,8 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
       onSelected: (value) {
         if (value == 'edit') {
           _navigateToEdit(facility);
+        } else if (value == 'suspend_staff') {
+          _suspendAllStaff(facility);
         } else if (value == 'delete') {
           _deleteFacility(facility);
         }
@@ -370,6 +402,17 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
               Icon(Icons.edit, size: 20),
               SizedBox(width: 8),
               Text('Edit'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'suspend_staff',
+          child: Row(
+            children: [
+              Icon(Icons.block, size: 20, color: AppTheme.warningColor),
+              SizedBox(width: 8),
+              Text('Suspend All Staff',
+                  style: TextStyle(color: AppTheme.warningColor)),
             ],
           ),
         ),
@@ -405,6 +448,14 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
           CupertinoActionSheetAction(
             isDestructiveAction: true,
             onPressed: () {
+              choice = 'suspend_staff';
+              Navigator.of(context).pop();
+            },
+            child: const Text('Suspend All Staff'),
+          ),
+          CupertinoActionSheetAction(
+            isDestructiveAction: true,
+            onPressed: () {
               choice = 'delete';
               Navigator.of(context).pop();
             },
@@ -418,6 +469,7 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
       ),
     );
     if (choice == 'edit') _navigateToEdit(facility);
+    if (choice == 'suspend_staff') _suspendAllStaff(facility);
     if (choice == 'delete') _deleteFacility(facility);
   }
 
@@ -440,10 +492,10 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
 
   static IconData _facilityIcon(String type) {
     return switch (type) {
-      'main_hospital' => Icons.local_hospital,
-      'branch' => Icons.business,
+      'hospital' => Icons.local_hospital,
+      'clinic' => Icons.business,
       'pharmacy' => Icons.medication,
-      'lab' || 'diagnostic_center' => Icons.science,
+      'lab' => Icons.science,
       _ => Icons.location_city,
     };
   }

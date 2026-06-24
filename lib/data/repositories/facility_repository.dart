@@ -10,16 +10,15 @@ class FacilityRepository {
   Future<List<FacilityModel>> getFacilities({
     String? organizationId,
     String? type,
-    bool activeOnly = true,
   }) async {
     final queryParams = <String, dynamic>{
       'organization_id': ?organizationId,
       'type': ?type,
-      'active_only': activeOnly,
+      'per_page': 100,
     };
 
     final response = await apiClient.get(
-      '/facilities',
+      '/tenants',
       queryParameters: queryParams,
     );
 
@@ -35,7 +34,7 @@ class FacilityRepository {
 
   /// Get single facility
   Future<FacilityModel> getFacility(String id) async {
-    final response = await apiClient.get('/facilities/$id');
+    final response = await apiClient.get('/tenants/$id');
 
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to get facility');
@@ -51,19 +50,25 @@ class FacilityRepository {
     required String organizationId,
     required String name,
     required String type,
-    required String address,
+    required String country,
+    String? stateProvince,
+    String? address,
     String? phone,
+    String? email,
     Map<String, dynamic>? operatingHours,
     required bool supportsEmergencyAccess,
   }) async {
     final response = await apiClient.post(
-      '/facilities',
+      '/tenants',
       data: {
         'organization_id': organizationId,
         'name': name,
         'type': type,
-        'address': address,
+        'country': country,
+        'state_province': ?stateProvince,
+        'address': ?address,
         'phone': ?phone,
+        'email': ?email,
         'operating_hours': ?operatingHours,
         'supports_emergency_access': supportsEmergencyAccess,
       },
@@ -83,22 +88,28 @@ class FacilityRepository {
     required String id,
     String? name,
     String? type,
+    String? country,
+    String? stateProvince,
     String? address,
     String? phone,
+    String? email,
     Map<String, dynamic>? operatingHours,
     bool? supportsEmergencyAccess,
   }) async {
     final data = <String, dynamic>{};
     if (name != null) data['name'] = name;
     if (type != null) data['type'] = type;
+    if (country != null) data['country'] = country;
+    if (stateProvince != null) data['state_province'] = stateProvince;
     if (address != null) data['address'] = address;
     if (phone != null) data['phone'] = phone;
+    if (email != null) data['email'] = email;
     if (operatingHours != null) data['operating_hours'] = operatingHours;
     if (supportsEmergencyAccess != null) {
       data['supports_emergency_access'] = supportsEmergencyAccess;
     }
 
-    final response = await apiClient.patch('/facilities/$id', data: data);
+    final response = await apiClient.put('/tenants/$id', data: data);
 
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to update facility');
@@ -111,11 +122,25 @@ class FacilityRepository {
 
   /// Delete facility (admin only)
   Future<void> deleteFacility(String id) async {
-    final response = await apiClient.delete('/facilities/$id');
+    final response = await apiClient.delete('/tenants/$id');
 
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to delete facility');
     }
+  }
+
+  /// Suspend all active staff memberships at a facility in one operation
+  /// (admin only). Destructive and irreversible per-membership — the backend
+  /// logs a single bulk-operation manifest rather than per-membership events.
+  Future<int> bulkSuspendStaff(String tenantId) async {
+    final response = await apiClient.post('/tenants/$tenantId/staff/bulk-suspend');
+
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to suspend staff');
+    }
+
+    final data = response['data'] as Map;
+    return (data['affected_count'] as num?)?.toInt() ?? 0;
   }
 
   /// List all active tenants — used as destination picker in referral form.
