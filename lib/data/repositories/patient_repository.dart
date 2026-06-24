@@ -294,6 +294,33 @@ class PatientRepository {
     await _db.markPatientInactive(patientId);
   }
 
+  /// GET /patients/{id}/audit-log — primary provider or super_admin only.
+  Future<List<Map<String, dynamic>>> getAuditLog(
+    String patientId, {
+    int page = 1,
+    int perPage = 50,
+  }) async {
+    final response = await apiClient.get(
+      '/patients/$patientId/audit-log',
+      queryParameters: {'page': page, 'per_page': perPage},
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to load audit log');
+    }
+    final data = response['data'] as List? ?? [];
+    return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  /// POST /patients/{id}/activate — Records department staff only. Sets
+  /// record_status=active with a time-limited activation window.
+  Future<Map<String, dynamic>> activatePatient(String patientId) async {
+    final response = await apiClient.post('/patients/$patientId/activate');
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to activate patient record');
+    }
+    return Map<String, dynamic>.from(response['data'] as Map);
+  }
+
   // ── STATS ──────────────────────────────────────────────────────────────────
 
   /// Derive dashboard stats from the local cache.

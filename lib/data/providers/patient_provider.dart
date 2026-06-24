@@ -265,6 +265,33 @@ class PatientProvider extends ChangeNotifier {
     }
   }
 
+  Future<List<Map<String, dynamic>>?> getAuditLog(String patientId) async {
+    try {
+      return await repository.getAuditLog(patientId);
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<bool> activatePatient(String patientId) async {
+    try {
+      final result = await repository.activatePatient(patientId);
+      if (_selectedPatient?.id == patientId) {
+        // The backend doesn't return a full patient payload here, just the
+        // activation fields — refresh from the canonical endpoint instead
+        // of trying to patch _selectedPatient from this partial response.
+        await loadPatient(patientId);
+      }
+      return result['record_status'] == 'active';
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
   // ── DASHBOARD STATS ────────────────────────────────────────────────────────
 
   Future<void> loadDashboardStats(String providerId) async {
