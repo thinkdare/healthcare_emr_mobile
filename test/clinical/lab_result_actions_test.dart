@@ -18,6 +18,7 @@ Map<String, dynamic> _labJson(String id, {String status = 'pending'}) => {
 class _RecordingApiClient extends ApiClient {
   String? lastPath;
   String? lastMethod;
+  dynamic lastData;
   Map<String, dynamic> response;
 
   _RecordingApiClient(this.response) : super();
@@ -31,6 +32,7 @@ class _RecordingApiClient extends ApiClient {
   }) async {
     lastPath = path;
     lastMethod = 'POST';
+    lastData = data;
     return response;
   }
 }
@@ -57,6 +59,42 @@ void main() {
 
       expect(
         () => repo.cancelLabResult('pat-1', 'lab-1'),
+        throwsA(isA<Exception>()),
+      );
+    });
+  });
+
+  group('ClinicalRepository.reviewLabResult', () {
+    test('POSTs to the review endpoint with interpretation/requires_followup', () async {
+      final fake = _RecordingApiClient({
+        'success': true,
+        'data': _labJson('lab-1', status: 'completed'),
+      });
+      final repo = ClinicalRepository(apiClient: fake, db: LocalDatabase.instance);
+
+      final result = await repo.reviewLabResult(
+        'pat-1',
+        'lab-1',
+        interpretation: 'Within normal range',
+        requiresFollowup: false,
+      );
+
+      expect(fake.lastMethod, 'POST');
+      expect(fake.lastPath, '/patients/pat-1/lab-results/lab-1/review');
+      expect(fake.lastData, {
+        'interpretation': 'Within normal range',
+        'requires_followup': false,
+      });
+      expect(result.status, 'completed');
+    });
+
+    test('throws when results are already reviewed', () async {
+      final fake = _RecordingApiClient(
+          {'success': false, 'message': 'These results have already been reviewed.'});
+      final repo = ClinicalRepository(apiClient: fake, db: LocalDatabase.instance);
+
+      expect(
+        () => repo.reviewLabResult('pat-1', 'lab-1'),
         throwsA(isA<Exception>()),
       );
     });

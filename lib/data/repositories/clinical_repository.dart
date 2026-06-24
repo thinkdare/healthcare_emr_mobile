@@ -347,6 +347,26 @@ class ClinicalRepository {
         Map<String, dynamic>.from(response['data'] as Map));
   }
 
+  Future<LabResultModel> reviewLabResult(
+    String patientId,
+    String labResultId, {
+    String? interpretation,
+    bool? requiresFollowup,
+  }) async {
+    final response = await apiClient.post(
+      '/patients/$patientId/lab-results/$labResultId/review',
+      data: {
+        'interpretation': ?interpretation,
+        'requires_followup': ?requiresFollowup,
+      },
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to review lab result');
+    }
+    return LabResultModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
   Future<LabResultModel> cancelLabResult(
       String patientId, String labResultId) async {
     final response = await apiClient.post(

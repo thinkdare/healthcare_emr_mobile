@@ -1605,6 +1605,7 @@ class _LabResultCardState extends State<_LabResultCard> {
   bool _recording = false;
   bool _cancelling = false;
   bool _printing = false;
+  bool _reviewing = false;
 
   Future<void> _cancel() async {
     final confirmed = await showDialog<bool>(
@@ -1659,6 +1660,72 @@ class _LabResultCardState extends State<_LabResultCard> {
     await showDialog<void>(
       context: context,
       builder: (ctx) => _LabOrderPrintDialog(payload: payload),
+    );
+  }
+
+  Future<void> _review() async {
+    final interpretationCtrl = TextEditingController();
+    bool requiresFollowup = widget.lab.requiresFollowup;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: const Text('Review Lab Results'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (widget.lab.results != null) ...[
+                Text(widget.lab.results!, style: const TextStyle(fontSize: 13)),
+                const SizedBox(height: 16),
+              ],
+              TextField(
+                controller: interpretationCtrl,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                    labelText: 'Interpretation (optional)'),
+              ),
+              const SizedBox(height: 8),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Requires follow-up',
+                    style: TextStyle(fontSize: 13)),
+                value: requiresFollowup,
+                onChanged: (v) => setLocal(() => requiresFollowup = v ?? false),
+              ),
+            ],
+          ),
+          actions: [
+            AdaptiveTextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel')),
+            AdaptiveFilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Mark Reviewed'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _reviewing = true);
+    final result = await context.read<ClinicalProvider>().reviewLabResult(
+      widget.lab.id,
+      interpretation:
+          interpretationCtrl.text.trim().isEmpty ? null : interpretationCtrl.text.trim(),
+      requiresFollowup: requiresFollowup,
+    );
+    if (!mounted) return;
+    setState(() => _reviewing = false);
+
+    showAdaptiveToast(
+      context,
+      result != null
+          ? 'Results reviewed'
+          : context.read<ClinicalProvider>().error ?? 'Failed to review results',
+      type: result != null ? ToastType.success : ToastType.error,
     );
   }
 
@@ -1782,6 +1849,10 @@ class _LabResultCardState extends State<_LabResultCard> {
         ((auth.currentUser?.isSuperAdmin ?? false) ||
             auth.currentUserId == lab.orderedById);
     final canPrint = auth.canOrderLabs;
+    final canReview = lab.isCompleted &&
+        lab.reviewedById == null &&
+        ((auth.currentUser?.isSuperAdmin ?? false) ||
+            auth.currentUserId == lab.orderedById);
 
     Color statusColor;
     switch (lab.status) {
@@ -1898,11 +1969,24 @@ class _LabResultCardState extends State<_LabResultCard> {
                 ),
               ),
             ],
-            if (canCancel || canPrint) ...[
+            if (canCancel || canPrint || canReview) ...[
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 children: [
+                  if (canReview)
+                    AdaptiveFilledButton(
+                      onPressed: _reviewing ? null : _review,
+                      icon: _reviewing
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation(Colors.white)))
+                          : const Icon(Icons.fact_check_outlined, size: 16),
+                      child: Text(_reviewing ? 'Saving…' : 'Review Results'),
+                    ),
                   if (canCancel)
                     OutlinedButton.icon(
                       onPressed: _cancelling ? null : _cancel,

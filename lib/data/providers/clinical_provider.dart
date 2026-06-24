@@ -533,6 +533,31 @@ class ClinicalProvider extends ChangeNotifier {
     }
   }
 
+  Future<LabResultModel?> reviewLabResult(
+    String labResultId, {
+    String? interpretation,
+    bool? requiresFollowup,
+  }) async {
+    if (_patientId == null) return null;
+    try {
+      final updated = await repository.reviewLabResult(
+        _patientId!,
+        labResultId,
+        interpretation: interpretation,
+        requiresFollowup: requiresFollowup,
+      );
+      _labResults = _labResults
+          .map((l) => l.id == labResultId ? updated : l)
+          .toList();
+      notifyListeners();
+      return updated;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<LabResultModel?> cancelLabResult(String labResultId) async {
     if (_patientId == null) return null;
     try {
