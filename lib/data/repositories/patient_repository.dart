@@ -328,12 +328,16 @@ class PatientRepository {
   Future<DashboardStatsModel> getDashboardStats(String providerId) async {
     final total  = await _db.getPatientCount(providerId);
     final recent = await _db.getRecentPatientCount(providerId, days: 7);
+    final pendingAppointments = await _db.getPendingAppointmentCount(providerId);
+    final activePrescriptions = await _db.getActivePrescriptionCount(providerId);
     final lastFetched = await _db.patientsLastFetched(providerId);
 
     return DashboardStatsModel(
       totalPatients:  total,
       activePatients: total, // active = total in Phase 2 (soft-deleted are excluded)
       recentPatients: recent,
+      pendingAppointments: pendingAppointments,
+      activePrescriptions: activePrescriptions,
       lastRefreshed:  lastFetched,
       isFromCache:    true,
     );

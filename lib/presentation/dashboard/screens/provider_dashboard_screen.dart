@@ -787,9 +787,10 @@ class _PatientStatsCard extends StatelessWidget {
                     child: _StatTile(
                       icon: Icons.event,
                       label: 'Appointments',
-                      value: '—',
+                      value: p.isLoadingStats
+                          ? '…'
+                          : '${stats.pendingAppointments}',
                       color: AppTheme.secondaryColor,
-                      subtitle: 'Coming soon',
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -797,9 +798,10 @@ class _PatientStatsCard extends StatelessWidget {
                     child: _StatTile(
                       icon: Icons.medication,
                       label: 'Prescriptions',
-                      value: '—',
+                      value: p.isLoadingStats
+                          ? '…'
+                          : '${stats.activePrescriptions}',
                       color: AppTheme.warningColor,
-                      subtitle: 'Coming soon',
                     ),
                   ),
                 ]),
@@ -1175,7 +1177,6 @@ class _StatTile extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
-  final String? subtitle;
   final VoidCallback? onTap;
 
   const _StatTile({
@@ -1183,7 +1184,6 @@ class _StatTile extends StatelessWidget {
     required this.label,
     required this.value,
     required this.color,
-    this.subtitle,
     this.onTap,
   });
 
@@ -1210,12 +1210,6 @@ class _StatTile extends StatelessWidget {
             Text(label,
                 style: TextStyle(fontSize: 11, color: AppTheme.gray600),
                 textAlign: TextAlign.center),
-            if (subtitle != null)
-              Text(subtitle!,
-                  style: TextStyle(
-                      fontSize: 10,
-                      color: AppTheme.gray600,
-                      fontStyle: FontStyle.italic)),
           ],
         ),
       ),

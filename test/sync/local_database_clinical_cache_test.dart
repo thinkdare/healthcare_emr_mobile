@@ -125,6 +125,47 @@ void main() {
       expect(p1Results, isEmpty);
       expect(p2Results, hasLength(1));
     });
+
+    test('getPendingAppointmentCount excludes completed/cancelled/no_show', () async {
+      for (final status in ['scheduled', 'confirmed', 'checked_in']) {
+        await LocalDatabase.instance.upsertAppointment(AppointmentModel(
+          id: 'appt-pending-$status',
+          patientId: 'pat-1',
+          providerId: 'prov-1',
+          appointmentDate: DateTime(2026, 7, 1, 9, 0),
+          durationMinutes: 30,
+          appointmentType: 'consultation',
+          status: status,
+          reminderSent: false,
+        ));
+      }
+      for (final status in ['completed', 'cancelled', 'no_show']) {
+        await LocalDatabase.instance.upsertAppointment(AppointmentModel(
+          id: 'appt-terminal-$status',
+          patientId: 'pat-1',
+          providerId: 'prov-1',
+          appointmentDate: DateTime(2026, 7, 1, 9, 0),
+          durationMinutes: 30,
+          appointmentType: 'consultation',
+          status: status,
+          reminderSent: false,
+        ));
+      }
+      // Different provider — must not be counted.
+      await LocalDatabase.instance.upsertAppointment(AppointmentModel(
+        id: 'appt-other-prov',
+        patientId: 'pat-1',
+        providerId: 'prov-2',
+        appointmentDate: DateTime(2026, 7, 1, 9, 0),
+        durationMinutes: 30,
+        appointmentType: 'consultation',
+        status: 'scheduled',
+        reminderSent: false,
+      ));
+
+      final count = await LocalDatabase.instance.getPendingAppointmentCount('prov-1');
+      expect(count, 3);
+    });
   });
 
   // ── Prescriptions ─────────────────────────────────────────────────────────
@@ -172,6 +213,53 @@ void main() {
 
       final results = await LocalDatabase.instance.getPrescriptionsByPatient('pat-1');
       expect(results, isEmpty);
+    });
+
+    test('getActivePrescriptionCount excludes cancelled/discontinued/expired', () async {
+      for (final status in ['pending', 'active', 'filled', 'partially_filled']) {
+        await LocalDatabase.instance.upsertPrescription(PrescriptionModel(
+          id: 'rx-active-$status',
+          patientId: 'pat-1',
+          prescriberId: 'doc-1',
+          medicationName: 'Amoxicillin',
+          dosage: '500mg',
+          frequency: 'TID',
+          refillsAllowed: 2,
+          refillsRemaining: 2,
+          status: status,
+          drugInteractionsChecked: false,
+        ));
+      }
+      for (final status in ['cancelled', 'discontinued', 'expired']) {
+        await LocalDatabase.instance.upsertPrescription(PrescriptionModel(
+          id: 'rx-terminal-$status',
+          patientId: 'pat-1',
+          prescriberId: 'doc-1',
+          medicationName: 'Ibuprofen',
+          dosage: '200mg',
+          frequency: 'BID',
+          refillsAllowed: 0,
+          refillsRemaining: 0,
+          status: status,
+          drugInteractionsChecked: false,
+        ));
+      }
+      // Different prescriber — must not be counted.
+      await LocalDatabase.instance.upsertPrescription(PrescriptionModel(
+        id: 'rx-other-prescriber',
+        patientId: 'pat-1',
+        prescriberId: 'doc-2',
+        medicationName: 'Paracetamol',
+        dosage: '500mg',
+        frequency: 'QID',
+        refillsAllowed: 1,
+        refillsRemaining: 1,
+        status: 'active',
+        drugInteractionsChecked: false,
+      ));
+
+      final count = await LocalDatabase.instance.getActivePrescriptionCount('doc-1');
+      expect(count, 4);
     });
   });
 

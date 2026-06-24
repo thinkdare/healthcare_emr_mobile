@@ -305,8 +305,9 @@ class DashboardStatsModel {
   final int activePatients;
   final int recentPatients; // created in last 7 days
 
-  // Phase 5 will populate these — kept as 0 for now
+  /// Appointments not yet completed/cancelled/no-show, derived from the cache.
   final int pendingAppointments;
+  /// Prescriptions not cancelled/discontinued/expired, derived from the cache.
   final int activePrescriptions;
 
   final DateTime? lastRefreshed;

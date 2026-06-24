@@ -551,6 +551,32 @@ class LocalDatabase {
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
+  /// Count of this provider's appointments that haven't reached a terminal
+  /// state yet (i.e. still scheduled/checked-in, not completed/cancelled/no-show).
+  Future<int> getPendingAppointmentCount(String providerId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      '''SELECT COUNT(*) as count FROM appointments_cache
+         WHERE provider_id = ?
+           AND status NOT IN ('completed', 'cancelled', 'no_show')''',
+      [providerId],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  /// Count of this prescriber's prescriptions that are still actionable
+  /// (not cancelled, discontinued, or expired).
+  Future<int> getActivePrescriptionCount(String providerId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      '''SELECT COUNT(*) as count FROM prescriptions_cache
+         WHERE prescriber_id = ?
+           AND status NOT IN ('cancelled', 'discontinued', 'expired')''',
+      [providerId],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
   // ── METADATA DAO ──────────────────────────────────────────────────────────
 
   Future<void> setMetadata(String key, String value) async {
