@@ -50,6 +50,10 @@ dependencies:
   # File picker (document upload)
   file_picker: ^11.0.2
 
+  # Writable directory lookup + opening downloaded files (invoice PDFs)
+  path_provider: ^2.1.5
+  open_filex: ^4.7.0
+
   # Date/time formatting
   intl: ^0.20.0
   local_auth: ^3.0.1

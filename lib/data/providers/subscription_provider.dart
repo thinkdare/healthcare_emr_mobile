@@ -182,6 +182,18 @@ class SubscriptionProvider extends ChangeNotifier {
     }
   }
 
+  /// Returns the raw PDF bytes for an invoice, or null on error.
+  Future<List<int>?> downloadInvoicePdf(String orgId, String invoiceId) async {
+    _error = null;
+    try {
+      return await repository.downloadInvoicePdf(orgId, invoiceId);
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return null;
+    }
+  }
+
   // ── Payment gateway checkout ──────────────────────────────────────────────
 
   /// Returns { checkout_url, reference, gateway } or null on error.

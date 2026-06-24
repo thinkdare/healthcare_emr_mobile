@@ -168,6 +168,13 @@ class SubscriptionRepository {
         Map<String, dynamic>.from(response['data'] as Map));
   }
 
+  /// GET /billing/organizations/{orgId}/invoices/{id}/pdf
+  /// Returns the raw PDF bytes — not a JSON envelope.
+  Future<List<int>> downloadInvoicePdf(String orgId, String invoiceId) async {
+    return apiClient.getBytes(
+        '/billing/organizations/$orgId/invoices/$invoiceId/pdf');
+  }
+
   /// POST /billing/organizations/{orgId}/checkout-session
   /// Returns { checkout_url, reference, gateway }
   Future<Map<String, dynamic>> createCheckoutSession(

@@ -8,8 +8,10 @@ class _RecordingApiClient extends ApiClient {
   String? lastPath;
   dynamic lastData;
   Map<String, dynamic> response;
+  List<int>? bytesResponse;
+  Object? bytesError;
 
-  _RecordingApiClient(this.response) : super();
+  _RecordingApiClient(this.response, {this.bytesResponse, this.bytesError}) : super();
 
   @override
   Future<Map<String, dynamic>> post(
@@ -21,6 +23,16 @@ class _RecordingApiClient extends ApiClient {
     lastPath = path;
     lastData = data;
     return response;
+  }
+
+  @override
+  Future<List<int>> getBytes(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    lastPath = path;
+    if (bytesError != null) throw bytesError!;
+    return bytesResponse ?? [];
   }
 }
 
@@ -87,6 +99,32 @@ void main() {
       expect(
         () => repo.recordPayment('org-1', 'inv-1', amount: 1000, method: 'card'),
         throwsA(isA<Exception>()),
+      );
+    });
+  });
+
+  group('SubscriptionRepository.downloadInvoicePdf', () {
+    test('GETs the invoice pdf endpoint and returns raw bytes', () async {
+      final bytes = [0x25, 0x50, 0x44, 0x46]; // %PDF
+      final fake = _RecordingApiClient({}, bytesResponse: bytes);
+      final repo = SubscriptionRepository(apiClient: fake);
+
+      final result = await repo.downloadInvoicePdf('org-1', 'inv-1');
+
+      expect(fake.lastPath, '/billing/organizations/org-1/invoices/inv-1/pdf');
+      expect(result, bytes);
+    });
+
+    test('propagates the error when the download fails', () async {
+      final fake = _RecordingApiClient(
+        {},
+        bytesError: ApiException('Failed to download file', statusCode: 404),
+      );
+      final repo = SubscriptionRepository(apiClient: fake);
+
+      expect(
+        () => repo.downloadInvoicePdf('org-1', 'inv-1'),
+        throwsA(isA<ApiException>()),
       );
     });
   });

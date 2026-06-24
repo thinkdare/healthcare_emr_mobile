@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
 import '../../../data/providers/auth_provider.dart';
@@ -16,6 +19,7 @@ class BillingInvoicesScreen extends StatefulWidget {
 
 class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
   String? _orgId;
+  String? _downloadingInvoiceId;
 
   @override
   void initState() {
@@ -482,15 +486,27 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                 const SizedBox(height: 12),
               ],
 
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    showAdaptiveToast(context, 'Download feature coming soon');
-                  },
-                  icon: const Icon(Icons.download),
-                  label: const Text('Download PDF'),
+              StatefulBuilder(
+                builder: (context, setSheetState) => SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: OutlinedButton.icon(
+                    onPressed: _downloadingInvoiceId == invoice.id
+                        ? null
+                        : () async {
+                            setSheetState(() => _downloadingInvoiceId = invoice.id);
+                            await _downloadAndOpenInvoicePdf(invoice);
+                            setSheetState(() => _downloadingInvoiceId = null);
+                          },
+                    icon: _downloadingInvoiceId == invoice.id
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.download),
+                    label: const Text('Download PDF'),
+                  ),
                 ),
               ),
             ],
@@ -498,6 +514,36 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _downloadAndOpenInvoicePdf(InvoiceModel invoice) async {
+    if (_orgId == null) return;
+    final provider = context.read<SubscriptionProvider>();
+    final bytes = await provider.downloadInvoicePdf(_orgId!, invoice.id);
+    if (!mounted) return;
+
+    if (bytes == null) {
+      showAdaptiveToast(
+        context,
+        provider.error ?? 'Failed to download invoice PDF',
+        type: ToastType.error,
+      );
+      return;
+    }
+
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/invoice-${invoice.invoiceNumber}.pdf');
+    await file.writeAsBytes(bytes, flush: true);
+
+    final result = await OpenFilex.open(file.path);
+    if (!mounted) return;
+    if (result.type != ResultType.done) {
+      showAdaptiveToast(
+        context,
+        'Downloaded, but could not open the PDF: ${result.message}',
+        type: ToastType.error,
+      );
+    }
   }
 
   Future<void> _showRecordPaymentDialog(InvoiceModel invoice) async {

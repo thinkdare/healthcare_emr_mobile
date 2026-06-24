@@ -249,6 +249,27 @@ class ApiClient {
     }
   }
 
+  /// Fetches a raw binary response (e.g. a generated PDF) rather than a
+  /// JSON envelope. Throws [ApiException] on any non-2xx response.
+  Future<List<int>> getBytes(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        path,
+        queryParameters: queryParameters,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return response.data ?? [];
+    } on DioException catch (e) {
+      throw ApiException(
+        'Failed to download file: ${e.message}',
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
+
   // Helper method to save token
   Future<void> saveToken(String token) async {
     await _storage.write(key: 'auth_token', value: token);
