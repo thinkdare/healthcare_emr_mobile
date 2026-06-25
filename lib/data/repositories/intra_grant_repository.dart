@@ -1,12 +1,26 @@
 // lib/data/repositories/intra_grant_repository.dart
 
+import 'package:uuid/uuid.dart';
+
 import '../models/intra_grant_models.dart';
 import '../../core/api/api_client.dart';
+import '../../core/database/local_database.dart';
 
 class IntraGrantRepository {
   final ApiClient apiClient;
+  final LocalDatabase _db;
 
-  IntraGrantRepository({required this.apiClient});
+  IntraGrantRepository({required this.apiClient, LocalDatabase? localDatabase})
+      : _db = localDatabase ?? LocalDatabase.instance;
+
+  bool _isNetworkError(Object e) {
+    final msg = e.toString();
+    return msg.contains('SocketException') ||
+        msg.contains('Connection refused') ||
+        msg.contains('Connection reset') ||
+        msg.contains('Network is unreachable') ||
+        msg.contains('HandshakeException');
+  }
 
   Future<({List<IntraAccessGrantModel> incoming, List<IntraAccessGrantModel> outgoing})>
       getGrants() async {
@@ -102,32 +116,73 @@ class IntraGrantRepository {
 
   Future<List<ClinicalNoteModel>> getPatientNotes(String patientId,
       {int page = 1}) async {
-    final response = await apiClient
-        .get('/patients/$patientId/notes?page=$page&per_page=20');
-    if (response['success'] != true) {
-      throw Exception(response['message'] ?? 'Failed to load clinical notes');
+    try {
+      final response = await apiClient
+          .get('/patients/$patientId/notes?page=$page&per_page=20');
+      if (response['success'] != true) {
+        throw Exception(response['message'] ?? 'Failed to load clinical notes');
+      }
+      final items = (response['data'] as List? ?? []);
+      final notes = items
+          .map((e) => ClinicalNoteModel.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      for (final n in notes) {
+        await _db.upsertClinicalNote(n);
+      }
+      return notes;
+    } catch (e) {
+      if (!_isNetworkError(e)) rethrow;
+      final cached = await _db.getClinicalNotesByPatient(patientId);
+      if (cached.isEmpty) rethrow;
+      return cached;
     }
-    final items = (response['data'] as List? ?? []);
-    return items
-        .map((e) => ClinicalNoteModel.fromJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
   }
 
   Future<ClinicalNoteModel> createNote(String patientId, {
     required String body,
+    required String authoredById,
+    required String authoredByName,
     String? title,
   }) async {
-    final response = await apiClient.post(
-      '/patients/$patientId/notes',
-      data: {
-        'body': body,
-        'title': ?title,
-      },
-    );
-    if (response['success'] != true) {
-      throw Exception(response['message'] ?? 'Failed to save note');
+    try {
+      final response = await apiClient.post(
+        '/patients/$patientId/notes',
+        data: {
+          'body': body,
+          'title': ?title,
+        },
+      );
+      if (response['success'] != true) {
+        throw Exception(response['message'] ?? 'Failed to save note');
+      }
+      final note = ClinicalNoteModel.fromJson(
+          Map<String, dynamic>.from(response['data'] as Map));
+      await _db.upsertClinicalNote(note);
+      return note;
+    } catch (e) {
+      if (!_isNetworkError(e)) rethrow;
+
+      final newId = const Uuid().v4();
+      final placeholder = ClinicalNoteModel(
+        id: newId,
+        patientId: patientId,
+        noteType: 'general',
+        title: title,
+        body: body,
+        authoredById: authoredById,
+        authoredByName: authoredByName,
+        authoredAt: DateTime.now(),
+      );
+      await _db.upsertClinicalNote(placeholder);
+
+      await _db.queuePendingSync(
+        id: const Uuid().v4(),
+        resourceType: 'clinical_notes',
+        resourceId: newId,
+        operation: 'create',
+        payload: {'patient_id': patientId, 'body': body, 'title': ?title},
+      );
+      throw Exception('Offline — note will be saved when you reconnect.');
     }
-    return ClinicalNoteModel.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map));
   }
 }

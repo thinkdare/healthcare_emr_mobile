@@ -248,7 +248,10 @@ class _MyAppState extends State<MyApp> {
     final reportingRepository       = ReportingRepository(apiClient: apiClient);
     final syncRepository            = SyncRepository(apiClient: apiClient);
     final referralRepository        = ReferralRepository(apiClient: apiClient);
-    final intraGrantRepository      = IntraGrantRepository(apiClient: apiClient);
+    final intraGrantRepository      = IntraGrantRepository(
+      apiClient: apiClient,
+      localDatabase: localDatabase,
+    );
     final intraTransferRepository   = IntraTransferRepository(apiClient: apiClient);
     final wardWorkflowRepository    = WardWorkflowRepository(apiClient: apiClient);
     final patientMessageRepository  = PatientMessageRepository(apiClient: apiClient);

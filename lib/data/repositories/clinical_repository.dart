@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/database/local_database.dart';
@@ -202,14 +203,55 @@ class ClinicalRepository {
   }
 
   Future<PrescriptionModel> createPrescription(
-      String patientId, Map<String, dynamic> data) async {
-    final response =
-        await apiClient.post('/patients/$patientId/prescriptions', data: data);
-    if (response['success'] != true) {
-      throw Exception(response['message'] ?? 'Failed to create prescription');
+    String patientId,
+    Map<String, dynamic> data, {
+    required String prescriberId,
+  }) async {
+    try {
+      final response = await apiClient.post(
+          '/patients/$patientId/prescriptions', data: data);
+      if (response['success'] != true) {
+        throw Exception(response['message'] ?? 'Failed to create prescription');
+      }
+      final prescription = PrescriptionModel.fromJson(
+          Map<String, dynamic>.from(response['data'] as Map));
+      await _db.upsertPrescription(prescription);
+      return prescription;
+    } catch (e) {
+      if (!_isNetworkError(e)) rethrow;
+
+      final newId = const Uuid().v4();
+      final refills = data['refills_allowed'] as int? ?? 0;
+
+      final placeholder = PrescriptionModel(
+        id: newId,
+        patientId: patientId,
+        prescriberId: prescriberId,
+        medicationName: data['medication_name'] as String,
+        medicationCode: data['medication_code'] as String?,
+        dosage: data['dosage'] as String,
+        frequency: data['frequency'] as String,
+        route: data['route'] as String?,
+        durationDays: data['duration_days'] as int?,
+        quantity: data['quantity'] as int?,
+        refillsAllowed: refills,
+        refillsRemaining: refills,
+        prescribedDate: DateTime.tryParse(data['prescribed_date'] as String? ?? ''),
+        expiresDate: DateTime.tryParse(data['expires_date'] as String? ?? ''),
+        status: 'pending',
+        specialInstructions: data['special_instructions'] as String?,
+        drugInteractionsChecked: data['drug_interactions_checked'] as bool? ?? false,
+      );
+      await _db.upsertPrescription(placeholder);
+
+      await _queueOfflineWrite(
+        resourceType: 'prescriptions',
+        resourceId: newId,
+        payload: {...data, 'patient_id': patientId},
+      );
+      throw Exception(
+          'Offline — prescription will be created when you reconnect.');
     }
-    return PrescriptionModel.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   Future<PrescriptionModel> updatePrescription(
@@ -496,14 +538,56 @@ class ClinicalRepository {
   }
 
   Future<VitalSignModel> createVitalSign(
-      String patientId, Map<String, dynamic> data) async {
-    final response =
-        await apiClient.post('/patients/$patientId/vital-signs', data: data);
-    if (response['success'] != true) {
-      throw Exception(response['message'] ?? 'Failed to record vital signs');
+    String patientId,
+    Map<String, dynamic> data, {
+    required String recordedById,
+  }) async {
+    try {
+      final response =
+          await apiClient.post('/patients/$patientId/vital-signs', data: data);
+      if (response['success'] != true) {
+        throw Exception(response['message'] ?? 'Failed to record vital signs');
+      }
+      final vital = VitalSignModel.fromJson(
+          Map<String, dynamic>.from(response['data'] as Map));
+      await _db.upsertVitalSign(vital);
+      return vital;
+    } catch (e) {
+      if (!_isNetworkError(e)) rethrow;
+
+      final newId = const Uuid().v4();
+      final placeholder = VitalSignModel(
+        id: newId,
+        patientId: patientId,
+        recordedById: recordedById,
+        encounterId: data['encounter_id'] as String?,
+        rosterEntryId: data['roster_entry_id'] as String?,
+        wardId: data['ward_id'] as String?,
+        recordedAt: DateTime.tryParse(data['recorded_at'] as String? ?? '') ?? DateTime.now(),
+        bloodPressureSystolic: data['blood_pressure_systolic'] as int?,
+        bloodPressureDiastolic: data['blood_pressure_diastolic'] as int?,
+        heartRate: data['heart_rate'] as int?,
+        respiratoryRate: data['respiratory_rate'] as int?,
+        temperature: (data['temperature'] as num?)?.toDouble(),
+        temperatureUnit: data['temperature_unit'] as String?,
+        oxygenSaturation: (data['oxygen_saturation'] as num?)?.toDouble(),
+        weight: (data['weight'] as num?)?.toDouble(),
+        weightUnit: data['weight_unit'] as String?,
+        height: (data['height'] as num?)?.toDouble(),
+        heightUnit: data['height_unit'] as String?,
+        notes: data['notes'] as String?,
+        version: 1,
+      );
+      await _db.upsertVitalSign(placeholder);
+
+      await _queueOfflineWrite(
+        resourceType: 'vitals',
+        resourceId: newId,
+        payload: {...data, 'patient_id': patientId},
+      );
+      throw Exception(
+          'Offline — vital signs will be recorded when you reconnect.');
     }
-    return VitalSignModel.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   Future<void> deleteVitalSign(String patientId, String vitalSignId) async {
@@ -738,5 +822,21 @@ class ClinicalRepository {
     }
     return RosterEntryModel.fromJson(
         Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  // ── OFFLINE WRITE HELPERS ─────────────────────────────────────────────────
+
+  Future<void> _queueOfflineWrite({
+    required String resourceType,
+    String? resourceId,
+    required Map<String, dynamic> payload,
+  }) async {
+    await _db.queuePendingSync(
+      id: const Uuid().v4(),
+      resourceType: resourceType,
+      resourceId: resourceId,
+      operation: 'create',
+      payload: payload,
+    );
   }
 }

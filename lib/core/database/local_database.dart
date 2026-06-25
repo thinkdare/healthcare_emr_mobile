@@ -7,6 +7,7 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:path/path.dart' as path_helper;
 import '../../data/models/clinical_models.dart';
 import '../../data/models/clinical_record_models.dart';
+import '../../data/models/intra_grant_models.dart';
 import '../../data/models/patient_models.dart';
 
 /// LocalDatabase
@@ -46,7 +47,7 @@ import '../../data/models/patient_models.dart';
 ///
 class LocalDatabase {
   static const String _kDatabaseName = 'emr_cache.db';
-  static const int _kVersion = 3;
+  static const int _kVersion = 4;
   static const String _kEncryptionKeyName = 'db_encryption_key_v1';
   static const String _kMigrationPendingSyncKey = 'db_migration_pending_sync';
 
@@ -160,6 +161,7 @@ class LocalDatabase {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) await _migrateV1toV2(db);
     if (oldVersion < 3) await _migrateV2toV3(db);
+    if (oldVersion < 4) await _migrateV3toV4(db);
   }
 
   Future<void> _migrateV1toV2(Database db) async {
@@ -270,7 +272,6 @@ class LocalDatabase {
     );
 
     // ── vitals_cache ───────────────────────────────────────────────────────
-    // Not yet in backend SYNCABLE_RESOURCES; table ready for future inclusion.
     await db.execute('''
       CREATE TABLE IF NOT EXISTS vitals_cache (
         id                         TEXT PRIMARY KEY,
@@ -327,6 +328,28 @@ class LocalDatabase {
     ''');
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_dx_patient ON diagnoses_cache(patient_id)',
+    );
+  }
+
+  Future<void> _migrateV3toV4(Database db) async {
+    // ── clinical_notes_cache ───────────────────────────────────────────────
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS clinical_notes_cache (
+        id                 TEXT PRIMARY KEY,
+        patient_id         TEXT NOT NULL,
+        note_type          TEXT NOT NULL,
+        title              TEXT,
+        body               TEXT NOT NULL,
+        authored_by_id     TEXT NOT NULL,
+        authored_by_name   TEXT NOT NULL,
+        source_type        TEXT,
+        source_id          TEXT,
+        authored_at        TEXT NOT NULL,
+        cached_at          TEXT NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_notes_patient ON clinical_notes_cache(patient_id)',
     );
   }
 
@@ -410,9 +433,10 @@ class LocalDatabase {
       )
     ''');
 
-    // Fresh installs also get v2 and v3 tables
+    // Fresh installs also get v2, v3, and v4 tables
     await _migrateV1toV2(db);
     await _migrateV2toV3(db);
+    await _migrateV3toV4(db);
   }
 
   // ── PATIENT DAO ────────────────────────────────────────────────────────────
@@ -766,6 +790,39 @@ class LocalDatabase {
       where: 'patient_id = ?',
       whereArgs: [patientId],
     );
+  }
+
+  Future<void> deleteVitalSign(String id) async {
+    final db = await database;
+    await db.delete('vitals_cache', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ── CLINICAL NOTE DAO ──────────────────────────────────────────────────────
+
+  Future<void> upsertClinicalNote(ClinicalNoteModel note) async {
+    final db = await database;
+    await db.insert(
+      'clinical_notes_cache',
+      _clinicalNoteToRow(note),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<ClinicalNoteModel>> getClinicalNotesByPatient(
+      String patientId) async {
+    final db = await database;
+    final rows = await db.query(
+      'clinical_notes_cache',
+      where: 'patient_id = ?',
+      whereArgs: [patientId],
+      orderBy: 'authored_at DESC',
+    );
+    return rows.map(_rowToClinicalNote).toList();
+  }
+
+  Future<void> deleteClinicalNote(String id) async {
+    final db = await database;
+    await db.delete('clinical_notes_cache', where: 'id = ?', whereArgs: [id]);
   }
 
   // ── DIAGNOSIS DAO ──────────────────────────────────────────────────────────
@@ -1205,6 +1262,36 @@ class LocalDatabase {
         notes:                   r['notes'] as String?,
         version:                 r['version'] as int? ?? 1,
         createdAt:               _parseDate(r['created_at']),
+      );
+
+  // ── CLINICAL NOTE SERIALISATION ────────────────────────────────────────────
+
+  Map<String, dynamic> _clinicalNoteToRow(ClinicalNoteModel n) => {
+        'id':               n.id,
+        'patient_id':       n.patientId,
+        'note_type':        n.noteType,
+        'title':            n.title,
+        'body':             n.body,
+        'authored_by_id':   n.authoredById,
+        'authored_by_name': n.authoredByName,
+        'source_type':      n.sourceType,
+        'source_id':        n.sourceId,
+        'authored_at':      n.authoredAt.toIso8601String(),
+        'cached_at':        DateTime.now().toIso8601String(),
+      };
+
+  ClinicalNoteModel _rowToClinicalNote(Map<String, dynamic> r) =>
+      ClinicalNoteModel(
+        id:              r['id'] as String,
+        patientId:       r['patient_id'] as String,
+        noteType:        r['note_type'] as String,
+        title:           r['title'] as String?,
+        body:            r['body'] as String,
+        authoredById:    r['authored_by_id'] as String,
+        authoredByName:  r['authored_by_name'] as String,
+        sourceType:      r['source_type'] as String?,
+        sourceId:        r['source_id'] as String?,
+        authoredAt:      DateTime.parse(r['authored_at'] as String),
       );
 
   // ── DIAGNOSIS SERIALISATION ────────────────────────────────────────────────

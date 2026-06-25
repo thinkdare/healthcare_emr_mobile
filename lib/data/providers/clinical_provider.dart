@@ -204,10 +204,14 @@ class ClinicalProvider extends ChangeNotifier {
 
   // ── Write operations ───────────────────────────────────────────────────────
 
-  Future<VitalSignModel?> createVitalSign(Map<String, dynamic> data) async {
+  Future<VitalSignModel?> createVitalSign(
+    Map<String, dynamic> data, {
+    required String recordedById,
+  }) async {
     if (_patientId == null) return null;
     try {
-      final v = await repository.createVitalSign(_patientId!, data);
+      final v = await repository.createVitalSign(_patientId!, data,
+          recordedById: recordedById);
       _vitalSigns = [v, ..._vitalSigns];
       notifyListeners();
       return v;
@@ -403,10 +407,13 @@ class ClinicalProvider extends ChangeNotifier {
   }
 
   Future<PrescriptionModel?> createPrescription(
-      Map<String, dynamic> data) async {
+    Map<String, dynamic> data, {
+    required String prescriberId,
+  }) async {
     if (_patientId == null) return null;
     try {
-      final rx = await repository.createPrescription(_patientId!, data);
+      final rx = await repository.createPrescription(_patientId!, data,
+          prescriberId: prescriberId);
       _prescriptions = [rx, ..._prescriptions];
       notifyListeners();
       return rx;
@@ -667,6 +674,11 @@ class ClinicalProvider extends ChangeNotifier {
 
   String _friendlyError(Object e) {
     final msg = e.toString();
+    // Offline-write-queue messages are already user-friendly and signal a
+    // deferred success, not a failure — pass them through unmodified.
+    if (msg.contains('Offline —')) {
+      return msg.replaceFirst('Exception: ', '');
+    }
     if (msg.contains('SocketException') || msg.contains('Connection')) {
       return 'No internet connection.';
     }

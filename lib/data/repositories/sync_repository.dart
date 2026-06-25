@@ -5,6 +5,8 @@ import 'package:uuid/uuid.dart';
 import '../../core/api/api_client.dart';
 import '../../core/database/local_database.dart';
 import '../models/clinical_models.dart';
+import '../models/clinical_record_models.dart';
+import '../models/intra_grant_models.dart';
 import '../models/sync_models.dart';
 
 class SyncRepository {
@@ -157,6 +159,30 @@ class SyncRepository {
       } else {
         final data = Map<String, dynamic>.from(m['data'] as Map);
         await _db.upsertLabResult(LabResultModel.fromJson(data));
+      }
+    }
+
+    // vitals
+    final vitals = resources['vitals'] as List? ?? [];
+    for (final item in vitals) {
+      final m = Map<String, dynamic>.from(item as Map);
+      if (m['deleted_at'] != null) {
+        await _db.deleteVitalSign(m['id'] as String);
+      } else {
+        final data = Map<String, dynamic>.from(m['data'] as Map);
+        await _db.upsertVitalSign(VitalSignModel.fromJson(data));
+      }
+    }
+
+    // clinical_notes
+    final clinicalNotes = resources['clinical_notes'] as List? ?? [];
+    for (final item in clinicalNotes) {
+      final m = Map<String, dynamic>.from(item as Map);
+      if (m['deleted_at'] != null) {
+        await _db.deleteClinicalNote(m['id'] as String);
+      } else {
+        final data = Map<String, dynamic>.from(m['data'] as Map);
+        await _db.upsertClinicalNote(ClinicalNoteModel.fromJson(data));
       }
     }
   }

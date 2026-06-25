@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
 import '../../../core/platform.dart';
 import '../../../data/models/clinical_models.dart';
+import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/clinical_provider.dart';
 import 'interaction_warning_sheet.dart';
 
@@ -296,11 +297,16 @@ class _PrescriptionFormState extends State<PrescriptionForm> {
         'drug_interaction_warnings': warnings.map((w) => w.toJson()).toList(),
     };
 
-    final result = await clinical.createPrescription(data);
+    final prescriberId = context.read<AuthProvider>().currentUserId!;
+    final result = await clinical.createPrescription(data, prescriberId: prescriberId);
     if (!mounted) return;
     setState(() => _saving = false);
 
     if (result != null) {
+      Navigator.of(context).pop(true);
+    } else if (clinical.error?.startsWith('Offline —') ?? false) {
+      // Queued locally — not a failure, just deferred.
+      showAdaptiveToast(context, clinical.error!, type: ToastType.info);
       Navigator.of(context).pop(true);
     } else {
       showAdaptiveToast(

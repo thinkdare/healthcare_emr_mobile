@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/intra_grant_provider.dart';
 
 /// Bottom sheet for writing a structured consultation note.
@@ -90,16 +91,25 @@ class _ConsultationNoteSheetState extends State<_ConsultationNoteSheet> {
 
     try {
       final repo = context.read<IntraGrantProvider>().repository;
+      final auth = context.read<AuthProvider>();
       await repo.createNote(
         widget.patientId,
         title: _buildTitle(),
         body:  _buildBody(),
+        authoredById:   auth.currentUserId!,
+        authoredByName: auth.displayName,
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
+      final message = e.toString().replaceAll('Exception: ', '');
+      if (message.startsWith('Offline —')) {
+        // Queued locally — not a failure, just deferred.
+        if (mounted) Navigator.of(context).pop(true);
+        return;
+      }
       setState(() {
         _saving = false;
-        _error  = e.toString().replaceAll('Exception: ', '');
+        _error  = message;
       });
     }
   }

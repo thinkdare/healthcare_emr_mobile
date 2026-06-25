@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:healthcare_emr_mobile/core/database/local_database.dart';
 import 'package:healthcare_emr_mobile/data/models/clinical_models.dart';
 import 'package:healthcare_emr_mobile/data/models/clinical_record_models.dart';
+import 'package:healthcare_emr_mobile/data/models/intra_grant_models.dart';
 import 'package:healthcare_emr_mobile/data/models/patient_models.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -333,6 +334,74 @@ void main() {
       expect(results.first.id, 'vs-1');
       expect(results.first.bloodPressureSystolic, 120);
       expect(results.first.temperature, 37.0);
+    });
+  });
+
+  // ── Clinical Notes ────────────────────────────────────────────────────────
+
+  group('clinical_notes_cache', () {
+    test('upsertClinicalNote and getClinicalNotesByPatient round-trips correctly',
+        () async {
+      final note = ClinicalNoteModel(
+        id: 'note-1',
+        patientId: 'pat-1',
+        noteType: 'general',
+        title: 'Follow-up',
+        body: 'Patient reports improved symptoms.',
+        authoredById: 'doc-1',
+        authoredByName: 'Dr. Doe',
+        authoredAt: DateTime(2026, 6, 10, 9, 0),
+      );
+
+      await LocalDatabase.instance.upsertClinicalNote(note);
+      final results = await LocalDatabase.instance.getClinicalNotesByPatient('pat-1');
+
+      expect(results, hasLength(1));
+      expect(results.first.id, 'note-1');
+      expect(results.first.title, 'Follow-up');
+      expect(results.first.body, 'Patient reports improved symptoms.');
+      expect(results.first.authoredByName, 'Dr. Doe');
+    });
+
+    test('upsertClinicalNote replaces existing row on same id', () async {
+      await LocalDatabase.instance.upsertClinicalNote(ClinicalNoteModel(
+        id: 'note-2',
+        patientId: 'pat-1',
+        noteType: 'general',
+        body: 'Original body.',
+        authoredById: 'doc-1',
+        authoredByName: 'Dr. Doe',
+        authoredAt: DateTime(2026, 6, 10, 9, 0),
+      ));
+      await LocalDatabase.instance.upsertClinicalNote(ClinicalNoteModel(
+        id: 'note-2',
+        patientId: 'pat-1',
+        noteType: 'general',
+        body: 'Updated body.',
+        authoredById: 'doc-1',
+        authoredByName: 'Dr. Doe',
+        authoredAt: DateTime(2026, 6, 10, 9, 0),
+      ));
+
+      final results = await LocalDatabase.instance.getClinicalNotesByPatient('pat-1');
+      expect(results, hasLength(1));
+      expect(results.first.body, 'Updated body.');
+    });
+
+    test('deleteClinicalNote removes specific row', () async {
+      await LocalDatabase.instance.upsertClinicalNote(ClinicalNoteModel(
+        id: 'note-del',
+        patientId: 'pat-1',
+        noteType: 'general',
+        body: 'To be deleted.',
+        authoredById: 'doc-1',
+        authoredByName: 'Dr. Doe',
+        authoredAt: DateTime(2026, 6, 10, 9, 0),
+      ));
+      await LocalDatabase.instance.deleteClinicalNote('note-del');
+
+      final results = await LocalDatabase.instance.getClinicalNotesByPatient('pat-1');
+      expect(results, isEmpty);
     });
   });
 

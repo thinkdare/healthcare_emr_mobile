@@ -13,6 +13,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/platform.dart';
+import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/clinical_provider.dart';
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
@@ -154,11 +155,26 @@ class _VitalSignFormState extends State<VitalSignForm> {
       if (_notesCtrl.text.trim().isNotEmpty) 'notes': _notesCtrl.text.trim(),
     };
 
+    final recordedById = context.read<AuthProvider>().currentUserId!;
+    final clinical = context.read<ClinicalProvider>();
     final result =
-        await context.read<ClinicalProvider>().createVitalSign(data);
+        await clinical.createVitalSign(data, recordedById: recordedById);
     if (!mounted) return;
     setState(() => _saving = false);
-    if (result != null) Navigator.pop(context, true);
+
+    if (result != null) {
+      Navigator.pop(context, true);
+    } else if (clinical.error?.startsWith('Offline —') ?? false) {
+      // Queued locally — not a failure, just deferred.
+      showAdaptiveToast(context, clinical.error!, type: ToastType.info);
+      Navigator.pop(context, true);
+    } else {
+      showAdaptiveToast(
+        context,
+        clinical.error ?? 'Failed to record vital signs',
+        type: ToastType.error,
+      );
+    }
   }
 
   @override
