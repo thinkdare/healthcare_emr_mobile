@@ -218,6 +218,10 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
                                 value: 'lab',
                                 child: Text('Laboratory'),
                               ),
+                              DropdownMenuItem(
+                                value: 'diagnostic_center',
+                                child: Text('Diagnostic Center'),
+                              ),
                             ],
                             onChanged: (value) {
                               setState(() => _selectedType = value!);

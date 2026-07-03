@@ -194,7 +194,7 @@ class AuthFacilityModel {
       'hospital': 'Hospital',
       'clinic': 'Clinic',
       'pharmacy': 'Pharmacy',
-      'laboratory': 'Laboratory',
+      'lab': 'Laboratory',
       'diagnostic_center': 'Diagnostic Center',
       'other': 'Facility',
     };

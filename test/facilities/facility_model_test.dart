@@ -78,5 +78,21 @@ void main() {
       expect(facility.slug, '');
       expect(facility.country, '');
     });
+
+    test('fromJson round-trips the diagnostic_center facility type', () {
+      final facility = FacilityModel.fromJson({
+        'id': 'tenant-5',
+        'name': 'City Diagnostics',
+        'slug': 'city-diagnostics',
+        'type': 'diagnostic_center',
+        'country': 'NG',
+        'supports_emergency_access': false,
+        'is_active': true,
+        'organization': null,
+        'created_at': '2026-01-01T10:00:00Z',
+      });
+
+      expect(facility.type, 'diagnostic_center');
+    });
   });
 }

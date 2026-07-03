@@ -80,7 +80,7 @@ class FacilityModel {
   final String id;
   final String name;
   final String slug;
-  final String type; // hospital | clinic | pharmacy | lab
+  final String type; // hospital | clinic | pharmacy | lab | diagnostic_center
   final String country;
   final String? stateProvince;
   final String? address;

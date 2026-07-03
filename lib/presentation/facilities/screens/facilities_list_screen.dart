@@ -274,6 +274,7 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
     'clinic': 'Clinic',
     'pharmacy': 'Pharmacy',
     'lab': 'Laboratory',
+    'diagnostic_center': 'Diagnostic Center',
   };
 
   Widget _buildFacilityCard(FacilityModel facility, {required bool isGrid}) {
@@ -496,6 +497,7 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
       'clinic' => Icons.business,
       'pharmacy' => Icons.medication,
       'lab' => Icons.science,
+      'diagnostic_center' => Icons.biotech,
       _ => Icons.location_city,
     };
   }

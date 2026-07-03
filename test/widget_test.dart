@@ -108,6 +108,30 @@ void main() {
       });
       expect(facility.displayType, 'mobile_unit');
     });
+
+    test('displayType maps the real backend "lab" value to Laboratory', () {
+      // Regression guard: this label map previously keyed on 'laboratory',
+      // which never matched the actual tenants.type value ('lab'), so real
+      // lab facilities fell through to the raw 'lab' string instead of a
+      // human-readable label.
+      final facility = AuthFacilityModel.fromJson({
+        'id': 'ten-3',
+        'name': 'City Lab',
+        'slug': 'city-lab',
+        'type': 'lab',
+      });
+      expect(facility.displayType, 'Laboratory');
+    });
+
+    test('displayType maps diagnostic_center', () {
+      final facility = AuthFacilityModel.fromJson({
+        'id': 'ten-4',
+        'name': 'City Diagnostics',
+        'slug': 'city-diagnostics',
+        'type': 'diagnostic_center',
+      });
+      expect(facility.displayType, 'Diagnostic Center');
+    });
   });
 
   group('StaffMembershipModel', () {
