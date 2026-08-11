@@ -54,7 +54,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (!mounted) return;
 
-    if (result == null || !result.exists) {
+    if (result == null) {
+      setState(() {
+        _loading = false;
+        _errorMessage = orgProvider.isConnectionError
+            ? 'Unable to reach the server. Check your connection and try again.'
+            : (orgProvider.error ?? 'Something went wrong. Please try again.');
+      });
+      return;
+    }
+
+    if (!result.exists) {
       setState(() {
         _loading = false;
         _errorMessage = 'No account found for this email address.';
