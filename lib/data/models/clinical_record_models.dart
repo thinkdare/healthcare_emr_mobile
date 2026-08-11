@@ -88,6 +88,33 @@ class VitalSignModel {
     );
   }
 
+  /// Round-trips through fromJson — used to cache the full record as a JSON
+  /// blob in vitals_cache rather than mapping every field to its own column.
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'patient_id': patientId,
+        'recorded_by_id': recordedById,
+        'encounter_id': encounterId,
+        'roster_entry_id': rosterEntryId,
+        'ward_id': wardId,
+        'recorded_at': recordedAt.toIso8601String(),
+        'blood_pressure_systolic': bloodPressureSystolic,
+        'blood_pressure_diastolic': bloodPressureDiastolic,
+        'heart_rate': heartRate,
+        'respiratory_rate': respiratoryRate,
+        'temperature': temperature,
+        'temperature_unit': temperatureUnit,
+        'oxygen_saturation': oxygenSaturation,
+        'weight': weight,
+        'weight_unit': weightUnit,
+        'height': height,
+        'height_unit': heightUnit,
+        'bmi': bmi,
+        'notes': notes,
+        'version': version,
+        'created_at': createdAt?.toIso8601String(),
+      };
+
   String get bpDisplay {
     if (bloodPressureSystolic == null || bloodPressureDiastolic == null) return '—';
     return '$bloodPressureSystolic/$bloodPressureDiastolic mmHg';
@@ -171,6 +198,27 @@ class DiagnosisModel {
   }
 
   bool get isActive => status == 'active' || status == 'in_remission';
+
+  /// Round-trips through fromJson — used to cache the full record as a JSON
+  /// blob in diagnoses_cache rather than mapping every field to its own column.
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'patient_id': patientId,
+        'diagnosed_by_id': diagnosedById,
+        'encounter_id': encounterId,
+        'ward_id': wardId,
+        'icd_code': icdCode,
+        'icd_version': icdVersion,
+        'description': description,
+        'diagnosis_type': diagnosisType,
+        'status': status,
+        'onset_date': onsetDate?.toIso8601String(),
+        'resolved_date': resolvedDate?.toIso8601String(),
+        'notes': notes,
+        'version': version,
+        'created_at': createdAt?.toIso8601String(),
+        'updated_at': updatedAt?.toIso8601String(),
+      };
 }
 
 // ── ProblemList ───────────────────────────────────────────────────────────────

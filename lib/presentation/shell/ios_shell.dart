@@ -13,6 +13,8 @@ import '../more/more_screen.dart';
 import '../patients/screens/patient_list_screen.dart';
 import '../roster/screens/roster_screen.dart';
 import '../sync/widgets/sync_banner.dart';
+import 'app_lock_gate.dart';
+import 'widgets/device_integrity_banner.dart';
 
 /// CupertinoApp root for iOS.
 /// Four tabs: Patients · Roster · Access · More
@@ -27,7 +29,7 @@ class IOSShell extends StatelessWidget {
       theme: const CupertinoThemeData(
         primaryColor: AppColors.primary,
       ),
-      home: const _IOSAuthWrapper(),
+      home: const AppLockGate(child: _IOSAuthWrapper()),
     );
   }
 }
@@ -60,6 +62,7 @@ class _IOSTabs extends StatelessWidget {
     return CupertinoPageScaffold(
       child: Column(
         children: [
+          const DeviceIntegrityBanner(),
           const SyncBanner(),
           Expanded(
             child: CupertinoTabScaffold(

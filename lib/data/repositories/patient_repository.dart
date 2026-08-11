@@ -209,7 +209,18 @@ class PatientRepository {
       return patient;
     } catch (e) {
       if (_isNetworkError(e)) {
-        await _queueOfflineWrite(operation: 'create', payload: data);
+        // SyncController::createOfflinePatient() uses resource_id as the
+        // new patient's actual primary key — and push() rejects the whole
+        // change with a 422 (resource_id is a required uuid) if it's
+        // missing. A client-generated id here is what lets this create,
+        // and anything created in the same offline session that references
+        // this patient (e.g. an appointment), sync successfully at all.
+        final id = const Uuid().v4();
+        await _queueOfflineWrite(
+          operation: 'create',
+          resourceId: id,
+          payload: data,
+        );
         throw Exception(
             'Offline — patient will be created when you reconnect.');
       }
@@ -252,17 +263,33 @@ class PatientRepository {
 
   // ── STATS ──────────────────────────────────────────────────────────────────
 
-  /// Derive dashboard stats from the local cache.
+  /// Derive dashboard stats from the local cache, plus live provider-scoped
+  /// appointment/prescription counts from the API when online (no offline
+  /// cache for those yet — they're 0 when the request fails).
   /// These are counts only — no PII leaves the cache.
   Future<DashboardStatsModel> getDashboardStats(String providerId) async {
     final total  = await _db.getPatientCount(providerId);
     final recent = await _db.getRecentPatientCount(providerId, days: 7);
     final lastFetched = await _db.patientsLastFetched(providerId);
 
+    var pendingAppointments = 0;
+    var activePrescriptions = 0;
+    try {
+      final response = await apiClient.get('/dashboard/provider-stats');
+      final data = Map<String, dynamic>.from(response['data'] as Map);
+      pendingAppointments = data['pending_appointments'] as int? ?? 0;
+      activePrescriptions = data['active_prescriptions'] as int? ?? 0;
+    } catch (_) {
+      // Offline or request failed — leave at 0 rather than surfacing an
+      // error for a non-critical dashboard widget.
+    }
+
     return DashboardStatsModel(
       totalPatients:  total,
       activePatients: total, // active = total in Phase 2 (soft-deleted are excluded)
       recentPatients: recent,
+      pendingAppointments: pendingAppointments,
+      activePrescriptions: activePrescriptions,
       lastRefreshed:  lastFetched,
       isFromCache:    true,
     );

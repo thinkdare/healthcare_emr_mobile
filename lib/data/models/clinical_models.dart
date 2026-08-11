@@ -350,3 +350,52 @@ class MedicalDocumentModel {
     return '${(fileSize! / (1024 * 1024)).toStringAsFixed(1)}MB';
   }
 }
+
+/// A message in a patient↔provider thread (PatientMessageController).
+/// Patients start the conversation from the patient portal; providers can
+/// only reply to an existing thread, not start a new one — there is no
+/// provider-initiate endpoint on the backend.
+class PatientMessageModel {
+  final String id;
+  final String senderType; // 'patient' | 'provider'
+  final String? senderId;
+  final String recipientType; // 'patient' | 'provider'
+  final String? subject;
+  final String body;
+  final String? parentId;
+  final DateTime? readAt;
+  final DateTime createdAt;
+  final bool hasReplies;
+
+  const PatientMessageModel({
+    required this.id,
+    required this.senderType,
+    this.senderId,
+    required this.recipientType,
+    this.subject,
+    required this.body,
+    this.parentId,
+    this.readAt,
+    required this.createdAt,
+    required this.hasReplies,
+  });
+
+  bool get isFromProvider => senderType == 'provider';
+
+  factory PatientMessageModel.fromJson(Map<String, dynamic> json) =>
+      PatientMessageModel(
+        id: json['id'] as String,
+        senderType: json['sender_type'] as String? ?? 'patient',
+        senderId: json['sender_id'] as String?,
+        recipientType: json['recipient_type'] as String? ?? 'provider',
+        subject: json['subject'] as String?,
+        body: json['body'] as String? ?? '',
+        parentId: json['parent_id'] as String?,
+        readAt: json['read_at'] == null
+            ? null
+            : DateTime.tryParse(json['read_at'] as String),
+        createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
+            DateTime.now(),
+        hasReplies: json['has_replies'] as bool? ?? false,
+      );
+}

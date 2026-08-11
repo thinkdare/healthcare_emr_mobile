@@ -146,6 +146,53 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  // ── Staff invitation acceptance ────────────────────────────────────────────
+
+  Future<InvitationPreviewModel?> loadInvitation(String token) async {
+    _error = null;
+    try {
+      return await repository.getInvitation(token);
+    } on Exception catch (e) {
+      _error = _friendlyError(e.toString());
+      notifyListeners();
+      return null;
+    }
+  }
+
+  /// Returns true on success. On success the session is already established
+  /// (token saved) — caller should proceed the same way it would after
+  /// [login], i.e. into facility selection or straight to the dashboard.
+  Future<bool> acceptInvitation({
+    required String token,
+    required String firstName,
+    required String lastName,
+    required String password,
+    required String passwordConfirmation,
+    String? phone,
+    String? licenseNumber,
+  }) async {
+    _error = null;
+    try {
+      await repository.registerFromInvitation(
+        token: token,
+        firstName: firstName,
+        lastName: lastName,
+        password: password,
+        passwordConfirmation: passwordConfirmation,
+        phone: phone,
+        licenseNumber: licenseNumber,
+      );
+      _currentUser = await repository.getCurrentUser();
+      await _loadFacilities();
+      return true;
+    } on Exception catch (e) {
+      _error = _friendlyError(e.toString());
+      _state = AuthState.unauthenticated;
+      notifyListeners();
+      return false;
+    }
+  }
+
   // ── 2FA ───────────────────────────────────────────────────────────────────
 
   Future<bool> verifyTwoFactor(String code) async {

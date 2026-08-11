@@ -51,6 +51,23 @@ dependencies:
   # Date/time formatting
   intl: ^0.20.0
 
+  # PDF invoice download (path_provider for the save location, open_file to view it)
+  path_provider: ^2.1.6
+  open_file: ^4.0.0
+
+  # Encrypted local cache (iOS/Android only — see LocalDatabase's class doc
+  # for why desktop stays on plaintext sqflite_common_ffi). No
+  # dependency_overrides needed for the sqflite/sqflite_sqlcipher iOS pod
+  # conflict some versions require — that's only for sqflite < 2.3.2, and
+  # this project is already on 2.4.x.
+  sqflite_sqlcipher: ^3.4.1
+
+  # Biometric app-lock gating (Face ID/fingerprint, falls back to device
+  # passcode) — gates resume-from-background and cold start when a session
+  # already exists.
+  local_auth: ^3.0.2
+  safe_device: ^1.4.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

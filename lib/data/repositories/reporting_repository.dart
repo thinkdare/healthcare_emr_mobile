@@ -37,7 +37,11 @@ class AuditLogEntry {
         wasEmergency: json['was_emergency'] as bool? ?? false,
         wasOffline: json['was_offline'] as bool? ?? false,
         ipAddress: json['ip_address'] as String?,
-        activeFacilitySlug: json['active_facility_slug'] as String?,
+        // The tenant-wide compliance endpoint uses 'active_facility_slug';
+        // the per-patient audit-log endpoint uses 'facility_context' for the
+        // same value.
+        activeFacilitySlug: (json['active_facility_slug'] ??
+            json['facility_context']) as String?,
         accessedAt: json['accessed_at'] == null
             ? null
             : DateTime.tryParse(json['accessed_at'] as String),

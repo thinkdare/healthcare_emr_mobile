@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
 import '../../../data/providers/auth_provider.dart';
@@ -486,10 +489,7 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                 width: double.infinity,
                 height: 56,
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    // TODO: Implement download
-                    showAdaptiveToast(context, 'Download feature coming soon');
-                  },
+                  onPressed: () => _downloadInvoicePdf(invoice),
                   icon: const Icon(Icons.download),
                   label: const Text('Download PDF'),
                 ),
@@ -499,6 +499,32 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _downloadInvoicePdf(InvoiceModel invoice) async {
+    if (_orgId == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    showAdaptiveToast(context, 'Downloading invoice…');
+    try {
+      final bytes = await context
+          .read<SubscriptionProvider>()
+          .downloadInvoicePdf(_orgId!, invoice.id);
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/invoice-${invoice.invoiceNumber}.pdf');
+      await file.writeAsBytes(bytes, flush: true);
+      if (!mounted) return;
+      final result = await OpenFile.open(file.path);
+      if (result.type != ResultType.done && mounted) {
+        messenger.showSnackBar(SnackBar(
+          content: Text('Saved to ${file.path} — ${result.message}'),
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        showAdaptiveToast(context, 'Failed to download invoice: $e',
+            type: ToastType.error);
+      }
+    }
   }
 
   Widget _buildDetailRow(String label, String value) {

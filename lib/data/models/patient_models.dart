@@ -305,7 +305,8 @@ class DashboardStatsModel {
   final int activePatients;
   final int recentPatients; // created in last 7 days
 
-  // Phase 5 will populate these — kept as 0 for now
+  // Provider-scoped counts from GET /dashboard/provider-stats — 0 if the
+  // request fails (e.g. offline); there's no local cache for these yet.
   final int pendingAppointments;
   final int activePrescriptions;
 

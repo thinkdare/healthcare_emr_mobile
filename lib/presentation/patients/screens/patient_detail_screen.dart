@@ -10,11 +10,14 @@ import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/clinical_provider.dart';
 import '../../../data/providers/patient_provider.dart';
 import '../../../data/providers/referral_provider.dart';
+import '../../access_grants/widgets/transfer_request_sheet.dart';
 import '../../referrals/widgets/create_referral_sheet.dart';
 import '../widgets/clinical_forms.dart';
 import '../widgets/clinical_record_tab.dart';
 import '../widgets/clinical_record_forms.dart';
+import 'patient_audit_log_screen.dart';
 import 'patient_form_screen.dart';
+import 'patient_messages_screen.dart';
 
 class PatientDetailScreen extends StatefulWidget {
   final PatientModel patient;
@@ -280,6 +283,19 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     }
   }
 
+  Future<void> _openTransferSheet() async {
+    final transferred = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => TransferRequestSheet(patientId: _patient.id),
+    );
+    if (transferred == true && mounted) {
+      showAdaptiveToast(context, 'Transfer request sent.',
+          type: ToastType.success);
+    }
+  }
+
   @override
   void dispose() {
     _tabs.dispose();
@@ -313,6 +329,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                   padding: EdgeInsets.zero,
                   onPressed: _openReferralSheet,
                   child: const Icon(CupertinoIcons.arrow_right_arrow_left_circle),
+                ),
+              if (auth.isStaff)
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: _openTransferSheet,
+                  child: const Icon(CupertinoIcons.person_2_square_stack),
                 ),
               if (canEdit)
                 CupertinoButton(
@@ -422,6 +444,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
               icon: const Icon(Icons.send_outlined),
               tooltip: 'Refer patient',
               onPressed: _openReferralSheet,
+            ),
+          if (auth.isStaff)
+            IconButton(
+              icon: const Icon(Icons.swap_horiz),
+              tooltip: 'Transfer patient',
+              onPressed: _openTransferSheet,
             ),
           if (canEdit)
             IconButton(
@@ -549,6 +577,44 @@ class _OverviewTab extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+
+          Card(
+            child: ListTile(
+              leading: Icon(Icons.chat_bubble_outline,
+                  color: AppTheme.primaryColor),
+              title: const Text('Messages'),
+              subtitle: const Text('Conversation with this patient'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => PatientMessagesScreen(
+                  patientId: p.id,
+                  patientName: p.fullName,
+                ),
+              )),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Audit log — only the primary provider (or a super admin, who
+          // won't be logging into this provider-facing app) can view this.
+          if (context.watch<AuthProvider>().currentUserId ==
+              p.primaryProviderId) ...[
+            Card(
+              child: ListTile(
+                leading: Icon(Icons.history, color: AppTheme.primaryColor),
+                title: const Text('Audit Log'),
+                subtitle: const Text('Who accessed this patient\'s record'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => PatientAuditLogScreen(
+                    patientId: p.id,
+                    patientName: p.fullName,
+                  ),
+                )),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
 
           // Allergies
           if (p.hasAllergies) ...[

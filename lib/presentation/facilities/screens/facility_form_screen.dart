@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
 import '../../../data/models/organization_models_enhanced.dart';
+import '../../../data/providers/auth_provider.dart';
 import '../../../data/repositories/facility_repository.dart';
 import '../../../core/api/api_client.dart';
 import '../../../config/theme.dart';
@@ -77,9 +78,12 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
         );
       } else {
         // Create new facility
-        // Note: organizationId should come from auth context
+        final organizationId = context.read<AuthProvider>().organizationId;
+        if (organizationId == null) {
+          throw Exception('No active organization found for this account.');
+        }
         await _repository.createFacility(
-          organizationId: 'current-org-id', // TODO: Get from auth provider
+          organizationId: organizationId,
           name: _nameController.text.trim(),
           type: _selectedType,
           address: _addressController.text.trim(),

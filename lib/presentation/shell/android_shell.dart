@@ -9,6 +9,7 @@ import '../../config/theme.dart';
 import '../../data/providers/auth_provider.dart';
 import '../auth/screens/login_screen.dart';
 import '../dashboard/screens/provider_dashboard_screen.dart';
+import 'app_lock_gate.dart';
 
 /// MaterialApp root for Android. Wraps the authenticated home in
 /// [ProviderDashboardScreen], which contains the drawer and all navigation.
@@ -21,7 +22,7 @@ class AndroidShell extends StatelessWidget {
       title: 'Healthcare EMR',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const _AuthWrapper(),
+      home: const AppLockGate(child: _AuthWrapper()),
     );
   }
 }

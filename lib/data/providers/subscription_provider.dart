@@ -128,6 +128,12 @@ class SubscriptionProvider extends ChangeNotifier {
     }
   }
 
+  /// Downloads an invoice PDF as raw bytes. No loading/error state here —
+  /// callers (a modal action) handle their own busy indicator and errors.
+  Future<List<int>> downloadInvoicePdf(String orgId, String invoiceId) {
+    return repository.downloadInvoicePdf(orgId, invoiceId);
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   void clearError() {

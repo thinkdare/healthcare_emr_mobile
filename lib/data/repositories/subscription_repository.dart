@@ -144,4 +144,12 @@ class SubscriptionRepository {
     return InvoiceModel.fromJson(
         Map<String, dynamic>.from(response['data'] as Map));
   }
+
+  /// GET /billing/organizations/{orgId}/invoices/{id}/pdf
+  /// Returns the raw PDF bytes — the backend streams a binary download,
+  /// not the standard {success, data} JSON envelope.
+  Future<List<int>> downloadInvoicePdf(String orgId, String invoiceId) {
+    return apiClient
+        .getBytes('/billing/organizations/$orgId/invoices/$invoiceId/pdf');
+  }
 }

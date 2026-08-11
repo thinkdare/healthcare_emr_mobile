@@ -12,6 +12,7 @@ import 'data/repositories/access_grant_repository.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/clinical_repository.dart';
 import 'data/repositories/emergency_access_repository.dart';
+import 'data/repositories/intra_transfer_repository.dart';
 import 'data/repositories/organization_repository.dart';
 import 'data/repositories/patient_repository.dart';
 import 'data/repositories/reporting_repository.dart';
@@ -21,6 +22,8 @@ import 'data/repositories/referral_repository.dart';
 import 'data/providers/access_grant_provider.dart';
 import 'data/providers/auth_provider.dart';
 import 'data/providers/clinical_provider.dart';
+import 'data/providers/device_integrity_provider.dart';
+import 'data/providers/intra_transfer_provider.dart';
 import 'data/providers/emergency_access_provider.dart';
 import 'data/providers/organization_provider.dart';
 import 'data/providers/patient_provider.dart';
@@ -41,8 +44,12 @@ void main() async {
 
   AppConfig.printConfig();
 
-  // Warm up SQLite so the first screen doesn't stutter
-  await LocalDatabase.instance.database;
+  if (!kIsWeb) {
+    // Warm up SQLite so the first screen doesn't stutter.
+    // No web sqflite factory is configured (see databaseFactory guard above),
+    // so this would throw before runApp() ever executes.
+    await LocalDatabase.instance.database;
+  }
 
   runApp(const MyApp());
 }
@@ -94,12 +101,16 @@ class _MyAppState extends State<MyApp> {
       localDatabase: localDatabase,
     );
     final subscriptionRepository    = SubscriptionRepository(apiClient: apiClient);
-    final clinicalRepository        = ClinicalRepository(apiClient: apiClient);
+    final clinicalRepository        = ClinicalRepository(
+      apiClient: apiClient,
+      localDatabase: localDatabase,
+    );
     final accessGrantRepository     = AccessGrantRepository(apiClient: apiClient);
     final emergencyAccessRepository = EmergencyAccessRepository(apiClient: apiClient);
     final reportingRepository       = ReportingRepository(apiClient: apiClient);
     final syncRepository            = SyncRepository(apiClient: apiClient);
     final referralRepository        = ReferralRepository(apiClient: apiClient);
+    final intraTransferRepository   = IntraTransferRepository(apiClient: apiClient);
 
     return MultiProvider(
       providers: [
@@ -138,6 +149,13 @@ class _MyAppState extends State<MyApp> {
         ),
         ChangeNotifierProvider(
           create: (_) => ReferralProvider(repository: referralRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => DeviceIntegrityProvider()..check(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) =>
+              IntraTransferProvider(repository: intraTransferRepository),
         ),
       ],
       // Platform branch: CupertinoApp on iOS, MaterialApp on Android.

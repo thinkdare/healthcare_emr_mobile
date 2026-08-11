@@ -1,6 +1,3 @@
-// ⚠️ MERGE GATE: This screen must not merge beyond local dev until
-// StaffRegistrationController::invite() has a backend org-admin check deployed
-// and a 403 test from a non-org-admin token passes in staging.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api/api_client.dart';
@@ -84,11 +81,11 @@ class _ProviderInvitationScreenState extends State<ProviderInvitationScreen> {
     }
     setState(() => _submitting = true);
     try {
-      await context.read<ApiClient>().post('/staff/invite', data: {
-        'email': _emailController.text.trim(),
-        'staff_type': _selectedStaffType,
-        'clinical_rank_id': _selectedRankId,
-      });
+      await _repo.inviteStaff(
+        email: _emailController.text.trim(),
+        staffType: _selectedStaffType,
+        clinicalRankId: _selectedRankId!,
+      );
       if (mounted) {
         showAdaptiveToast(
           context,

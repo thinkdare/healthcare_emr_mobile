@@ -1,17 +1,24 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 class AppConfig {
   static const String appName = 'Healthcare EMR System';
   static const String apiVersion = 'v1';
 
   static String get baseUrl {
-    if (Platform.isAndroid) {
-      // 10.0.3.2 = host loopback on Genymotion; use 10.0.2.2 for standard AVD
-      return 'http://10.0.3.2:8000/api/v1';
+    // kIsWeb must be checked first — Platform.* throws UnsupportedError
+    // at runtime on the web target (dart:io has no web implementation).
+    if (kIsWeb) {
+      return 'http://localhost:8180/api/v1';
+    } else if (Platform.isAndroid) {
+      // 10.0.2.2 = host loopback on the standard Android emulator (AVD);
+      // use 10.0.3.2 instead if running on Genymotion.
+      return 'http://10.0.2.2:8180/api/v1';
     } else if (Platform.isIOS) {
-      return 'http://localhost:8000/api/v1';
+      return 'http://localhost:8180/api/v1';
     } else {
-      return 'http://localhost:8000/api/v1';
+      return 'http://localhost:8180/api/v1';
     }
   }
 

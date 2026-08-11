@@ -55,6 +55,23 @@ class StaffRepository {
     }
   }
 
+  /// Invites a new staff member to the active facility. Org-admin only —
+  /// the backend rejects this with a 403 for any other staff type.
+  Future<void> inviteStaff({
+    required String email,
+    required String staffType,
+    required String clinicalRankId,
+  }) async {
+    final response = await apiClient.post('/staff/invite', data: {
+      'email': email,
+      'staff_type': staffType,
+      'clinical_rank_id': clinicalRankId,
+    });
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Failed to send invitation');
+    }
+  }
+
   Future<List<ClinicalRankModel>> getClinicalRanks() async {
     final response = await apiClient.get('/clinical-ranks');
     if (response['success'] != true) {

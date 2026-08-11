@@ -36,11 +36,11 @@
 ## 1. Base URL & Headers
 
 ```
-Base URL:  http://10.0.2.2/api/v1      (Android emulator → localhost)
-           http://localhost/api/v1       (iOS simulator / desktop)
+Base URL:  http://10.0.2.2:8180/api/v1   (Android emulator → localhost)
+           http://localhost:8180/api/v1    (iOS simulator / desktop / web)
 ```
 
-> The backend runs on **port 80** via Nginx. The current Flutter `app_config.dart` points to port 8001 — **fix this**.
+> The backend's Nginx container is published on host port **8180** (`NGINX_PORT` in `healthcare-emr/.env`), not the container-internal port 80. `app_config.dart` already points to 8180 — no fix needed here.
 
 ### Required headers (all requests)
 
@@ -130,13 +130,12 @@ These are issues in the **existing** Flutter project that must be fixed before t
 
 | # | File | Current (broken) | Correct |
 |---|---|---|---|
-| 1 | `app_config.dart` | Port `8001` | Port `80` |
-| 2 | `auth_repository.dart` | `GET /auth/user` | `GET /auth/me` |
-| 3 | `patient_repository.dart` | `GET /patients/search?q=` | `GET /patients?search=` |
-| 4 | `patient_repository.dart` | `PATCH /patients/{id}` | `PUT /patients/{id}` |
-| 5 | `auth_repository.dart` | Login sends `organization_id` | Login sends only `email` + `password` (org is selected post-login as a facility) |
-| 6 | `models.dart` `LoginResponseModel` | Expects `user` + `provider` in `data` | `data` contains `user` + `token` + `token_type`; no `provider` key |
-| 7 | `models.dart` `UserModel` | Has `userable_type` / `userable_id` | User has no polymorphic relation; staff details come from memberships |
+| 1 | `auth_repository.dart` | `GET /auth/user` | `GET /auth/me` |
+| 2 | `patient_repository.dart` | `GET /patients/search?q=` | `GET /patients?search=` |
+| 3 | `patient_repository.dart` | `PATCH /patients/{id}` | `PUT /patients/{id}` |
+| 4 | `auth_repository.dart` | Login sends `organization_id` | Login sends only `email` + `password` (org is selected post-login as a facility) |
+| 5 | `models.dart` `LoginResponseModel` | Expects `user` + `provider` in `data` | `data` contains `user` + `token` + `token_type`; no `provider` key |
+| 6 | `models.dart` `UserModel` | Has `userable_type` / `userable_id` | User has no polymorphic relation; staff details come from memberships |
 | 8 | `models.dart` `ProviderModel` | Has `organization_id`, `license_number`, `provider_type` | These fields don't exist — use `StaffMembershipModel` instead |
 | 9 | `api_client.dart` | Only injects `Authorization` header | Must also inject `X-Tenant-ID` header for clinical routes |
 | 10 | `auth_repository.dart` `getCurrentUser` | Reads `data['userable']` as provider | `data` is flat — no `userable` key |

@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/api/api_client.dart';
 import '../../core/database/local_database.dart';
+import '../models/clinical_record_models.dart';
+import '../models/patient_models.dart';
 import '../models/sync_models.dart';
 
 class SyncRepository {
@@ -87,6 +89,11 @@ class SyncRepository {
 
   // ── GET /api/v1/sync/pull ─────────────────────────────────────────────────
 
+  /// Applies pulled server changes to the local cache — scoped to patients,
+  /// vitals, and diagnoses, the only resources with a local cache table.
+  /// Everything else SyncController::pull() returns (appointments,
+  /// prescriptions, lab_results, clinical_notes) is fetched straight from
+  /// the API when needed and has no cache to apply into.
   Future<void> pull({DateTime? since}) async {
     final params = <String, dynamic>{};
     if (since != null) params['since'] = since.toIso8601String();
@@ -96,8 +103,49 @@ class SyncRepository {
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Pull failed');
     }
-    // Server changes in response['data']['resources'] — applying them to local
-    // cache is deferred; pull here primarily advances lastSyncedAt.
+
+    final data = Map<String, dynamic>.from(response['data'] as Map);
+    final resources = Map<String, dynamic>.from(data['resources'] as Map? ?? {});
+
+    await _applyPatients(resources['patients'] as List? ?? []);
+    await _applyVitals(resources['vitals'] as List? ?? []);
+    await _applyDiagnoses(resources['diagnoses'] as List? ?? []);
+  }
+
+  Future<void> _applyPatients(List entries) async {
+    for (final entry in entries) {
+      final row = Map<String, dynamic>.from(entry as Map);
+      final recordData = Map<String, dynamic>.from(row['data'] as Map);
+      if (row['deleted_at'] != null) {
+        await _db.markPatientInactive(row['id'] as String);
+        continue;
+      }
+      await _db.upsertPatient(PatientModel.fromJson(recordData));
+    }
+  }
+
+  Future<void> _applyVitals(List entries) async {
+    for (final entry in entries) {
+      final row = Map<String, dynamic>.from(entry as Map);
+      if (row['deleted_at'] != null) {
+        await _db.deleteVitalFromCache(row['id'] as String);
+        continue;
+      }
+      final recordData = Map<String, dynamic>.from(row['data'] as Map);
+      await _db.upsertVital(VitalSignModel.fromJson(recordData));
+    }
+  }
+
+  Future<void> _applyDiagnoses(List entries) async {
+    for (final entry in entries) {
+      final row = Map<String, dynamic>.from(entry as Map);
+      if (row['deleted_at'] != null) {
+        await _db.deleteDiagnosisFromCache(row['id'] as String);
+        continue;
+      }
+      final recordData = Map<String, dynamic>.from(row['data'] as Map);
+      await _db.upsertDiagnosis(DiagnosisModel.fromJson(recordData));
+    }
   }
 
   // ── GET /api/v1/sync/conflicts ────────────────────────────────────────────

@@ -6,6 +6,7 @@ import '../../../data/models/auth_models.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/organization_provider.dart';
 import '../../../config/theme.dart';
+import 'accept_invitation_screen.dart';
 import 'facility_picker_screen.dart';
 import '../../dashboard/screens/provider_dashboard_screen.dart';
 
@@ -289,6 +290,14 @@ class _LoginScreenState extends State<LoginScreen> {
             child: _loading
                 ? _LoadingSpinner()
                 : const Text('Next'),
+          ),
+          const SizedBox(height: 16),
+          AdaptiveTextButton(
+            onPressed: _loading
+                ? null
+                : () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const AcceptInvitationScreen())),
+            child: const Text('Have an invitation?'),
           ),
         ] else ...[
           // ── Step 2 ────────────────────────────────────────────────────

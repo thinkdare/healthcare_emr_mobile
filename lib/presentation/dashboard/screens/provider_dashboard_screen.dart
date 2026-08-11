@@ -27,6 +27,7 @@ import '../../subscription/screens/subscription_details_screen.dart';
 import '../../subscription/screens/subscription_upgrade_screen.dart';
 import '../../subscription/widgets/trial_status_banner.dart';
 import '../../sync/widgets/sync_banner.dart';
+import '../../shell/widgets/device_integrity_banner.dart';
 
 class ProviderDashboardScreen extends StatefulWidget {
   const ProviderDashboardScreen({super.key});
@@ -49,7 +50,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
     final orgId = auth.organizationId;
     await Future.wait([
-      if (orgId != null)
+      // Billing/subscription visibility is org-admin-only on the backend;
+      // staff logins get a 403 here, so don't bother making the request.
+      if (orgId != null && auth.isOrgAdmin)
         context.read<SubscriptionProvider>().loadSubscription(orgId),
       if (userId != null)
         context.read<PatientProvider>().loadPatients(providerId: userId),
@@ -70,7 +73,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
     final orgId = auth.organizationId;
     await Future.wait([
-      if (orgId != null)
+      if (orgId != null && auth.isOrgAdmin)
         context.read<SubscriptionProvider>().loadSubscription(orgId),
       if (userId != null)
         context.read<PatientProvider>().loadPatients(
@@ -215,6 +218,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
       body: Column(
         children: [
           const TrialStatusBanner(),
+          const DeviceIntegrityBanner(),
           const SyncBanner(),
           Expanded(
             child: Consumer<AuthProvider>(
@@ -448,15 +452,18 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         letterSpacing: 0.8,
                         color: Colors.grey.shade600)),
               ),
-              ListTile(
-                leading: const Icon(Icons.subscriptions),
-                title: const Text('Subscription'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const SubscriptionDetailsScreen()));
-                },
-              ),
+              // Billing/subscription visibility is org-admin-only on the
+              // backend (BillingController::resolveOrg) — staff get a 403.
+              if (isOrgAdmin)
+                ListTile(
+                  leading: const Icon(Icons.subscriptions),
+                  title: const Text('Subscription'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const SubscriptionDetailsScreen()));
+                  },
+                ),
               ListTile(
                 leading: const Icon(Icons.analytics_outlined),
                 title: const Text('Reports & Compliance'),
@@ -624,20 +631,22 @@ class _PatientStatsCard extends StatelessWidget {
                   Expanded(
                     child: _StatTile(
                       icon: Icons.event,
-                      label: 'Appointments',
-                      value: '—',
+                      label: 'Upcoming Appts',
+                      value: p.isLoadingStats
+                          ? '…'
+                          : '${stats.pendingAppointments}',
                       color: AppTheme.secondaryColor,
-                      subtitle: 'Coming soon',
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _StatTile(
                       icon: Icons.medication,
-                      label: 'Prescriptions',
-                      value: '—',
+                      label: 'Active Rx',
+                      value: p.isLoadingStats
+                          ? '…'
+                          : '${stats.activePrescriptions}',
                       color: AppTheme.warningColor,
-                      subtitle: 'Coming soon',
                     ),
                   ),
                 ]),

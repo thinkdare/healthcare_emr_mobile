@@ -83,6 +83,58 @@ class AuthRepository {
     );
   }
 
+  // ── Staff invitation acceptance ──────────────────────────────────────────
+
+  /// Looks up a pending invitation by its token — called when a staff member
+  /// opens the app with an invitation link/token from their email.
+  Future<InvitationPreviewModel> getInvitation(String token) async {
+    final response = await apiClient.get(
+      '/staff/invitation',
+      queryParameters: {'token': token},
+    );
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Invitation not found or has expired.');
+    }
+    return InvitationPreviewModel.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  /// Accepts an invitation and creates the account. Saves the returned
+  /// token, same as [login], so the caller can proceed straight to facility
+  /// selection / the dashboard.
+  Future<LoginSuccess> registerFromInvitation({
+    required String token,
+    required String firstName,
+    required String lastName,
+    required String password,
+    required String passwordConfirmation,
+    String? phone,
+    String? licenseNumber,
+  }) async {
+    final response = await apiClient.post('/staff/register', data: {
+      'token': token,
+      'first_name': firstName,
+      'last_name': lastName,
+      'password': password,
+      'password_confirmation': passwordConfirmation,
+      if (phone != null && phone.isNotEmpty) 'phone': phone,
+      if (licenseNumber != null && licenseNumber.isNotEmpty)
+        'license_number': licenseNumber,
+    });
+
+    if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Registration failed');
+    }
+
+    final data = Map<String, dynamic>.from(response['data'] as Map);
+    final result = loginResultFromJson(data);
+    if (result is! LoginSuccess) {
+      throw Exception('Unexpected response from registration.');
+    }
+    await apiClient.saveToken(result.token);
+    return result;
+  }
+
   // ── Current user ─────────────────────────────────────────────────────────
 
   /// Fetch the authenticated user's profile. Returns null if no token stored.

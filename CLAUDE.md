@@ -83,8 +83,9 @@ Every API request to clinical routes gets an `X-Tenant-ID` header injected by `A
 - All responses follow a `{success, message, data, meta}` envelope (Laravel backend)
 
 Base URL is platform-aware in `lib/config/app_config.dart`:
-- Android emulator: `http://10.0.3.2:8000/api/v1` (`10.0.3.2` is for Genymotion; use `10.0.2.2` for AVD)
-- iOS/desktop: `http://localhost:8000/api/v1`
+- Android emulator: `http://10.0.2.2:8180/api/v1` (standard AVD; use `10.0.3.2` instead for Genymotion)
+- iOS/desktop: `http://localhost:8180/api/v1`
+- Web: `http://localhost:8180/api/v1`
 
 ### Offline Caching (Phase 2)
 
@@ -97,6 +98,6 @@ No named routes or router package. Navigation is fully imperative using `Navigat
 ## Key Notes
 
 - **JSON models require code gen**: After editing any class annotated with `@JsonSerializable`, run `dart run build_runner build --delete-conflicting-outputs` to regenerate `.g.dart` files.
-- **Android emulator IP**: `10.0.3.2` is configured for Genymotion. Switch to `10.0.2.2` in `app_config.dart` for the standard Android emulator (AVD).
+- **Android emulator IP**: `10.0.2.2` is configured for the standard Android emulator (AVD). Switch to `10.0.3.2` in `app_config.dart` if running on Genymotion instead.
 - **API contract**: `API_CONTRACT.md` at the repo root documents all 39 backend endpoints, request/response shapes, and error codes. Consult it before implementing new API calls.
 - **Phase roadmap**: Current work is Phase 2 (offline SQLite caching). Phase 7 adds SQLCipher encryption and an offline write/sync queue. Do not assume full offline write support exists yet.

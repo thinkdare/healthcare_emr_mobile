@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/clinical_models.dart';
 import '../models/clinical_record_models.dart';
 import '../repositories/clinical_repository.dart';
+import '../repositories/reporting_repository.dart' show AuditLogEntry;
 
 /// ClinicalProvider
 ///
@@ -29,6 +30,20 @@ class ClinicalProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
+  // Audit log — lazy-loaded separately from loadAll(), since only the
+  // patient's primary provider (or a super admin) can view it; eagerly
+  // fetching it for every viewer would just mean a wasted 403 for most.
+  List<AuditLogEntry> _auditLog = [];
+  bool _isLoadingAuditLog = false;
+  bool _auditLogHasMore = false;
+  int _auditLogPage = 1;
+  String? _auditLogError;
+
+  List<PatientMessageModel> _messages = [];
+  bool _isLoadingMessages = false;
+  bool _isSendingMessage = false;
+  String? _messagesError;
+
   // ── Getters ────────────────────────────────────────────────────────────────
 
   String? get patientId => _patientId;
@@ -49,6 +64,16 @@ class ClinicalProvider extends ChangeNotifier {
       _problems.where((p) => p.isActive).toList();
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  List<AuditLogEntry> get auditLog => _auditLog;
+  bool get isLoadingAuditLog => _isLoadingAuditLog;
+  bool get auditLogHasMore => _auditLogHasMore;
+  String? get auditLogError => _auditLogError;
+
+  List<PatientMessageModel> get messages => _messages;
+  bool get isLoadingMessages => _isLoadingMessages;
+  bool get isSendingMessage => _isSendingMessage;
+  String? get messagesError => _messagesError;
 
   List<AppointmentModel> get upcomingAppointments =>
       _appointments.where((a) => a.isUpcoming).toList()
@@ -520,6 +545,80 @@ class ClinicalProvider extends ChangeNotifier {
     }
   }
 
+  // ── Audit log ──────────────────────────────────────────────────────────────
+
+  Future<void> loadAuditLog(String patientId, {bool refresh = false}) async {
+    if (refresh) {
+      _auditLogPage = 1;
+      _auditLog = [];
+    }
+    _isLoadingAuditLog = true;
+    _auditLogError = null;
+    notifyListeners();
+
+    try {
+      final result =
+          await repository.getPatientAuditLog(patientId, page: _auditLogPage);
+      _auditLog = refresh ? result.items : [..._auditLog, ...result.items];
+      _auditLogHasMore = result.hasMore;
+    } catch (e) {
+      _auditLogError = _friendlyError(e);
+    } finally {
+      _isLoadingAuditLog = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadMoreAuditLog(String patientId) async {
+    if (!_auditLogHasMore || _isLoadingAuditLog) return;
+    _auditLogPage++;
+    await loadAuditLog(patientId);
+  }
+
+  // ── Patient messaging ──────────────────────────────────────────────────────
+
+  Future<void> loadMessages(String patientId) async {
+    _isLoadingMessages = true;
+    _messagesError = null;
+    notifyListeners();
+
+    try {
+      _messages = await repository.getPatientMessages(patientId);
+    } catch (e) {
+      _messagesError = _friendlyError(e);
+    } finally {
+      _isLoadingMessages = false;
+      notifyListeners();
+    }
+  }
+
+  /// Replies threaded off the most recent message in the thread. Returns
+  /// false (with [messagesError] set) if there's no message to reply to yet
+  /// — providers can't start a new thread, only patients can, via the portal.
+  Future<bool> sendMessageReply(String patientId, String body) async {
+    if (_messages.isEmpty) {
+      _messagesError =
+          'The patient hasn\'t started a conversation yet — providers can only reply to existing messages.';
+      notifyListeners();
+      return false;
+    }
+
+    _isSendingMessage = true;
+    notifyListeners();
+    try {
+      final reply = await repository.replyToPatientMessage(
+          patientId, _messages.last.id, body);
+      _messages = [..._messages, reply];
+      return true;
+    } catch (e) {
+      _messagesError = _friendlyError(e);
+      return false;
+    } finally {
+      _isSendingMessage = false;
+      notifyListeners();
+    }
+  }
+
   // ── Housekeeping ───────────────────────────────────────────────────────────
 
   void clear() {
@@ -533,6 +632,10 @@ class ClinicalProvider extends ChangeNotifier {
     _problems      = [];
     _procedures    = [];
     _immunizations = [];
+    _auditLog      = [];
+    _auditLogPage  = 1;
+    _auditLogHasMore = false;
+    _messages      = [];
     _error = null;
     notifyListeners();
   }

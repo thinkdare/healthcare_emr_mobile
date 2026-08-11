@@ -136,6 +136,33 @@ class FacilityRepository {
         .cast<Map<String, dynamic>>();
   }
 
+  /// List active staff at the caller's current facility — used by
+  /// TransferRequestSheet to pick an intra-facility transfer recipient.
+  ///
+  /// Uses GET /tenants/{id}/staff rather than /staff/memberships: the
+  /// latter (see listStaffAtTenant() below) scopes staff-role callers to
+  /// only their own membership server-side regardless of a tenant_id
+  /// filter, which is unusable for "list my colleagues." /tenants/{id}/staff
+  /// allows any staff member to list their own tenant's roster
+  /// (TenantController::userCanAccessTenant() grants this for a tenant the
+  /// caller has an active membership at), which is the access level this
+  /// screen actually needs.
+  Future<List<Map<String, dynamic>>> listStaffAtCurrentTenant() async {
+    final tenantId = await apiClient.getTenantId();
+    if (tenantId == null) return [];
+
+    final response = await apiClient.get(
+      '/tenants/$tenantId/staff',
+      queryParameters: {'per_page': 100},
+    );
+    if (response['success'] != true) return [];
+
+    final data = response['data'];
+    final raw =
+        data is Map ? (data['data'] as List? ?? []) : (data as List? ?? []);
+    return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
   /// List active staff at a specific tenant — used as provider picker in referral form.
   Future<List<Map<String, dynamic>>> listStaffAtTenant(
       String tenantId) async {

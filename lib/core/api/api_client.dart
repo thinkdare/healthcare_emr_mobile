@@ -245,6 +245,26 @@ class ApiClient {
     }
   }
 
+  /// GETs a binary payload (e.g. a PDF) rather than the standard JSON
+  /// envelope. Auth/tenant headers are still injected by the interceptor.
+  Future<List<int>> getBytes(String path) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        path,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      if (response.statusCode != null && response.statusCode! >= 400) {
+        throw ApiException('Request failed', statusCode: response.statusCode);
+      }
+      return response.data ?? <int>[];
+    } on DioException catch (e) {
+      throw ApiException(
+        'Network error: ${e.message}',
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
+
   // Helper method to save token
   Future<void> saveToken(String token) async {
     await _storage.write(key: 'auth_token', value: token);

@@ -229,6 +229,53 @@ class CheckEmailResponse {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// InvitationPreviewModel — GET /staff/invitation?token=
+// ─────────────────────────────────────────────────────────────────────────────
+
+class InvitationPreviewModel {
+  final String email;
+  final String? firstName;
+  final String? lastName;
+  final String facilityId;
+  final String facilityName;
+  final String? staffType;
+  final String? department;
+  final String? clinicalRankName;
+  final DateTime expiresAt;
+
+  const InvitationPreviewModel({
+    required this.email,
+    this.firstName,
+    this.lastName,
+    required this.facilityId,
+    required this.facilityName,
+    this.staffType,
+    this.department,
+    this.clinicalRankName,
+    required this.expiresAt,
+  });
+
+  factory InvitationPreviewModel.fromJson(Map<String, dynamic> json) {
+    final facility = json['facility'] as Map? ?? {};
+    final rank = json['clinical_rank'] as Map?;
+    return InvitationPreviewModel(
+      email: json['email'] as String? ?? '',
+      firstName: json['first_name'] as String?,
+      lastName: json['last_name'] as String?,
+      facilityId: facility['id'] as String? ?? '',
+      facilityName: facility['name'] as String? ?? 'Facility',
+      staffType: json['staff_type'] as String?,
+      department: json['department'] as String?,
+      clinicalRankName: rank?['name'] as String?,
+      expiresAt: DateTime.tryParse(json['expires_at'] as String? ?? '') ??
+          DateTime.now(),
+    );
+  }
+
+  bool get isExpired => DateTime.now().isAfter(expiresAt);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // LoginResult — sealed-style: either a full token or a 2FA challenge
 // ─────────────────────────────────────────────────────────────────────────────
 

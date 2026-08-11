@@ -1,7 +1,13 @@
 import 'dart:convert';
+import 'dart:io' show File, Platform;
+import 'dart:math';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart' as sqlcipher;
 import 'package:path/path.dart' as path_helper;
 import '../../data/models/patient_models.dart';
+import '../../data/models/clinical_record_models.dart';
 
 /// LocalDatabase
 ///
@@ -12,20 +18,32 @@ import '../../data/models/patient_models.dart';
 /// ── DESIGN DECISIONS ──────────────────────────────────────────────────────
 ///
 /// 1. ONE database file per app install.
-///    The file is `emr_cache.db` in the app's documents directory.
 ///    Multi-user support (multiple providers logging in on the same device)
 ///    is handled by scoping every query on provider_id.
 ///
-/// 2. Plaintext cache, not encrypted SQLite (Phase 2 scope).
-///    The data stored here is the same PII that the server decrypts before
-///    sending. Full SQLCipher encryption is Phase 7. For now we mitigate
-///    risk by: (a) caching only the current provider's patients, (b) clearing
-///    all data on logout, (c) relying on device-level encryption (iOS Data
-///    Protection, Android Full Disk Encryption).
+/// 2. Encrypted on iOS/Android, plaintext on desktop.
+///    `sqflite_sqlcipher` only ships native SQLCipher builds for iOS and
+///    Android — there is no currently-maintained package providing prebuilt
+///    SQLCipher binaries for Linux/macOS/Windows (sqlcipher_flutter_libs,
+///    the package that used to fill this gap, is an obsolete no-op as of
+///    0.7.0 per its own README). Desktop therefore stays on the plaintext
+///    sqflite_common_ffi path already wired in main.dart — the same
+///    device-level-encryption mitigation this class used everywhere before
+///    this migration (iOS Data Protection / Android Full Disk Encryption /
+///    OS-level disk encryption on desktop). iOS/Android are the platforms
+///    the product's actual "cached PHI on a ward device" threat model is
+///    about, so this isn't a corner cut on the scenario that matters — it's
+///    a real ecosystem limit on the scenario that's secondary (dev/desktop
+///    convenience builds).
 ///
-/// 3. Cache-only — no sync queue in Phase 2.
-///    Writes go to the server first. On success, the cache is updated.
-///    The sync queue (offline writes → server) is Phase 7.
+/// 3. Migration from the pre-encryption plaintext DB is NOT a wipe.
+///    See [_migrateFromLegacyPlaintextDb] — the old cache tables are
+///    discarded (safe: read-only, refetched from the server), but any rows
+///    in pending_sync (a clinician's not-yet-synced offline writes) are
+///    carried over into the new encrypted file before the old one is
+///    deleted. Silently discarding a queued offline vital sign or diagnosis
+///    on an app update would be a real clinical-data-loss bug, not just a
+///    cache miss.
 ///
 /// 4. Version-based migrations.
 ///    Bump [_kVersion] and add a migration block in [_onUpgrade] when the
@@ -37,8 +55,12 @@ import '../../data/models/patient_models.dart';
 ///    write and decoded on read inside the DAO methods.
 ///
 class LocalDatabase {
-  static const String _kDatabaseName = 'emr_cache.db';
-  static const int _kVersion = 2;
+  static const String _kLegacyPlaintextDatabaseName = 'emr_cache.db';
+  static const String _kEncryptedDatabaseName = 'emr_cache_v2.db';
+  static const int _kVersion = 3;
+  static const _kEncryptionKeyStorageKey = 'local_db_encryption_key';
+
+  static const _secureStorage = FlutterSecureStorage();
 
   // Singleton
   static LocalDatabase? _instance;
@@ -56,14 +78,39 @@ class LocalDatabase {
     return _db!;
   }
 
+  bool get _supportsEncryption =>
+      !kIsWeb && (Platform.isIOS || Platform.isAndroid);
+
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   Future<Database> _open() async {
-    final dbPath = await getDatabasesPath();
-    final fullPath = path_helper.join(dbPath, _kDatabaseName);
+    if (!_supportsEncryption) {
+      // Desktop/test — unchanged plaintext path via whatever databaseFactory
+      // main.dart configured (sqflite_common_ffi off-device).
+      final dbPath = await getDatabasesPath();
+      final fullPath = path_helper.join(dbPath, _kLegacyPlaintextDatabaseName);
+      return openDatabase(
+        fullPath,
+        version: _kVersion,
+        onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
+        onOpen: (db) async => await db.rawQuery('PRAGMA journal_mode=WAL'),
+      );
+    }
 
-    return openDatabase(
-      fullPath,
+    final dbPath = await getDatabasesPath();
+    final encryptedPath = path_helper.join(dbPath, _kEncryptedDatabaseName);
+    final legacyPath = path_helper.join(dbPath, _kLegacyPlaintextDatabaseName);
+
+    if (!await File(encryptedPath).exists() && await File(legacyPath).exists()) {
+      await _migrateFromLegacyPlaintextDb(legacyPath, encryptedPath);
+    }
+
+    final key = await _getOrCreateEncryptionKey();
+
+    return sqlcipher.openDatabase(
+      encryptedPath,
+      password: key,
       version: _kVersion,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
@@ -74,12 +121,73 @@ class LocalDatabase {
     );
   }
 
+  /// Carries pending_sync rows from the old plaintext DB into a fresh
+  /// encrypted one, then deletes the old file. Everything else in the old
+  /// DB (patients/vitals/diagnoses cache, cache_metadata) is left behind —
+  /// it's read-only cache data that gets refetched from the server on the
+  /// next load, unlike pending_sync which represents real unsynced writes.
+  Future<void> _migrateFromLegacyPlaintextDb(
+    String legacyPath,
+    String encryptedPath,
+  ) async {
+    List<Map<String, Object?>> pendingRows = [];
+    try {
+      final legacyDb = await openDatabase(legacyPath, readOnly: true);
+      try {
+        pendingRows = await legacyDb.query('pending_sync');
+      } finally {
+        await legacyDb.close();
+      }
+    } catch (_) {
+      // Legacy DB unreadable/corrupt — nothing to carry over, proceed to
+      // create a fresh encrypted DB rather than blocking startup on it.
+      pendingRows = [];
+    }
+
+    final key = await _getOrCreateEncryptionKey();
+    final encryptedDb = await sqlcipher.openDatabase(
+      encryptedPath,
+      password: key,
+      version: _kVersion,
+      onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
+    );
+
+    if (pendingRows.isNotEmpty) {
+      final batch = encryptedDb.batch();
+      for (final row in pendingRows) {
+        batch.insert('pending_sync', row,
+            conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      await batch.commit(noResult: true);
+    }
+    await encryptedDb.close();
+
+    try {
+      await File(legacyPath).delete();
+    } catch (_) {
+      // Non-fatal — worst case the old plaintext file lingers unused on disk.
+    }
+  }
+
+  Future<String> _getOrCreateEncryptionKey() async {
+    final existing = await _secureStorage.read(key: _kEncryptionKeyStorageKey);
+    if (existing != null) return existing;
+
+    final random = Random.secure();
+    final keyBytes = List<int>.generate(32, (_) => random.nextInt(256));
+    final key = base64UrlEncode(keyBytes);
+    await _secureStorage.write(key: _kEncryptionKeyStorageKey, value: key);
+    return key;
+  }
+
   Future<void> _onCreate(Database db, int version) async {
     await _createV1Tables(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) await _migrateV1toV2(db);
+    if (oldVersion < 3) await _migrateV2toV3(db);
   }
 
   Future<void> _migrateV1toV2(Database db) async {
@@ -93,6 +201,50 @@ class LocalDatabase {
         client_version INTEGER NOT NULL DEFAULT 0,
         queued_at      TEXT NOT NULL
       )
+    ''');
+  }
+
+  /// Offline caching for vitals and diagnoses — scoped to these two
+  /// resource types deliberately (not the full clinical domain). Both are
+  /// clinician-authored, low-conflict-risk, append-mostly data with a
+  /// straightforward version-based conflict story; prescriptions/labs/
+  /// appointments are a different risk class (clinical-safety adjudication,
+  /// device-sourced data, facility-wide scheduling conflicts respectively)
+  /// and are deliberately left online-only for now.
+  ///
+  /// Full records are stored as a JSON blob (data_json) rather than mapped
+  /// to individual columns — unlike patients_cache, nothing here needs
+  /// field-level SQL search, so a blob avoids ~20 columns of mapping code
+  /// per resource type that would just drift from the model over time.
+  Future<void> _migrateV2toV3(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS vitals_cache (
+        id           TEXT PRIMARY KEY,
+        patient_id   TEXT NOT NULL,
+        recorded_at  TEXT NOT NULL,
+        version      INTEGER NOT NULL DEFAULT 1,
+        data_json    TEXT NOT NULL,
+        cached_at    TEXT NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_vitals_patient
+        ON vitals_cache(patient_id)
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS diagnoses_cache (
+        id           TEXT PRIMARY KEY,
+        patient_id   TEXT NOT NULL,
+        created_at   TEXT,
+        version      INTEGER NOT NULL DEFAULT 1,
+        data_json    TEXT NOT NULL,
+        cached_at    TEXT NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_diagnoses_patient
+        ON diagnoses_cache(patient_id)
     ''');
   }
 
@@ -155,8 +307,9 @@ class LocalDatabase {
       )
     ''');
 
-    // Fresh installs also get the v2 table
+    // Fresh installs also get the v2/v3 tables
     await _migrateV1toV2(db);
+    await _migrateV2toV3(db);
   }
 
   // ── PATIENT DAO ────────────────────────────────────────────────────────────
@@ -295,6 +448,112 @@ class LocalDatabase {
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
+  // ── VITALS DAO ─────────────────────────────────────────────────────────────
+
+  Future<void> replaceVitals(String patientId, List<VitalSignModel> vitals) async {
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+
+    await db.transaction((txn) async {
+      await txn.delete('vitals_cache', where: 'patient_id = ?', whereArgs: [patientId]);
+      final batch = txn.batch();
+      for (final v in vitals) {
+        batch.insert('vitals_cache', _vitalToRow(v, now), conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      await batch.commit(noResult: true);
+    });
+  }
+
+  Future<void> upsertVital(VitalSignModel vital) async {
+    final db = await database;
+    await db.insert(
+      'vitals_cache',
+      _vitalToRow(vital, DateTime.now().toIso8601String()),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> deleteVitalFromCache(String id) async {
+    final db = await database;
+    await db.delete('vitals_cache', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<List<VitalSignModel>> getCachedVitals(String patientId) async {
+    final db = await database;
+    final rows = await db.query(
+      'vitals_cache',
+      where: 'patient_id = ?',
+      whereArgs: [patientId],
+      orderBy: 'recorded_at DESC',
+    );
+    return rows
+        .map((r) => VitalSignModel.fromJson(
+            Map<String, dynamic>.from(jsonDecode(r['data_json'] as String) as Map)))
+        .toList();
+  }
+
+  Map<String, dynamic> _vitalToRow(VitalSignModel v, String cachedAt) => {
+        'id': v.id,
+        'patient_id': v.patientId,
+        'recorded_at': v.recordedAt.toIso8601String(),
+        'version': v.version,
+        'data_json': jsonEncode(v.toJson()),
+        'cached_at': cachedAt,
+      };
+
+  // ── DIAGNOSES DAO ──────────────────────────────────────────────────────────
+
+  Future<void> replaceDiagnoses(String patientId, List<DiagnosisModel> diagnoses) async {
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+
+    await db.transaction((txn) async {
+      await txn.delete('diagnoses_cache', where: 'patient_id = ?', whereArgs: [patientId]);
+      final batch = txn.batch();
+      for (final d in diagnoses) {
+        batch.insert('diagnoses_cache', _diagnosisToRow(d, now), conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      await batch.commit(noResult: true);
+    });
+  }
+
+  Future<void> upsertDiagnosis(DiagnosisModel diagnosis) async {
+    final db = await database;
+    await db.insert(
+      'diagnoses_cache',
+      _diagnosisToRow(diagnosis, DateTime.now().toIso8601String()),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> deleteDiagnosisFromCache(String id) async {
+    final db = await database;
+    await db.delete('diagnoses_cache', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<List<DiagnosisModel>> getCachedDiagnoses(String patientId) async {
+    final db = await database;
+    final rows = await db.query(
+      'diagnoses_cache',
+      where: 'patient_id = ?',
+      whereArgs: [patientId],
+      orderBy: 'created_at DESC',
+    );
+    return rows
+        .map((r) => DiagnosisModel.fromJson(
+            Map<String, dynamic>.from(jsonDecode(r['data_json'] as String) as Map)))
+        .toList();
+  }
+
+  Map<String, dynamic> _diagnosisToRow(DiagnosisModel d, String cachedAt) => {
+        'id': d.id,
+        'patient_id': d.patientId,
+        'created_at': d.createdAt?.toIso8601String(),
+        'version': d.version,
+        'data_json': jsonEncode(d.toJson()),
+        'cached_at': cachedAt,
+      };
+
   // ── METADATA DAO ──────────────────────────────────────────────────────────
 
   Future<void> setMetadata(String key, String value) async {
@@ -346,6 +605,10 @@ class LocalDatabase {
   // ── HOUSEKEEPING ──────────────────────────────────────────────────────────
 
   /// Clear all data for a specific provider — called on logout.
+  /// vitals_cache/diagnoses_cache have no provider_id column (they're
+  /// patient-scoped, not provider-scoped) — cleared in full, same as the
+  /// patients_cache rows being clinical data with no reason to persist
+  /// across a logout regardless of whose they were.
   Future<void> clearProviderData(String providerId) async {
     final db = await database;
     await db.transaction((txn) async {
@@ -354,6 +617,8 @@ class LocalDatabase {
         where: 'primary_provider_id = ?',
         whereArgs: [providerId],
       );
+      await txn.delete('vitals_cache');
+      await txn.delete('diagnoses_cache');
       // Remove provider-specific metadata keys
       await txn.delete(
         'cache_metadata',
@@ -369,6 +634,8 @@ class LocalDatabase {
     final db = await database;
     await db.transaction((txn) async {
       await txn.delete('patients_cache');
+      await txn.delete('vitals_cache');
+      await txn.delete('diagnoses_cache');
       await txn.delete('cache_metadata');
     });
   }
