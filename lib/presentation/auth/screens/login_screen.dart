@@ -9,6 +9,7 @@ import 'accept_invitation_screen.dart';
 import 'facility_picker_screen.dart';
 import '../../dashboard/screens/provider_dashboard_screen.dart';
 import '../../../config/app_colors.dart';
+import '../../shared/widgets/adaptive_card.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -207,43 +208,49 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // ── Header ───────────────────────────────────────────
-                      Icon(
-                        Icons.local_hospital,
-                        size: 80,
-                        color: AppColors.of(context).accent,
+                      Container(
+                        width: 56,
+                        height: 56,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.of(context).accent,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(Icons.local_hospital,
+                            size: 28, color: Colors.white),
                       ),
                       const SizedBox(height: 16),
-                      const Text(
-                        'Healthcare EMR',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      const Text('Healthcare EMR',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontSize: 28, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Text(
                         show2FA
                             ? 'Two-Factor Authentication'
                             : 'Provider Login',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: AppColors.of(context).textSecondary,
+                        style: TextStyle(fontSize: 16, color: AppColors.of(context).textSecondary),
+                      ),
+                      const SizedBox(height: 32),
+
+                      AdaptiveCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // ── Error banner ─────────────────────────────
+                            if (_errorMessage != null) ...[
+                              _ErrorBox(message: _errorMessage!),
+                              const SizedBox(height: 16),
+                            ],
+
+                            if (show2FA)
+                              _buildTwoFactorStep()
+                            else
+                              _buildPasswordStep(),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 48),
-
-                      // ── Error banner ─────────────────────────────────────
-                      if (_errorMessage != null) ...[
-                        _ErrorBox(message: _errorMessage!),
-                        const SizedBox(height: 16),
-                      ],
-
-                      if (show2FA)
-                        _buildTwoFactorStep()
-                      else
-                        _buildPasswordStep(),
                     ],
                   ),
                 ),
