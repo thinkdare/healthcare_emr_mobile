@@ -1,12 +1,14 @@
 // lib/presentation/shell/ios_shell.dart
 //
 // iOS root — CupertinoApp + CupertinoTabScaffold with four tabs.
-// Each tab has its own independent navigation stack via CupertinoTabView.
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/app_colors.dart';
+import '../../config/app_color_scope.dart';
+import '../../config/app_color_tokens.dart';
 import '../../data/providers/auth_provider.dart';
+import '../../data/providers/theme_mode_provider.dart';
 import '../access_grants/screens/access_grants_screen.dart';
 import '../auth/screens/login_screen.dart';
 import '../more/more_screen.dart';
@@ -16,20 +18,37 @@ import '../sync/widgets/sync_banner.dart';
 import 'app_lock_gate.dart';
 import 'widgets/device_integrity_banner.dart';
 
-/// CupertinoApp root for iOS.
-/// Four tabs: Patients · Roster · Access · More
 class IOSShell extends StatelessWidget {
   const IOSShell({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoApp(
-      title: 'Healthcare EMR',
-      debugShowCheckedModeBanner: false,
-      theme: const CupertinoThemeData(
-        primaryColor: AppColors.primary,
-      ),
-      home: const AppLockGate(child: _IOSAuthWrapper()),
+    return Consumer<ThemeModeProvider>(
+      builder: (context, themeModeProvider, _) {
+        return Builder(
+          builder: (context) {
+            final brightness = themeModeProvider.resolvedBrightness(context);
+            final tokens =
+                brightness == Brightness.dark ? AppColorTokens.dark : AppColorTokens.light;
+            return AppColorScope(
+              tokens: tokens,
+              child: CupertinoApp(
+                title: 'Healthcare EMR',
+                debugShowCheckedModeBanner: false,
+                theme: CupertinoThemeData(
+                  brightness: brightness,
+                  primaryColor: tokens.accent,
+                  scaffoldBackgroundColor: tokens.background,
+                  textTheme: const CupertinoTextThemeData(
+                    textStyle: TextStyle(fontFamily: 'Plus Jakarta Sans'),
+                  ),
+                ),
+                home: const AppLockGate(child: _IOSAuthWrapper()),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -59,6 +78,7 @@ class _IOSTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return CupertinoPageScaffold(
       child: Column(
         children: [
@@ -67,26 +87,26 @@ class _IOSTabs extends StatelessWidget {
           Expanded(
             child: CupertinoTabScaffold(
               tabBar: CupertinoTabBar(
-        activeColor: AppColors.primary,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.person_crop_circle),
-            label: 'Patients',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.list_bullet_below_rectangle),
-            label: 'Roster',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.lock_shield),
-            label: 'Access',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.ellipsis_circle),
-            label: 'More',
-          ),
-        ],
-      ),
+                activeColor: tokens.accent,
+                items: const [
+                  BottomNavigationBarItem(
+                    icon: Icon(CupertinoIcons.person_crop_circle),
+                    label: 'Patients',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(CupertinoIcons.list_bullet_below_rectangle),
+                    label: 'Roster',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(CupertinoIcons.lock_shield),
+                    label: 'Access',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(CupertinoIcons.ellipsis_circle),
+                    label: 'More',
+                  ),
+                ],
+              ),
               tabBuilder: (context, index) {
                 return CupertinoTabView(
                   builder: (_) => switch (index) {
