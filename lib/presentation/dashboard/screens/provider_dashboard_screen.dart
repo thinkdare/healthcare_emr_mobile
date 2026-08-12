@@ -27,6 +27,7 @@ import '../../subscription/screens/subscription_upgrade_screen.dart';
 import '../../subscription/widgets/trial_status_banner.dart';
 import '../../sync/widgets/sync_banner.dart';
 import '../../shell/widgets/device_integrity_banner.dart';
+import '../../shared/widgets/adaptive_card.dart';
 import '../../../config/app_colors.dart';
 
 class ProviderDashboardScreen extends StatefulWidget {
@@ -597,64 +598,52 @@ class _WelcomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppColors.of(context).accent,
-              AppColors.of(context).accent,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    final tokens = AppColors.of(context);
+    return AdaptiveCard(
+      backgroundColor: tokens.accent,
+      borderColor: tokens.accent,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Welcome back,',
+            style: TextStyle(fontSize: 16, color: Colors.white70),
           ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Welcome back,',
-              style: TextStyle(fontSize: 16, color: Colors.white70),
+          const SizedBox(height: 4),
+          Text(
+            auth.displayName,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
-            const SizedBox(height: 4),
+          ),
+          const SizedBox(height: 8),
+          if (auth.staffTypeDisplay.isNotEmpty)
             Text(
-              auth.displayName,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+              auth.department.isNotEmpty
+                  ? '${auth.staffTypeDisplay} · ${auth.department}'
+                  : auth.staffTypeDisplay,
+              style: const TextStyle(fontSize: 16, color: Colors.white70),
             ),
-            const SizedBox(height: 8),
-            if (auth.staffTypeDisplay.isNotEmpty)
-              Text(
-                auth.department.isNotEmpty
-                    ? '${auth.staffTypeDisplay} · ${auth.department}'
-                    : auth.staffTypeDisplay,
-                style: const TextStyle(fontSize: 16, color: Colors.white70),
-              ),
-            if (auth.facilityName.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.location_on,
-                    size: 14,
-                    color: Colors.white54,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    auth.facilityName,
-                    style: const TextStyle(fontSize: 13, color: Colors.white70),
-                  ),
-                ],
-              ),
-            ],
+          if (auth.facilityName.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(
+                  Icons.location_on,
+                  size: 14,
+                  color: Colors.white54,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  auth.facilityName,
+                  style: const TextStyle(fontSize: 13, color: Colors.white70),
+                ),
+              ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
