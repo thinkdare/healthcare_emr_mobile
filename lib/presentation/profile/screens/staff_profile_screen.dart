@@ -4,6 +4,7 @@ import '../../../core/platform.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../data/providers/auth_provider.dart';
+import '../../../data/providers/theme_mode_provider.dart';
 import '../../../config/app_colors.dart';
 
 class StaffProfileScreen extends StatefulWidget {
@@ -133,6 +134,29 @@ class _ProfileTab extends StatelessWidget {
                     ),
                   ],
                 ],
+              ),
+
+              // Appearance
+              Consumer<ThemeModeProvider>(
+                builder: (context, themeMode, _) => _SectionCard(
+                  title: 'Appearance',
+                  icon: Icons.palette_outlined,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: SegmentedButton<ThemeMode>(
+                        segments: const [
+                          ButtonSegment(value: ThemeMode.light, label: Text('Light')),
+                          ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
+                          ButtonSegment(value: ThemeMode.system, label: Text('System')),
+                        ],
+                        selected: {themeMode.mode},
+                        onSelectionChanged: (selection) =>
+                            themeMode.setMode(selection.first),
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
               // Membership info
