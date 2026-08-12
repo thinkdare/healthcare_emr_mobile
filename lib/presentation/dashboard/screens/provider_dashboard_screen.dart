@@ -28,6 +28,7 @@ import '../../subscription/widgets/trial_status_banner.dart';
 import '../../sync/widgets/sync_banner.dart';
 import '../../shell/widgets/device_integrity_banner.dart';
 import '../../shared/widgets/adaptive_card.dart';
+import '../../shared/widgets/stat_tile.dart';
 import '../../../config/app_colors.dart';
 
 class ProviderDashboardScreen extends StatefulWidget {
@@ -663,114 +664,111 @@ class _PatientStatsCard extends StatelessWidget {
     return Consumer<PatientProvider>(
       builder: (context, p, _) {
         final stats = p.stats;
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.analytics,
-                      color: AppColors.of(context).accent,
-                    ),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Patient Overview',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+        return AdaptiveCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.analytics,
+                    color: AppColors.of(context).accent,
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Patient Overview',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    if (p.patientsFromCache)
-                      Tooltip(
-                        message: 'Showing cached data',
-                        child: Icon(
-                          Icons.offline_bolt,
-                          size: 16,
-                          color: AppColors.of(context).warning,
-                        ),
-                      ),
-                    if (p.isLoadingStats)
-                      const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                  ],
-                ),
-                const Divider(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatTile(
-                        icon: Icons.people,
-                        label: 'Total Patients',
-                        value: p.isLoadingStats
-                            ? '…'
-                            : '${stats.totalPatients}',
-                        color: AppColors.of(context).accent,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const PatientListScreen(),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatTile(
-                        icon: Icons.person_add,
-                        label: 'New (7 days)',
-                        value: p.isLoadingStats
-                            ? '…'
-                            : '${stats.recentPatients}',
-                        color: AppColors.of(context).success,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatTile(
-                        icon: Icons.event,
-                        label: 'Upcoming Appts',
-                        value: p.isLoadingStats
-                            ? '…'
-                            : '${stats.pendingAppointments}',
-                        color: AppColors.of(context).accent,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatTile(
-                        icon: Icons.medication,
-                        label: 'Active Rx',
-                        value: p.isLoadingStats
-                            ? '…'
-                            : '${stats.activePrescriptions}',
+                  ),
+                  if (p.patientsFromCache)
+                    Tooltip(
+                      message: 'Showing cached data',
+                      child: Icon(
+                        Icons.offline_bolt,
+                        size: 16,
                         color: AppColors.of(context).warning,
                       ),
                     ),
-                  ],
-                ),
-                if (stats.lastRefreshed != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    'Last refreshed: ${_timeAgo(stats.lastRefreshed!)}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.of(context).textSecondary,
+                  if (p.isLoadingStats)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                ],
+              ),
+              const Divider(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: StatTile(
+                      icon: Icons.people,
+                      label: 'Total Patients',
+                      value: p.isLoadingStats
+                          ? '…'
+                          : '${stats.totalPatients}',
+                      color: AppColors.of(context).accent,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const PatientListScreen(),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: StatTile(
+                      icon: Icons.person_add,
+                      label: 'New (7 days)',
+                      value: p.isLoadingStats
+                          ? '…'
+                          : '${stats.recentPatients}',
+                      color: AppColors.of(context).success,
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: StatTile(
+                      icon: Icons.event,
+                      label: 'Upcoming Appts',
+                      value: p.isLoadingStats
+                          ? '…'
+                          : '${stats.pendingAppointments}',
+                      color: AppColors.of(context).accent,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: StatTile(
+                      icon: Icons.medication,
+                      label: 'Active Rx',
+                      value: p.isLoadingStats
+                          ? '…'
+                          : '${stats.activePrescriptions}',
+                      color: AppColors.of(context).warning,
+                    ),
+                  ),
+                ],
+              ),
+              if (stats.lastRefreshed != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Last refreshed: ${_timeAgo(stats.lastRefreshed!)}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.of(context).textSecondary,
+                  ),
+                ),
               ],
-            ),
+            ],
           ),
         );
       },
@@ -1214,72 +1212,6 @@ class _EmergencyAccessCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared small widgets
 // ─────────────────────────────────────────────────────────────────────────────
-
-class _StatTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-  final String? subtitle;
-  final VoidCallback? onTap;
-
-  const _StatTile({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-    this.subtitle,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 26),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: AppColors.of(context).textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (subtitle != null)
-              Text(
-                subtitle!,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: AppColors.of(context).textSecondary,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _InfoRow extends StatelessWidget {
   final String label;
