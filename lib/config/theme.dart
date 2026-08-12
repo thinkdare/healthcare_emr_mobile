@@ -31,6 +31,8 @@ class AppTheme {
         onPrimaryContainer: tokens.accent,
         secondary: tokens.accent,
         onSecondary: Colors.white,
+        secondaryContainer: tokens.accentTint,
+        onSecondaryContainer: tokens.accent,
         error: tokens.critical,
         onError: Colors.white,
         errorContainer: tokens.criticalTint,
