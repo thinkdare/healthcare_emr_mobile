@@ -602,48 +602,51 @@ class _WelcomeCard extends StatelessWidget {
     return AdaptiveCard(
       backgroundColor: tokens.accent,
       borderColor: tokens.accent,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Welcome back,',
-            style: TextStyle(fontSize: 16, color: Colors.white70),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            auth.displayName,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+      child: SizedBox(
+        width: double.infinity,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Welcome back,',
+              style: TextStyle(fontSize: 16, color: Colors.white70),
             ),
-          ),
-          const SizedBox(height: 8),
-          if (auth.staffTypeDisplay.isNotEmpty)
-            Text(
-              auth.department.isNotEmpty
-                  ? '${auth.staffTypeDisplay} · ${auth.department}'
-                  : auth.staffTypeDisplay,
-              style: const TextStyle(fontSize: 16, color: Colors.white70),
-            ),
-          if (auth.facilityName.isNotEmpty) ...[
             const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(
-                  Icons.location_on,
-                  size: 14,
-                  color: Colors.white54,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  auth.facilityName,
-                  style: const TextStyle(fontSize: 13, color: Colors.white70),
-                ),
-              ],
+            Text(
+              auth.displayName,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
+            const SizedBox(height: 8),
+            if (auth.staffTypeDisplay.isNotEmpty)
+              Text(
+                auth.department.isNotEmpty
+                    ? '${auth.staffTypeDisplay} · ${auth.department}'
+                    : auth.staffTypeDisplay,
+                style: const TextStyle(fontSize: 16, color: Colors.white70),
+              ),
+            if (auth.facilityName.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.location_on,
+                    size: 14,
+                    color: Colors.white54,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    auth.facilityName,
+                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                  ),
+                ],
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
