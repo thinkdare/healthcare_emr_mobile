@@ -35,13 +35,17 @@ class CriticalAlertCard extends StatelessWidget {
             children: [
               Icon(Icons.warning_rounded, size: 18, color: tokens.critical),
               const SizedBox(width: AppSpacing.sm),
-              Text(
-                title,
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
-                  letterSpacing: 0.02,
-                  color: tokens.critical,
+              Expanded(
+                child: Text(
+                  title,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    letterSpacing: 0.02,
+                    color: tokens.critical,
+                  ),
                 ),
               ),
             ],
