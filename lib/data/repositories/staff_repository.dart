@@ -20,11 +20,8 @@ class StaffRepository {
         ? (data['data'] as List? ?? [])
         : (data as List? ?? []);
     return raw
-        .map(
-          (e) => FacilityStaffMemberModel.fromJson(
-            Map<String, dynamic>.from(e as Map),
-          ),
-        )
+        .map((e) => FacilityStaffMemberModel.fromJson(
+            Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
@@ -65,14 +62,11 @@ class StaffRepository {
     required String staffType,
     required String clinicalRankId,
   }) async {
-    final response = await apiClient.post(
-      '/staff/invite',
-      data: {
-        'email': email,
-        'staff_type': staffType,
-        'clinical_rank_id': clinicalRankId,
-      },
-    );
+    final response = await apiClient.post('/staff/invite', data: {
+      'email': email,
+      'staff_type': staffType,
+      'clinical_rank_id': clinicalRankId,
+    });
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to send invitation');
     }
@@ -88,10 +82,8 @@ class StaffRepository {
         ? (data['data'] as List? ?? [])
         : (data as List? ?? []);
     return raw
-        .map(
-          (e) =>
-              ClinicalRankModel.fromJson(Map<String, dynamic>.from(e as Map)),
-        )
+        .map((e) =>
+            ClinicalRankModel.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 }

@@ -26,8 +26,10 @@ class PatientRepository {
   final ApiClient apiClient;
   final LocalDatabase _db;
 
-  PatientRepository({required this.apiClient, LocalDatabase? localDatabase})
-    : _db = localDatabase ?? LocalDatabase.instance;
+  PatientRepository({
+    required this.apiClient,
+    LocalDatabase? localDatabase,
+  }) : _db = localDatabase ?? LocalDatabase.instance;
 
   // ── READ ───────────────────────────────────────────────────────────────────
 
@@ -58,7 +60,11 @@ class PatientRepository {
     try {
       final response = await apiClient.get(
         '/patients',
-        queryParameters: {'page': page, 'per_page': perPage, 'paginate': true},
+        queryParameters: {
+          'page': page,
+          'per_page': perPage,
+          'paginate': true,
+        },
       );
 
       if (response['success'] != true) {
@@ -67,18 +73,13 @@ class PatientRepository {
 
       // Laravel paginatedResponse puts the paginator inside 'data'
       final rawData = response['data'];
-      final paginator =
-          rawData is Map<String, dynamic> && rawData.containsKey('data')
+      final paginator = rawData is Map<String, dynamic> && rawData.containsKey('data')
           ? PaginatedPatientResponse.fromJson(
-              Map<String, dynamic>.from(rawData),
-            )
+              Map<String, dynamic>.from(rawData))
           : PaginatedPatientResponse(
               data: (rawData as List? ?? [])
-                  .map(
-                    (e) => PatientModel.fromJson(
-                      Map<String, dynamic>.from(e as Map),
-                    ),
-                  )
+                  .map((e) => PatientModel.fromJson(
+                      Map<String, dynamic>.from(e as Map)))
                   .toList(),
               currentPage: 1,
               perPage: perPage,
@@ -124,7 +125,11 @@ class PatientRepository {
     try {
       final response = await apiClient.get(
         '/patients',
-        queryParameters: {'search': query, 'page': page, 'per_page': perPage},
+        queryParameters: {
+          'search': query,
+          'page': page,
+          'per_page': perPage,
+        },
       );
 
       if (response['success'] != true) {
@@ -132,18 +137,12 @@ class PatientRepository {
       }
 
       final rawData = response['data'];
-      final paginator =
-          rawData is Map<String, dynamic> && rawData.containsKey('data')
-          ? PaginatedPatientResponse.fromJson(
-              Map<String, dynamic>.from(rawData),
-            )
+      final paginator = rawData is Map<String, dynamic> && rawData.containsKey('data')
+          ? PaginatedPatientResponse.fromJson(Map<String, dynamic>.from(rawData))
           : PaginatedPatientResponse(
               data: (rawData as List? ?? [])
-                  .map(
-                    (e) => PatientModel.fromJson(
-                      Map<String, dynamic>.from(e as Map),
-                    ),
-                  )
+                  .map((e) => PatientModel.fromJson(
+                      Map<String, dynamic>.from(e as Map)))
                   .toList(),
               currentPage: 1,
               perPage: perPage,
@@ -188,8 +187,7 @@ class PatientRepository {
         throw Exception(response['message'] ?? 'Failed to load patient');
       }
       final patient = PatientModel.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map),
-      );
+          Map<String, dynamic>.from(response['data'] as Map));
       await _db.upsertPatient(patient);
       return patient;
     } catch (_) {
@@ -206,8 +204,7 @@ class PatientRepository {
         throw Exception(response['message'] ?? 'Failed to create patient');
       }
       final patient = PatientModel.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map),
-      );
+          Map<String, dynamic>.from(response['data'] as Map));
       await _db.upsertPatient(patient);
       return patient;
     } catch (e) {
@@ -225,8 +222,7 @@ class PatientRepository {
           payload: data,
         );
         throw Exception(
-          'Offline — patient will be created when you reconnect.',
-        );
+            'Offline — patient will be created when you reconnect.');
       }
       rethrow;
     }
@@ -237,23 +233,21 @@ class PatientRepository {
     Map<String, dynamic> data,
   ) async {
     try {
-      final response = await apiClient.put('/patients/$patientId', data: data);
+      final response =
+          await apiClient.put('/patients/$patientId', data: data);
       if (response['success'] != true) {
         throw Exception(response['message'] ?? 'Failed to update patient');
       }
       final patient = PatientModel.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map),
-      );
+          Map<String, dynamic>.from(response['data'] as Map));
       await _db.upsertPatient(patient);
       return patient;
     } catch (e) {
       if (_isNetworkError(e)) {
         await _queueOfflineWrite(
-          operation: 'update',
-          resourceId: patientId,
-          payload: data,
-        );
-        throw Exception('Offline — changes will sync when you reconnect.');
+            operation: 'update', resourceId: patientId, payload: data);
+        throw Exception(
+            'Offline — changes will sync when you reconnect.');
       }
       rethrow;
     }
@@ -274,7 +268,7 @@ class PatientRepository {
   /// cache for those yet — they're 0 when the request fails).
   /// These are counts only — no PII leaves the cache.
   Future<DashboardStatsModel> getDashboardStats(String providerId) async {
-    final total = await _db.getPatientCount(providerId);
+    final total  = await _db.getPatientCount(providerId);
     final recent = await _db.getRecentPatientCount(providerId, days: 7);
     final lastFetched = await _db.patientsLastFetched(providerId);
 
@@ -291,14 +285,13 @@ class PatientRepository {
     }
 
     return DashboardStatsModel(
-      totalPatients: total,
-      activePatients:
-          total, // active = total in Phase 2 (soft-deleted are excluded)
+      totalPatients:  total,
+      activePatients: total, // active = total in Phase 2 (soft-deleted are excluded)
       recentPatients: recent,
       pendingAppointments: pendingAppointments,
       activePrescriptions: activePrescriptions,
-      lastRefreshed: lastFetched,
-      isFromCache: true,
+      lastRefreshed:  lastFetched,
+      isFromCache:    true,
     );
   }
 

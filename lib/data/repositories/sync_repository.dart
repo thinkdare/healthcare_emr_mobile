@@ -12,11 +12,11 @@ class SyncRepository {
   final ApiClient apiClient;
   final LocalDatabase _db;
 
-  static const _prefClientId = 'sync_client_id';
+  static const _prefClientId     = 'sync_client_id';
   static const _prefLastSyncedAt = 'sync_last_synced_at';
 
   SyncRepository({required this.apiClient, LocalDatabase? localDatabase})
-    : _db = localDatabase ?? LocalDatabase.instance;
+      : _db = localDatabase ?? LocalDatabase.instance;
 
   // ── Client ID (stable UUID, generated once per install) ───────────────────
 
@@ -46,43 +46,36 @@ class SyncRepository {
 
   Future<void> registerDevice() async {
     final clientId = await getOrCreateClientId();
-    await apiClient.post(
-      '/sync/register',
-      data: {
-        'client_id': clientId,
-        'device_type': 'mobile',
-        'platform': 'ios',
-        'app_version': '1.0.0',
-      },
-    );
+    await apiClient.post('/sync/register', data: {
+      'client_id':   clientId,
+      'device_type': 'mobile',
+      'platform':    'ios',
+      'app_version': '1.0.0',
+    });
   }
 
   // ── POST /api/v1/sync/push ────────────────────────────────────────────────
 
   Future<SyncPushResult> push() async {
     final clientId = await getOrCreateClientId();
-    final pending = await _db.getPendingSyncItems();
+    final pending  = await _db.getPendingSyncItems();
     if (pending.isEmpty) {
       return const SyncPushResult(queued: 0, conflicts: 0, applied: 0);
     }
 
-    final changes = pending
-        .map(
-          (row) => SyncChange(
-            resourceType: row['resource_type'] as String,
-            resourceId: row['resource_id'] as String?,
-            operation: row['operation'] as String,
-            payload: Map<String, dynamic>.from(row['payload'] as Map),
-            clientVersion: row['client_version'] as int,
-            clientTimestamp: row['queued_at'] as String,
-          ).toJson(),
-        )
-        .toList();
+    final changes = pending.map((row) => SyncChange(
+      resourceType:    row['resource_type'] as String,
+      resourceId:      row['resource_id'] as String?,
+      operation:       row['operation'] as String,
+      payload:         Map<String, dynamic>.from(row['payload'] as Map),
+      clientVersion:   row['client_version'] as int,
+      clientTimestamp: row['queued_at'] as String,
+    ).toJson()).toList();
 
-    final response = await apiClient.post(
-      '/sync/push',
-      data: {'client_id': clientId, 'changes': changes},
-    );
+    final response = await apiClient.post('/sync/push', data: {
+      'client_id': clientId,
+      'changes':   changes,
+    });
 
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Push failed');
@@ -91,8 +84,7 @@ class SyncRepository {
     await _db.clearPendingSync();
 
     return SyncPushResult.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   // ── GET /api/v1/sync/pull ─────────────────────────────────────────────────
@@ -106,15 +98,14 @@ class SyncRepository {
     final params = <String, dynamic>{};
     if (since != null) params['since'] = since.toIso8601String();
 
-    final response = await apiClient.get('/sync/pull', queryParameters: params);
+    final response =
+        await apiClient.get('/sync/pull', queryParameters: params);
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Pull failed');
     }
 
     final data = Map<String, dynamic>.from(response['data'] as Map);
-    final resources = Map<String, dynamic>.from(
-      data['resources'] as Map? ?? {},
-    );
+    final resources = Map<String, dynamic>.from(data['resources'] as Map? ?? {});
 
     await _applyPatients(resources['patients'] as List? ?? []);
     await _applyVitals(resources['vitals'] as List? ?? []);
@@ -181,20 +172,16 @@ class SyncRepository {
     Map<String, dynamic>? mergedData,
     String? notes,
   }) async {
-    final response = await apiClient.post(
-      '/sync/conflicts/$id/resolve',
-      data: {
-        'resolution_strategy': strategy,
-        if (mergedData != null) 'merged_data': mergedData,
-        if (notes != null && notes.isNotEmpty) 'notes': notes,
-      },
-    );
+    final response = await apiClient.post('/sync/conflicts/$id/resolve', data: {
+      'resolution_strategy': strategy,
+      if (mergedData != null) 'merged_data': mergedData,
+      if (notes != null && notes.isNotEmpty) 'notes': notes,
+    });
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to resolve conflict');
     }
     return SyncConflict.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   // ── Pending count ─────────────────────────────────────────────────────────

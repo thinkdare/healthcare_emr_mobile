@@ -14,9 +14,7 @@ class IntraTransferProvider extends ChangeNotifier {
   String? get error => _error;
 
   Future<IntraTransferModel?> create(
-    String patientId,
-    Map<String, dynamic> data,
-  ) async {
+      String patientId, Map<String, dynamic> data) async {
     _isSending = true;
     _error = null;
     notifyListeners();

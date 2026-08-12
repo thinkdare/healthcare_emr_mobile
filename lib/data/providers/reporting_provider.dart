@@ -85,7 +85,10 @@ class ReportingProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> loadAuditLog(String tenantId, {bool refresh = false}) async {
+  Future<void> loadAuditLog(
+    String tenantId, {
+    bool refresh = false,
+  }) async {
     if (_loadingAudit) return;
 
     if (refresh) {
@@ -106,7 +109,9 @@ class ReportingProvider extends ChangeNotifier {
         accessAuthority: auditAuthorityFilter,
         wasEmergency: auditEmergencyFilter,
       );
-      _auditLogs = refresh ? result.items : [..._auditLogs, ...result.items];
+      _auditLogs = refresh
+          ? result.items
+          : [..._auditLogs, ...result.items];
       _auditHasMore = result.hasMore;
       _auditTotal = result.total;
       if (result.hasMore) _auditPage++;

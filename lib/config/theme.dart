@@ -61,28 +61,24 @@ class AppTheme {
           backgroundColor: tokens.accent,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xl,
-            vertical: AppSpacing.lg,
-          ),
+              horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.control),
           ),
           elevation: 0,
           textStyle: const TextStyle(
-            fontFamily: 'Plus Jakarta Sans',
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+              fontFamily: 'Plus Jakarta Sans',
+              fontSize: 16,
+              fontWeight: FontWeight.w700),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: tokens.accent,
           textStyle: const TextStyle(
-            fontFamily: 'Plus Jakarta Sans',
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+              fontFamily: 'Plus Jakarta Sans',
+              fontSize: 16,
+              fontWeight: FontWeight.w600),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -90,17 +86,14 @@ class AppTheme {
           foregroundColor: tokens.accent,
           side: BorderSide(color: tokens.accent, width: 1.5),
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xl,
-            vertical: AppSpacing.lg,
-          ),
+              horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.control),
           ),
           textStyle: const TextStyle(
-            fontFamily: 'Plus Jakarta Sans',
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+              fontFamily: 'Plus Jakarta Sans',
+              fontSize: 16,
+              fontWeight: FontWeight.w700),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -127,13 +120,9 @@ class AppTheme {
         filled: true,
         fillColor: tokens.surface,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.lg,
-        ),
+            horizontal: AppSpacing.lg, vertical: AppSpacing.lg),
         labelStyle: TextStyle(color: tokens.textSecondary),
-        hintStyle: TextStyle(
-          color: tokens.textSecondary.withValues(alpha: 0.6),
-        ),
+        hintStyle: TextStyle(color: tokens.textSecondary.withValues(alpha: 0.6)),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
@@ -143,16 +132,12 @@ class AppTheme {
           side: BorderSide(color: tokens.surfaceBorder),
         ),
         margin: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.sm,
-        ),
+            horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
       ),
-      textTheme: Typography.material2021(platform: TargetPlatform.android).black
-          .apply(
-            fontFamily: 'Plus Jakarta Sans',
-            bodyColor: tokens.textPrimary,
-            displayColor: tokens.textPrimary,
-          ),
+      textTheme: Typography.material2021(platform: TargetPlatform.android)
+          .black
+          .apply(fontFamily: 'Plus Jakarta Sans', bodyColor: tokens.textPrimary,
+              displayColor: tokens.textPrimary),
     );
   }
 }

@@ -8,28 +8,22 @@ class AccessGrantRepository {
 
   // ── GET /api/v1/access-grants ─────────────────────────────────────────────
 
-  Future<
-    ({
-      List<AccessGrantModel> pendingApproval,
-      List<AccessGrantModel> myRequests,
-    })
-  >
-  getGrants() async {
+  Future<({List<AccessGrantModel> pendingApproval, List<AccessGrantModel> myRequests})>
+      getGrants() async {
     final response = await apiClient.get('/access-grants');
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to load access grants');
     }
     final data = response['data'] as Map<String, dynamic>;
 
-    List<AccessGrantModel> parse(dynamic raw) => (raw as List? ?? [])
-        .map(
-          (e) => AccessGrantModel.fromJson(Map<String, dynamic>.from(e as Map)),
-        )
-        .toList();
+    List<AccessGrantModel> parse(dynamic raw) =>
+        (raw as List? ?? [])
+            .map((e) => AccessGrantModel.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList();
 
     return (
       pendingApproval: parse(data['pending_my_approval']),
-      myRequests: parse(data['my_requests']),
+      myRequests:      parse(data['my_requests']),
     );
   }
 
@@ -41,8 +35,7 @@ class AccessGrantRepository {
       throw Exception(response['message'] ?? 'Failed to request access');
     }
     return AccessGrantModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   // ── POST /api/v1/access-grants/{id}/approve ───────────────────────────────
@@ -56,8 +49,7 @@ class AccessGrantRepository {
       throw Exception(response['message'] ?? 'Failed to approve grant');
     }
     return AccessGrantModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   // ── POST /api/v1/access-grants/{id}/deny ─────────────────────────────────
@@ -71,8 +63,7 @@ class AccessGrantRepository {
       throw Exception(response['message'] ?? 'Failed to deny grant');
     }
     return AccessGrantModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   // ── POST /api/v1/access-grants/{id}/revoke ───────────────────────────────
@@ -86,7 +77,6 @@ class AccessGrantRepository {
       throw Exception(response['message'] ?? 'Failed to revoke grant');
     }
     return AccessGrantModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 }

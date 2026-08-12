@@ -26,14 +26,8 @@ class SyncDiff {
 class SyncDiffHelper {
   // Internal versioning fields — never shown to the user.
   static const _excluded = {
-    'id',
-    'version',
-    'created_at',
-    'updated_at',
-    'deleted_at',
-    'user_id',
-    'membership_id',
-    'last_modified_by',
+    'id', 'version', 'created_at', 'updated_at', 'deleted_at',
+    'user_id', 'membership_id', 'last_modified_by',
   };
 
   static SyncDiff diff({
@@ -41,10 +35,9 @@ class SyncDiffHelper {
     required Map<String, dynamic> serverData,
     required String resourceType,
   }) {
-    final allKeys = {
-      ...clientData.keys,
-      ...serverData.keys,
-    }.where((k) => !_excluded.contains(k)).toSet();
+    final allKeys = {...clientData.keys, ...serverData.keys}
+        .where((k) => !_excluded.contains(k))
+        .toSet();
 
     // Partition keys into three groups:
     //   clientOnly  — field present in client but not server (client added it)
@@ -144,8 +137,7 @@ class SyncDiffHelper {
     if (overlapping.isNotEmpty) {
       final fields = overlapping.map(_label).join(', ');
       parts.add(
-        'Both sides changed $fields — the server version will be used as it is more recent.',
-      );
+          'Both sides changed $fields — the server version will be used as it is more recent.');
     }
     return parts.isEmpty ? 'No user-facing fields differ.' : parts.join(' ');
   }

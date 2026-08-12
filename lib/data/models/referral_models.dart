@@ -4,21 +4,21 @@ enum ReferralFilter {
   all,
   pending,
   active, // accepted + scheduled
-  done; // completed + cancelled
+  done;   // completed + cancelled
 
   bool matches(String status) => switch (this) {
-    ReferralFilter.all => true,
-    ReferralFilter.pending => status == 'pending',
-    ReferralFilter.active => status == 'accepted' || status == 'scheduled',
-    ReferralFilter.done => status == 'completed' || status == 'cancelled',
-  };
+        ReferralFilter.all     => true,
+        ReferralFilter.pending => status == 'pending',
+        ReferralFilter.active  => status == 'accepted' || status == 'scheduled',
+        ReferralFilter.done    => status == 'completed' || status == 'cancelled',
+      };
 
   String get label => switch (this) {
-    ReferralFilter.all => 'All',
-    ReferralFilter.pending => 'Pending',
-    ReferralFilter.active => 'Active',
-    ReferralFilter.done => 'Done',
-  };
+        ReferralFilter.all     => 'All',
+        ReferralFilter.pending => 'Pending',
+        ReferralFilter.active  => 'Active',
+        ReferralFilter.done    => 'Done',
+      };
 }
 
 class ReferralStatusHistoryModel {
@@ -38,11 +38,11 @@ class ReferralStatusHistoryModel {
 
   factory ReferralStatusHistoryModel.fromJson(Map<String, dynamic> json) =>
       ReferralStatusHistoryModel(
-        from: json['from'] as String?,
-        to: json['to'] as String,
+        from:      json['from'] as String?,
+        to:        json['to'] as String,
         changedBy: json['changed_by'] as String?,
-        reason: json['reason'] as String?,
-        at: json['at'] as String,
+        reason:    json['reason'] as String?,
+        at:        json['at'] as String,
       );
 }
 
@@ -63,11 +63,11 @@ class ReferralMessageModel {
 
   factory ReferralMessageModel.fromJson(Map<String, dynamic> json) =>
       ReferralMessageModel(
-        id: json['id'] as String,
-        senderId: json['sender_id'] as String,
+        id:         json['id'] as String,
+        senderId:   json['sender_id'] as String,
         senderName: json['sender'] as String? ?? 'Unknown',
-        message: json['message'] as String,
-        createdAt: json['created_at'] as String,
+        message:    json['message'] as String,
+        createdAt:  json['created_at'] as String,
       );
 }
 
@@ -152,11 +152,11 @@ class ReferralModel {
     this.statusHistory = const [],
   });
 
-  bool get isOpen => !['completed', 'cancelled'].contains(status);
-  bool get canAccept => isReceived && status == 'pending';
+  bool get isOpen      => !['completed', 'cancelled'].contains(status);
+  bool get canAccept   => isReceived && status == 'pending';
   bool get canSchedule => isReceived && status == 'accepted';
   bool get canComplete => isReceived && status == 'scheduled';
-  bool get canCancel =>
+  bool get canCancel   =>
       isSent && ['pending', 'accepted', 'scheduled'].contains(status);
 
   factory ReferralModel.fromJson(
@@ -164,61 +164,59 @@ class ReferralModel {
     required String currentTenantId,
   }) {
     final fromTenant = json['from_tenant'] as Map?;
-    final toTenant = json['to_tenant'] as Map?;
-    final fromId = fromTenant?['id'] as String?;
-    final toId = toTenant?['id'] as String?;
-    final patient = json['master_patient'] as Map?;
+    final toTenant   = json['to_tenant']   as Map?;
+    final fromId     = fromTenant?['id'] as String?;
+    final toId       = toTenant?['id']   as String?;
+    final patient    = json['master_patient'] as Map?;
 
     List<ReferralStatusHistoryModel> history = [];
     final rawHistory = json['status_history'];
     if (rawHistory is List) {
       history = rawHistory
-          .map(
-            (e) => ReferralStatusHistoryModel.fromJson(
-              Map<String, dynamic>.from(e as Map),
-            ),
-          )
+          .map((e) => ReferralStatusHistoryModel.fromJson(
+                Map<String, dynamic>.from(e as Map),
+              ))
           .toList();
     }
 
     return ReferralModel(
-      id: json['id'] as String,
-      status: json['status'] as String,
-      specialty: json['specialty'] as String,
-      urgency: json['urgency'] as String,
-      isUrgent: (json['is_urgent'] as bool?) ?? false,
-      isOverdue: (json['is_overdue'] as bool?) ?? false,
-      fromTenantId: fromId,
-      fromTenantName: fromTenant?['name'] as String? ?? '',
-      toTenantId: toId,
-      toTenantName: toTenant?['name'] as String? ?? '',
-      referringProviderId: json['referring_provider_id'] as String,
-      referringProviderName: json['referring_provider'] as String? ?? '',
-      referredToProviderId: json['referred_to_provider_id'] as String?,
+      id:                     json['id'] as String,
+      status:                 json['status'] as String,
+      specialty:              json['specialty'] as String,
+      urgency:                json['urgency'] as String,
+      isUrgent:               (json['is_urgent'] as bool?) ?? false,
+      isOverdue:              (json['is_overdue'] as bool?) ?? false,
+      fromTenantId:           fromId,
+      fromTenantName:         fromTenant?['name'] as String? ?? '',
+      toTenantId:             toId,
+      toTenantName:           toTenant?['name'] as String? ?? '',
+      referringProviderId:    json['referring_provider_id'] as String,
+      referringProviderName:  json['referring_provider'] as String? ?? '',
+      referredToProviderId:   json['referred_to_provider_id'] as String?,
       referredToProviderName: json['referred_to_provider'] as String?,
-      masterPatientId: patient?['id'] as String?,
-      patientName: patient?['name'] as String?,
-      patientDob: patient?['date_of_birth'] as String?,
-      patientGender: patient?['gender'] as String?,
-      reason: json['reason'] as String?,
-      clinicalSummary: json['clinical_summary'] as String?,
-      relevantHistory: json['relevant_history'] as String?,
-      currentMedications: json['current_medications'] as String?,
-      diagnosticResults: json['diagnostic_results'] as String?,
-      consultationNotes: json['consultation_notes'] as String?,
-      recommendations: json['recommendations'] as String?,
-      appointmentDate: json['appointment_date'] as String?,
-      appointmentLocation: json['appointment_location'] as String?,
-      requiresFollowUp: (json['requires_follow_up'] as bool?) ?? false,
-      followUpDate: json['follow_up_date'] as String?,
-      referredAt: json['referred_at'] as String,
-      acceptedAt: json['accepted_at'] as String?,
-      scheduledAt: json['scheduled_at'] as String?,
-      completedAt: json['completed_at'] as String?,
-      cancelledAt: json['cancelled_at'] as String?,
-      isSent: fromId == currentTenantId,
-      isReceived: toId == currentTenantId,
-      statusHistory: history,
+      masterPatientId:        patient?['id'] as String?,
+      patientName:            patient?['name'] as String?,
+      patientDob:             patient?['date_of_birth'] as String?,
+      patientGender:          patient?['gender'] as String?,
+      reason:                 json['reason'] as String?,
+      clinicalSummary:        json['clinical_summary'] as String?,
+      relevantHistory:        json['relevant_history'] as String?,
+      currentMedications:     json['current_medications'] as String?,
+      diagnosticResults:      json['diagnostic_results'] as String?,
+      consultationNotes:      json['consultation_notes'] as String?,
+      recommendations:        json['recommendations'] as String?,
+      appointmentDate:        json['appointment_date'] as String?,
+      appointmentLocation:    json['appointment_location'] as String?,
+      requiresFollowUp:       (json['requires_follow_up'] as bool?) ?? false,
+      followUpDate:           json['follow_up_date'] as String?,
+      referredAt:             json['referred_at'] as String,
+      acceptedAt:             json['accepted_at'] as String?,
+      scheduledAt:            json['scheduled_at'] as String?,
+      completedAt:            json['completed_at'] as String?,
+      cancelledAt:            json['cancelled_at'] as String?,
+      isSent:                 fromId == currentTenantId,
+      isReceived:             toId == currentTenantId,
+      statusHistory:          history,
     );
   }
 }

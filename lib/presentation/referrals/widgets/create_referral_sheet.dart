@@ -17,12 +17,12 @@ class CreateReferralSheet extends StatefulWidget {
 }
 
 class _CreateReferralSheetState extends State<CreateReferralSheet> {
-  final _specialtyCtrl = TextEditingController();
-  final _reasonCtrl = TextEditingController();
-  final _summaryCtrl = TextEditingController();
-  final _historyCtrl = TextEditingController();
-  final _medsCtrl = TextEditingController();
-  final _diagnosticsCtrl = TextEditingController();
+  final _specialtyCtrl    = TextEditingController();
+  final _reasonCtrl       = TextEditingController();
+  final _summaryCtrl      = TextEditingController();
+  final _historyCtrl      = TextEditingController();
+  final _medsCtrl         = TextEditingController();
+  final _diagnosticsCtrl  = TextEditingController();
 
   String _urgency = 'routine';
   bool _requiresFollowUp = false;
@@ -56,7 +56,8 @@ class _CreateReferralSheetState extends State<CreateReferralSheet> {
   Future<void> _loadFacilities() async {
     setState(() => _loadingFacilities = true);
     try {
-      final apiClient = context.read<ReferralProvider>().repository.apiClient;
+      final apiClient =
+          context.read<ReferralProvider>().repository.apiClient;
       final repo = FacilityRepository(apiClient: apiClient);
       final facilities = await repo.listTenants();
       setState(() => _facilities = facilities);
@@ -74,7 +75,8 @@ class _CreateReferralSheetState extends State<CreateReferralSheet> {
       _facilityProviders = [];
     });
     try {
-      final apiClient = context.read<ReferralProvider>().repository.apiClient;
+      final apiClient =
+          context.read<ReferralProvider>().repository.apiClient;
       final repo = FacilityRepository(apiClient: apiClient);
       final providers = await repo.listStaffAtTenant(tenantId);
       setState(() => _facilityProviders = providers);
@@ -99,10 +101,10 @@ class _CreateReferralSheetState extends State<CreateReferralSheet> {
 
     final data = <String, dynamic>{
       'master_patient_id': widget.patient.globalPatientId,
-      'to_tenant_id': _selectedFacility!['id'],
-      'specialty': _specialtyCtrl.text.trim(),
-      'urgency': _urgency,
-      'reason': _reasonCtrl.text.trim(),
+      'to_tenant_id':      _selectedFacility!['id'],
+      'specialty':         _specialtyCtrl.text.trim(),
+      'urgency':           _urgency,
+      'reason':            _reasonCtrl.text.trim(),
       if (_selectedProvider != null)
         'referred_to_provider_id': _selectedProvider!['id'],
       if (_summaryCtrl.text.trim().isNotEmpty)
@@ -155,15 +157,13 @@ class _CreateReferralSheetState extends State<CreateReferralSheet> {
             child: Row(
               children: [
                 const Expanded(
-                  child: Text(
-                    'Refer Patient',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 17),
-                  ),
+                  child: Text('Refer Patient',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 17)),
                 ),
-                Text(
-                  widget.patient.fullName,
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                ),
+                Text(widget.patient.fullName,
+                    style: TextStyle(
+                        fontSize: 12, color: Colors.grey.shade600)),
               ],
             ),
           ),
@@ -172,10 +172,9 @@ class _CreateReferralSheetState extends State<CreateReferralSheet> {
             Container(
               color: Colors.red.shade50,
               padding: const EdgeInsets.all(12),
-              child: Text(
-                _error!,
-                style: TextStyle(color: Colors.red.shade700, fontSize: 12),
-              ),
+              child: Text(_error!,
+                  style: TextStyle(
+                      color: Colors.red.shade700, fontSize: 12)),
             ),
           Expanded(
             child: SingleChildScrollView(
@@ -185,37 +184,30 @@ class _CreateReferralSheetState extends State<CreateReferralSheet> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Destination facility
-                  const Text(
-                    'Destination facility *',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
+                  const Text('Destination facility *',
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87)),
                   const SizedBox(height: 6),
                   _loadingFacilities
                       ? const Center(child: CircularProgressIndicator())
                       : InputDecorator(
                           decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
-                          ),
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 4)),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<Map<String, dynamic>>(
                               value: _selectedFacility,
                               isExpanded: true,
                               hint: const Text('Select facility'),
                               items: _facilities
-                                  .map(
-                                    (f) => DropdownMenuItem(
-                                      value: f,
-                                      child: Text(f['name'] as String? ?? ''),
-                                    ),
-                                  )
+                                  .map((f) => DropdownMenuItem(
+                                        value: f,
+                                        child: Text(
+                                            f['name'] as String? ?? ''),
+                                      ))
                                   .toList(),
                               onChanged: (f) {
                                 setState(() => _selectedFacility = f);
@@ -228,25 +220,19 @@ class _CreateReferralSheetState extends State<CreateReferralSheet> {
                         ),
                   const SizedBox(height: 14),
                   // Optional provider
-                  const Text(
-                    'Specific provider (optional)',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
+                  const Text('Specific provider (optional)',
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87)),
                   const SizedBox(height: 6),
                   _loadingProviders
                       ? const LinearProgressIndicator()
                       : InputDecorator(
                           decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
-                          ),
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 4)),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<Map<String, dynamic>>(
                               value: _selectedProvider,
@@ -260,7 +246,8 @@ class _CreateReferralSheetState extends State<CreateReferralSheet> {
                                 ..._facilityProviders.map(
                                   (p) => DropdownMenuItem(
                                     value: p,
-                                    child: Text(p['name'] as String? ?? ''),
+                                    child: Text(
+                                        p['name'] as String? ?? ''),
                                   ),
                                 ),
                               ],
@@ -282,23 +269,21 @@ class _CreateReferralSheetState extends State<CreateReferralSheet> {
                   ),
                   const SizedBox(height: 14),
                   // Urgency
-                  const Text(
-                    'Urgency *',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
+                  const Text('Urgency *',
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87)),
                   const SizedBox(height: 6),
                   SegmentedButton<String>(
                     segments: const [
-                      ButtonSegment(value: 'routine', label: Text('Routine')),
-                      ButtonSegment(value: 'urgent', label: Text('Urgent')),
                       ButtonSegment(
-                        value: 'emergency',
-                        label: Text('Emergency'),
-                      ),
+                          value: 'routine', label: Text('Routine')),
+                      ButtonSegment(
+                          value: 'urgent', label: Text('Urgent')),
+                      ButtonSegment(
+                          value: 'emergency',
+                          label: Text('Emergency')),
                     ],
                     selected: {_urgency},
                     onSelectionChanged: (s) =>
@@ -357,11 +342,10 @@ class _CreateReferralSheetState extends State<CreateReferralSheet> {
                   // Follow-up toggle
                   SwitchListTile(
                     value: _requiresFollowUp,
-                    onChanged: (v) => setState(() => _requiresFollowUp = v),
-                    title: const Text(
-                      'Requires follow-up',
-                      style: TextStyle(fontSize: 13),
-                    ),
+                    onChanged: (v) =>
+                        setState(() => _requiresFollowUp = v),
+                    title: const Text('Requires follow-up',
+                        style: TextStyle(fontSize: 13)),
                     contentPadding: EdgeInsets.zero,
                   ),
                   if (_requiresFollowUp) ...[
@@ -370,28 +354,22 @@ class _CreateReferralSheetState extends State<CreateReferralSheet> {
                       onPressed: () async {
                         final picked = await showDatePicker(
                           context: context,
-                          initialDate: DateTime.now().add(
-                            const Duration(days: 7),
-                          ),
-                          firstDate: DateTime.now().add(
-                            const Duration(days: 1),
-                          ),
-                          lastDate: DateTime.now().add(
-                            const Duration(days: 365),
-                          ),
+                          initialDate: DateTime.now()
+                              .add(const Duration(days: 7)),
+                          firstDate: DateTime.now()
+                              .add(const Duration(days: 1)),
+                          lastDate: DateTime.now()
+                              .add(const Duration(days: 365)),
                         );
                         if (picked != null) {
-                          setState(
-                            () => _followUpDate = picked.toIso8601String(),
-                          );
+                          setState(() => _followUpDate =
+                              picked.toIso8601String());
                         }
                       },
                       icon: const Icon(Icons.event, size: 16),
-                      label: Text(
-                        _followUpDate == null
-                            ? 'Select follow-up date'
-                            : _followUpDate!.split('T').first,
-                      ),
+                      label: Text(_followUpDate == null
+                          ? 'Select follow-up date'
+                          : _followUpDate!.split('T').first),
                     ),
                   ],
                   const SizedBox(height: 24),
@@ -400,12 +378,8 @@ class _CreateReferralSheetState extends State<CreateReferralSheet> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              12,
-              16,
-              12 + MediaQuery.of(context).viewInsets.bottom,
-            ),
+            padding: EdgeInsets.fromLTRB(16, 12, 16,
+                12 + MediaQuery.of(context).viewInsets.bottom),
             child: ElevatedButton(
               onPressed: (_isValid && !_submitting) ? _submit : null,
               style: ElevatedButton.styleFrom(
@@ -416,10 +390,7 @@ class _CreateReferralSheetState extends State<CreateReferralSheet> {
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
+                          strokeWidth: 2, color: Colors.white))
                   : const Text('Send referral'),
             ),
           ),

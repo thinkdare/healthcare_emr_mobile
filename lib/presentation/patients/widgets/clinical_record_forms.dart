@@ -39,10 +39,9 @@ Widget _sheet({required String title, required Widget child}) {
           ),
         ),
         const SizedBox(height: 16),
-        Text(
-          title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
+        Text(title,
+            style:
+                const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
         child,
       ],
@@ -51,11 +50,12 @@ Widget _sheet({required String title, required Widget child}) {
 }
 
 InputDecoration _field(String label, {String? hint}) => InputDecoration(
-  labelText: label,
-  hintText: hint,
-  border: const OutlineInputBorder(),
-  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-);
+      labelText: label,
+      hintText: hint,
+      border: const OutlineInputBorder(),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+    );
 
 Widget _saveButton(bool saving, VoidCallback onPressed, String label) {
   return SizedBox(
@@ -66,8 +66,7 @@ Widget _saveButton(bool saving, VoidCallback onPressed, String label) {
           ? const SizedBox(
               height: 18,
               width: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
+              child: CircularProgressIndicator(strokeWidth: 2))
           : Text(label),
     ),
   );
@@ -84,16 +83,16 @@ class VitalSignForm extends StatefulWidget {
 
 class _VitalSignFormState extends State<VitalSignForm> {
   final _formKey = GlobalKey<FormState>();
-  final _bpSysCtrl = TextEditingController();
-  final _bpDiaCtrl = TextEditingController();
-  final _hrCtrl = TextEditingController();
-  final _rrCtrl = TextEditingController();
-  final _tempCtrl = TextEditingController();
-  final _spo2Ctrl = TextEditingController();
+  final _bpSysCtrl  = TextEditingController();
+  final _bpDiaCtrl  = TextEditingController();
+  final _hrCtrl     = TextEditingController();
+  final _rrCtrl     = TextEditingController();
+  final _tempCtrl   = TextEditingController();
+  final _spo2Ctrl   = TextEditingController();
   final _weightCtrl = TextEditingController();
   final _heightCtrl = TextEditingController();
-  final _notesCtrl = TextEditingController();
-  String _tempUnit = 'C';
+  final _notesCtrl  = TextEditingController();
+  String _tempUnit   = 'C';
   String _weightUnit = 'kg';
   String _heightUnit = 'cm';
   bool _saving = false;
@@ -101,26 +100,16 @@ class _VitalSignFormState extends State<VitalSignForm> {
   @override
   void dispose() {
     for (final c in [
-      _bpSysCtrl,
-      _bpDiaCtrl,
-      _hrCtrl,
-      _rrCtrl,
-      _tempCtrl,
-      _spo2Ctrl,
-      _weightCtrl,
-      _heightCtrl,
-      _notesCtrl,
+      _bpSysCtrl, _bpDiaCtrl, _hrCtrl, _rrCtrl, _tempCtrl,
+      _spo2Ctrl, _weightCtrl, _heightCtrl, _notesCtrl,
     ]) {
       c.dispose();
     }
     super.dispose();
   }
 
-  Widget _unitToggle(
-    String current,
-    List<String> options,
-    ValueChanged<String> onChanged,
-  ) {
+  Widget _unitToggle(String current, List<String> options,
+      ValueChanged<String> onChanged) {
     return ToggleButtons(
       isSelected: options.map((o) => o == current).toList(),
       onPressed: (i) => setState(() => onChanged(options[i])),
@@ -165,7 +154,8 @@ class _VitalSignFormState extends State<VitalSignForm> {
       if (_notesCtrl.text.trim().isNotEmpty) 'notes': _notesCtrl.text.trim(),
     };
 
-    final result = await context.read<ClinicalProvider>().createVitalSign(data);
+    final result =
+        await context.read<ClinicalProvider>().createVitalSign(data);
     if (!mounted) return;
     setState(() => _saving = false);
     if (result != null) Navigator.pop(context, true);
@@ -174,9 +164,8 @@ class _VitalSignFormState extends State<VitalSignForm> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: _sheet(
         title: 'Record Vital Signs',
         child: Form(
@@ -184,107 +173,90 @@ class _VitalSignFormState extends State<VitalSignForm> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _bpSysCtrl,
-                      decoration: _field('Systolic BP', hint: 'mmHg'),
-                      keyboardType: TextInputType.number,
-                    ),
+              Row(children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _bpSysCtrl,
+                    decoration: _field('Systolic BP', hint: 'mmHg'),
+                    keyboardType: TextInputType.number,
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _bpDiaCtrl,
-                      decoration: _field('Diastolic BP', hint: 'mmHg'),
-                      keyboardType: TextInputType.number,
-                    ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: _bpDiaCtrl,
+                    decoration: _field('Diastolic BP', hint: 'mmHg'),
+                    keyboardType: TextInputType.number,
                   ),
-                ],
-              ),
+                ),
+              ]),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _hrCtrl,
-                      decoration: _field('Heart Rate', hint: 'bpm'),
-                      keyboardType: TextInputType.number,
-                    ),
+              Row(children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _hrCtrl,
+                    decoration: _field('Heart Rate', hint: 'bpm'),
+                    keyboardType: TextInputType.number,
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _rrCtrl,
-                      decoration: _field('Resp. Rate', hint: '/min'),
-                      keyboardType: TextInputType.number,
-                    ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: _rrCtrl,
+                    decoration: _field('Resp. Rate', hint: '/min'),
+                    keyboardType: TextInputType.number,
                   ),
-                ],
-              ),
+                ),
+              ]),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _tempCtrl,
-                      decoration: _field('Temperature'),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                    ),
+              Row(children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _tempCtrl,
+                    decoration: _field('Temperature'),
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true),
                   ),
-                  const SizedBox(width: 8),
-                  _unitToggle(_tempUnit, ['C', 'F'], (v) => _tempUnit = v),
-                ],
-              ),
+                ),
+                const SizedBox(width: 8),
+                _unitToggle(
+                    _tempUnit, ['C', 'F'], (v) => _tempUnit = v),
+              ]),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _spo2Ctrl,
                 decoration: _field('Oxygen Saturation', hint: '%'),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+              ),
+              const SizedBox(height: 12),
+              Row(children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _weightCtrl,
+                    decoration: _field('Weight'),
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                _unitToggle(
+                    _weightUnit, ['kg', 'lbs'], (v) => _weightUnit = v),
+              ]),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _weightCtrl,
-                      decoration: _field('Weight'),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                    ),
+              Row(children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _heightCtrl,
+                    decoration: _field('Height'),
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true),
                   ),
-                  const SizedBox(width: 8),
-                  _unitToggle(_weightUnit, [
-                    'kg',
-                    'lbs',
-                  ], (v) => _weightUnit = v),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _heightCtrl,
-                      decoration: _field('Height'),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  _unitToggle(_heightUnit, [
-                    'cm',
-                    'in',
-                  ], (v) => _heightUnit = v),
-                ],
-              ),
+                ),
+                const SizedBox(width: 8),
+                _unitToggle(
+                    _heightUnit, ['cm', 'in'], (v) => _heightUnit = v),
+              ]),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _notesCtrl,
@@ -311,13 +283,13 @@ class DiagnosisForm extends StatefulWidget {
 }
 
 class _DiagnosisFormState extends State<DiagnosisForm> {
-  final _formKey = GlobalKey<FormState>();
-  final _descCtrl = TextEditingController();
-  final _icdCtrl = TextEditingController();
+  final _formKey   = GlobalKey<FormState>();
+  final _descCtrl  = TextEditingController();
+  final _icdCtrl   = TextEditingController();
   final _notesCtrl = TextEditingController();
-  String _type = 'primary';
+  String _type   = 'primary';
   String _status = 'active';
-  bool _saving = false;
+  bool _saving   = false;
 
   static const _types = [
     ('primary', 'Primary'),
@@ -353,7 +325,8 @@ class _DiagnosisFormState extends State<DiagnosisForm> {
       if (_notesCtrl.text.trim().isNotEmpty) 'notes': _notesCtrl.text.trim(),
     };
 
-    final result = await context.read<ClinicalProvider>().createDiagnosis(data);
+    final result =
+        await context.read<ClinicalProvider>().createDiagnosis(data);
     if (!mounted) return;
     setState(() => _saving = false);
     if (result != null) Navigator.pop(context, true);
@@ -362,9 +335,8 @@ class _DiagnosisFormState extends State<DiagnosisForm> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: _sheet(
         title: 'Record Diagnosis',
         child: Form(
@@ -388,9 +360,8 @@ class _DiagnosisFormState extends State<DiagnosisForm> {
                 value: _type,
                 decoration: _field('Diagnosis Type'),
                 items: _types
-                    .map(
-                      (t) => DropdownMenuItem(value: t.$1, child: Text(t.$2)),
-                    )
+                    .map((t) => DropdownMenuItem(
+                        value: t.$1, child: Text(t.$2)))
                     .toList(),
                 onChanged: (v) => setState(() => _type = v!),
               ),
@@ -399,9 +370,8 @@ class _DiagnosisFormState extends State<DiagnosisForm> {
                 value: _status,
                 decoration: _field('Status'),
                 items: _statuses
-                    .map(
-                      (s) => DropdownMenuItem(value: s.$1, child: Text(s.$2)),
-                    )
+                    .map((s) => DropdownMenuItem(
+                        value: s.$1, child: Text(s.$2)))
                     .toList(),
                 onChanged: (v) => setState(() => _status = v!),
               ),
@@ -431,11 +401,11 @@ class ProblemForm extends StatefulWidget {
 }
 
 class _ProblemFormState extends State<ProblemForm> {
-  final _formKey = GlobalKey<FormState>();
-  final _descCtrl = TextEditingController();
+  final _formKey   = GlobalKey<FormState>();
+  final _descCtrl  = TextEditingController();
   final _notesCtrl = TextEditingController();
   String _status = 'active';
-  bool _saving = false;
+  bool _saving   = false;
 
   static const _statuses = [
     ('active', 'Active'),
@@ -461,7 +431,8 @@ class _ProblemFormState extends State<ProblemForm> {
       if (_notesCtrl.text.trim().isNotEmpty) 'notes': _notesCtrl.text.trim(),
     };
 
-    final result = await context.read<ClinicalProvider>().createProblem(data);
+    final result =
+        await context.read<ClinicalProvider>().createProblem(data);
     if (!mounted) return;
     setState(() => _saving = false);
     if (result != null) Navigator.pop(context, true);
@@ -470,9 +441,8 @@ class _ProblemFormState extends State<ProblemForm> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: _sheet(
         title: 'Add to Problem List',
         child: Form(
@@ -490,9 +460,8 @@ class _ProblemFormState extends State<ProblemForm> {
                 value: _status,
                 decoration: _field('Status'),
                 items: _statuses
-                    .map(
-                      (s) => DropdownMenuItem(value: s.$1, child: Text(s.$2)),
-                    )
+                    .map((s) => DropdownMenuItem(
+                        value: s.$1, child: Text(s.$2)))
                     .toList(),
                 onChanged: (v) => setState(() => _status = v!),
               ),
@@ -522,12 +491,12 @@ class ProcedureForm extends StatefulWidget {
 }
 
 class _ProcedureFormState extends State<ProcedureForm> {
-  final _formKey = GlobalKey<FormState>();
-  final _descCtrl = TextEditingController();
+  final _formKey      = GlobalKey<FormState>();
+  final _descCtrl     = TextEditingController();
   final _durationCtrl = TextEditingController();
-  final _notesCtrl = TextEditingController();
+  final _notesCtrl    = TextEditingController();
   String _status = 'planned';
-  bool _saving = false;
+  bool _saving   = false;
 
   static const _statuses = [
     ('planned', 'Planned'),
@@ -557,7 +526,8 @@ class _ProcedureFormState extends State<ProcedureForm> {
       if (_notesCtrl.text.trim().isNotEmpty) 'notes': _notesCtrl.text.trim(),
     };
 
-    final result = await context.read<ClinicalProvider>().createProcedure(data);
+    final result =
+        await context.read<ClinicalProvider>().createProcedure(data);
     if (!mounted) return;
     setState(() => _saving = false);
     if (result != null) Navigator.pop(context, true);
@@ -566,9 +536,8 @@ class _ProcedureFormState extends State<ProcedureForm> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: _sheet(
         title: 'Record Procedure',
         child: Form(
@@ -586,9 +555,8 @@ class _ProcedureFormState extends State<ProcedureForm> {
                 value: _status,
                 decoration: _field('Status'),
                 items: _statuses
-                    .map(
-                      (s) => DropdownMenuItem(value: s.$1, child: Text(s.$2)),
-                    )
+                    .map((s) => DropdownMenuItem(
+                        value: s.$1, child: Text(s.$2)))
                     .toList(),
                 onChanged: (v) => setState(() => _status = v!),
               ),
@@ -624,14 +592,14 @@ class ImmunizationForm extends StatefulWidget {
 }
 
 class _ImmunizationFormState extends State<ImmunizationForm> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameCtrl = TextEditingController();
-  final _codeCtrl = TextEditingController();
-  final _doseCtrl = TextEditingController(text: '1');
-  final _lotCtrl = TextEditingController();
+  final _formKey   = GlobalKey<FormState>();
+  final _nameCtrl  = TextEditingController();
+  final _codeCtrl  = TextEditingController();
+  final _doseCtrl  = TextEditingController(text: '1');
+  final _lotCtrl   = TextEditingController();
   final _notesCtrl = TextEditingController();
   String _route = 'intramuscular';
-  bool _saving = false;
+  bool _saving  = false;
 
   static const _routes = [
     ('intramuscular', 'Intramuscular'),
@@ -665,9 +633,8 @@ class _ImmunizationFormState extends State<ImmunizationForm> {
       if (_notesCtrl.text.trim().isNotEmpty) 'notes': _notesCtrl.text.trim(),
     };
 
-    final result = await context.read<ClinicalProvider>().createImmunization(
-      data,
-    );
+    final result =
+        await context.read<ClinicalProvider>().createImmunization(data);
     if (!mounted) return;
     setState(() => _saving = false);
     if (result != null) Navigator.pop(context, true);
@@ -676,9 +643,8 @@ class _ImmunizationFormState extends State<ImmunizationForm> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: _sheet(
         title: 'Record Immunization',
         child: Form(
@@ -699,35 +665,33 @@ class _ImmunizationFormState extends State<ImmunizationForm> {
                     (v == null || v.trim().isEmpty) ? 'Required' : null,
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _doseCtrl,
-                      decoration: _field('Dose #'),
-                      keyboardType: TextInputType.number,
-                      validator: (v) => (v == null || int.tryParse(v) == null)
-                          ? 'Enter a number'
-                          : null,
-                    ),
+              Row(children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _doseCtrl,
+                    decoration: _field('Dose #'),
+                    keyboardType: TextInputType.number,
+                    validator: (v) =>
+                        (v == null || int.tryParse(v) == null)
+                            ? 'Enter a number'
+                            : null,
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _lotCtrl,
-                      decoration: _field('Lot Number'),
-                    ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: _lotCtrl,
+                    decoration: _field('Lot Number'),
                   ),
-                ],
-              ),
+                ),
+              ]),
               const SizedBox(height: 12),
               AdaptiveDropdown<String>(
                 value: _route,
                 decoration: _field('Route'),
                 items: _routes
-                    .map(
-                      (r) => DropdownMenuItem(value: r.$1, child: Text(r.$2)),
-                    )
+                    .map((r) => DropdownMenuItem(
+                        value: r.$1, child: Text(r.$2)))
                     .toList(),
                 onChanged: (v) => setState(() => _route = v!),
               ),

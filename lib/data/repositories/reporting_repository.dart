@@ -28,43 +28,43 @@ class AuditLogEntry {
   });
 
   factory AuditLogEntry.fromJson(Map<String, dynamic> json) => AuditLogEntry(
-    id: json['id'] as String,
-    patientId: json['patient_id'] as String?,
-    userId: json['user_id'] as String?,
-    action: json['action'] as String? ?? '',
-    resourceType: json['resource_type'] as String?,
-    accessAuthority: json['access_authority'] as String?,
-    wasEmergency: json['was_emergency'] as bool? ?? false,
-    wasOffline: json['was_offline'] as bool? ?? false,
-    ipAddress: json['ip_address'] as String?,
-    // The tenant-wide compliance endpoint uses 'active_facility_slug';
-    // the per-patient audit-log endpoint uses 'facility_context' for the
-    // same value.
-    activeFacilitySlug:
-        (json['active_facility_slug'] ?? json['facility_context']) as String?,
-    accessedAt: json['accessed_at'] == null
-        ? null
-        : DateTime.tryParse(json['accessed_at'] as String),
-  );
+        id: json['id'] as String,
+        patientId: json['patient_id'] as String?,
+        userId: json['user_id'] as String?,
+        action: json['action'] as String? ?? '',
+        resourceType: json['resource_type'] as String?,
+        accessAuthority: json['access_authority'] as String?,
+        wasEmergency: json['was_emergency'] as bool? ?? false,
+        wasOffline: json['was_offline'] as bool? ?? false,
+        ipAddress: json['ip_address'] as String?,
+        // The tenant-wide compliance endpoint uses 'active_facility_slug';
+        // the per-patient audit-log endpoint uses 'facility_context' for the
+        // same value.
+        activeFacilitySlug: (json['active_facility_slug'] ??
+            json['facility_context']) as String?,
+        accessedAt: json['accessed_at'] == null
+            ? null
+            : DateTime.tryParse(json['accessed_at'] as String),
+      );
 
   String get actionDisplay => switch (action) {
-    'viewed' => 'Viewed',
-    'created' => 'Created',
-    'updated' => 'Updated',
-    'deleted' => 'Deleted',
-    'emergency_access' => 'Emergency Access',
-    'access_denied' => 'Access Denied',
-    _ => action,
-  };
+        'viewed'           => 'Viewed',
+        'created'          => 'Created',
+        'updated'          => 'Updated',
+        'deleted'          => 'Deleted',
+        'emergency_access' => 'Emergency Access',
+        'access_denied'    => 'Access Denied',
+        _                  => action,
+      };
 
   String get authorityDisplay => switch (accessAuthority) {
-    'primary_provider' => 'Primary Provider',
-    'intra_tenant_grant' => 'Intra-facility Grant',
-    'cross_tenant_grant' => 'Cross-facility Grant',
-    'emergency' => 'Emergency',
-    'denied' => 'Denied',
-    _ => accessAuthority ?? '—',
-  };
+        'primary_provider'    => 'Primary Provider',
+        'intra_tenant_grant'  => 'Intra-facility Grant',
+        'cross_tenant_grant'  => 'Cross-facility Grant',
+        'emergency'           => 'Emergency',
+        'denied'              => 'Denied',
+        _                     => accessAuthority ?? '—',
+      };
 }
 
 class ReportingRepository {
@@ -75,9 +75,8 @@ class ReportingRepository {
   // ── Org dashboard ─────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>?> orgDashboard(String orgId) async {
-    final response = await apiClient.get(
-      '/reporting/organizations/$orgId/dashboard',
-    );
+    final response = await apiClient
+        .get('/reporting/organizations/$orgId/dashboard');
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to load org dashboard');
     }
@@ -88,13 +87,11 @@ class ReportingRepository {
   // ── Tenant dashboard ──────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>?> tenantDashboard(String tenantId) async {
-    final response = await apiClient.get(
-      '/reporting/tenants/$tenantId/dashboard',
-    );
+    final response =
+        await apiClient.get('/reporting/tenants/$tenantId/dashboard');
     if (response['success'] != true) {
       throw Exception(
-        response['message'] ?? 'Failed to load facility dashboard',
-      );
+          response['message'] ?? 'Failed to load facility dashboard');
     }
     final data = Map<String, dynamic>.from(response['data'] as Map);
     return data['stats'] as Map<String, dynamic>?;
@@ -143,10 +140,7 @@ class ReportingRepository {
   // ── Audit summary ─────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> auditSummary(
-    String tenantId,
-    String from,
-    String to,
-  ) async {
+      String tenantId, String from, String to) async {
     final response = await apiClient.get(
       '/reporting/tenants/$tenantId/compliance/audit-summary',
       queryParameters: {'from': from, 'to': to},

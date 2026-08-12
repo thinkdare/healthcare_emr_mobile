@@ -11,32 +11,32 @@ class OrganizationEnhancedModel {
   final String address;
   final String? phone;
   final String? email;
-
+  
   @JsonKey(name: 'tax_id')
   final String? taxId;
-
+  
   // Subscription fields
   @JsonKey(name: 'subscription_status')
   final String subscriptionStatus; // 'trial', 'active', 'suspended', 'cancelled'
-
+  
   @JsonKey(name: 'trial_ends_at')
   final DateTime? trialEndsAt;
-
+  
   @JsonKey(name: 'max_facilities')
   final int maxFacilities;
-
+  
   @JsonKey(name: 'max_providers')
   final int maxProviders;
-
+  
   @JsonKey(name: 'billing_email')
   final String? billingEmail;
-
+  
   @JsonKey(name: 'billing_address')
   final String? billingAddress;
-
+  
   @JsonKey(name: 'created_at')
   final DateTime? createdAt;
-
+  
   @JsonKey(name: 'updated_at')
   final DateTime? updatedAt;
 
@@ -62,11 +62,10 @@ class OrganizationEnhancedModel {
       _$OrganizationEnhancedModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$OrganizationEnhancedModelToJson(this);
-
-  bool get isActive =>
-      subscriptionStatus == 'active' || subscriptionStatus == 'trial';
+  
+  bool get isActive => subscriptionStatus == 'active' || subscriptionStatus == 'trial';
   bool get onTrial => subscriptionStatus == 'trial';
-
+  
   int? get trialDaysRemaining {
     if (trialEndsAt == null) return null;
     return trialEndsAt!.difference(DateTime.now()).inDays;
@@ -77,27 +76,27 @@ class OrganizationEnhancedModel {
 @JsonSerializable()
 class FacilityModel {
   final String id;
-
+  
   @JsonKey(name: 'organization_id')
   final String organizationId;
-
+  
   final String name;
   final String type; // 'main_hospital', 'branch', 'pharmacy', 'lab'
   final String address;
   final String? phone;
-
+  
   @JsonKey(name: 'operating_hours')
   final Map<String, dynamic>? operatingHours;
-
+  
   @JsonKey(name: 'supports_emergency_access')
   final bool supportsEmergencyAccess;
-
+  
   @JsonKey(name: 'is_active')
   final bool isActive;
-
+  
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
-
+  
   @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
@@ -125,14 +124,10 @@ class FacilityModel {
 
 @JsonSerializable()
 class OrgStatsModel {
-  @JsonKey(name: 'total_facilities')
-  final int totalFacilities;
-  @JsonKey(name: 'total_staff')
-  final int totalStaff;
-  @JsonKey(name: 'total_patients')
-  final int totalPatients;
-  @JsonKey(name: 'active_subscriptions')
-  final int activeSubscriptions;
+  @JsonKey(name: 'total_facilities') final int totalFacilities;
+  @JsonKey(name: 'total_staff')      final int totalStaff;
+  @JsonKey(name: 'total_patients')   final int totalPatients;
+  @JsonKey(name: 'active_subscriptions') final int activeSubscriptions;
 
   const OrgStatsModel({
     required this.totalFacilities,

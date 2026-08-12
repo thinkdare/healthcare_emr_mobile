@@ -25,7 +25,7 @@ class ClinicalRepository {
   final LocalDatabase _db;
 
   ClinicalRepository({required this.apiClient, LocalDatabase? localDatabase})
-    : _db = localDatabase ?? LocalDatabase.instance;
+      : _db = localDatabase ?? LocalDatabase.instance;
 
   // ── Appointments ──────────────────────────────────────────────────────────
 
@@ -36,77 +36,60 @@ class ClinicalRepository {
   }) async {
     final response = await apiClient.get(
       '/patients/$patientId/appointments',
-      queryParameters: {'page': page, if (status != null) 'status': status},
+      queryParameters: {
+        'page': page,
+        if (status != null) 'status': status,
+      },
     );
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to load appointments');
     }
     final rawData = response['data'];
-    final list = rawData is Map
-        ? rawData['data'] as List? ?? []
-        : rawData as List? ?? [];
+    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
     return list
-        .map(
-          (e) => AppointmentModel.fromJson(Map<String, dynamic>.from(e as Map)),
-        )
+        .map((e) => AppointmentModel.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
   Future<AppointmentModel> getAppointment(
-    String patientId,
-    String appointmentId,
-  ) async {
-    final response = await apiClient.get(
-      '/patients/$patientId/appointments/$appointmentId',
-    );
+      String patientId, String appointmentId) async {
+    final response =
+        await apiClient.get('/patients/$patientId/appointments/$appointmentId');
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to load appointment');
     }
     return AppointmentModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   Future<AppointmentModel> updateAppointmentStatus(
-    String patientId,
-    String appointmentId,
-    String status,
-  ) async {
+      String patientId, String appointmentId, String status) async {
     final response = await apiClient.put(
       '/patients/$patientId/appointments/$appointmentId',
       data: {'status': status},
     );
     if (response['success'] != true) {
       throw Exception(
-        response['message'] ?? 'Failed to update appointment status',
-      );
+          response['message'] ?? 'Failed to update appointment status');
     }
     return AppointmentModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   Future<AppointmentModel> createAppointment(
-    String patientId,
-    Map<String, dynamic> data,
-  ) async {
-    final response = await apiClient.post(
-      '/patients/$patientId/appointments',
-      data: data,
-    );
+      String patientId, Map<String, dynamic> data) async {
+    final response =
+        await apiClient.post('/patients/$patientId/appointments', data: data);
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to create appointment');
     }
     return AppointmentModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   Future<AppointmentModel> cancelAppointment(
-    String patientId,
-    String appointmentId, {
-    String? reason,
-  }) async {
+      String patientId, String appointmentId,
+      {String? reason}) async {
     final response = await apiClient.post(
       '/patients/$patientId/appointments/$appointmentId/cancel',
       data: {if (reason != null) 'cancellation_reason': reason},
@@ -115,8 +98,7 @@ class ClinicalRepository {
       throw Exception(response['message'] ?? 'Failed to cancel appointment');
     }
     return AppointmentModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   // ── Prescriptions ─────────────────────────────────────────────────────────
@@ -128,59 +110,46 @@ class ClinicalRepository {
   }) async {
     final response = await apiClient.get(
       '/patients/$patientId/prescriptions',
-      queryParameters: {'page': page, if (status != null) 'status': status},
+      queryParameters: {
+        'page': page,
+        if (status != null) 'status': status,
+      },
     );
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to load prescriptions');
     }
     final rawData = response['data'];
-    final list = rawData is Map
-        ? rawData['data'] as List? ?? []
-        : rawData as List? ?? [];
+    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
     return list
-        .map(
-          (e) =>
-              PrescriptionModel.fromJson(Map<String, dynamic>.from(e as Map)),
-        )
+        .map((e) => PrescriptionModel.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
   Future<PrescriptionModel> getPrescription(
-    String patientId,
-    String prescriptionId,
-  ) async {
-    final response = await apiClient.get(
-      '/patients/$patientId/prescriptions/$prescriptionId',
-    );
+      String patientId, String prescriptionId) async {
+    final response = await apiClient
+        .get('/patients/$patientId/prescriptions/$prescriptionId');
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to load prescription');
     }
     return PrescriptionModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   Future<PrescriptionModel> createPrescription(
-    String patientId,
-    Map<String, dynamic> data,
-  ) async {
-    final response = await apiClient.post(
-      '/patients/$patientId/prescriptions',
-      data: data,
-    );
+      String patientId, Map<String, dynamic> data) async {
+    final response =
+        await apiClient.post('/patients/$patientId/prescriptions', data: data);
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to create prescription');
     }
     return PrescriptionModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   Future<PrescriptionModel> fillPrescription(
-    String patientId,
-    String prescriptionId, {
-    required int quantityDispensed,
-  }) async {
+      String patientId, String prescriptionId,
+      {required int quantityDispensed}) async {
     final response = await apiClient.post(
       '/patients/$patientId/prescriptions/$prescriptionId/fill',
       data: {'quantity_dispensed': quantityDispensed},
@@ -189,27 +158,22 @@ class ClinicalRepository {
       throw Exception(response['message'] ?? 'Failed to fill prescription');
     }
     return PrescriptionModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   Future<PrescriptionModel> discontinuePrescription(
-    String patientId,
-    String prescriptionId, {
-    String? reason,
-  }) async {
+      String patientId, String prescriptionId,
+      {String? reason}) async {
     final response = await apiClient.post(
       '/patients/$patientId/prescriptions/$prescriptionId/discontinue',
       data: {if (reason != null) 'discontinuation_reason': reason},
     );
     if (response['success'] != true) {
       throw Exception(
-        response['message'] ?? 'Failed to discontinue prescription',
-      );
+          response['message'] ?? 'Failed to discontinue prescription');
     }
     return PrescriptionModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   // ── Lab Results ───────────────────────────────────────────────────────────
@@ -221,58 +185,45 @@ class ClinicalRepository {
   }) async {
     final response = await apiClient.get(
       '/patients/$patientId/lab-results',
-      queryParameters: {'page': page, if (status != null) 'status': status},
+      queryParameters: {
+        'page': page,
+        if (status != null) 'status': status,
+      },
     );
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to load lab results');
     }
     final rawData = response['data'];
-    final list = rawData is Map
-        ? rawData['data'] as List? ?? []
-        : rawData as List? ?? [];
+    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
     return list
-        .map(
-          (e) => LabResultModel.fromJson(Map<String, dynamic>.from(e as Map)),
-        )
+        .map((e) => LabResultModel.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
   Future<LabResultModel> getLabResult(
-    String patientId,
-    String labResultId,
-  ) async {
-    final response = await apiClient.get(
-      '/patients/$patientId/lab-results/$labResultId',
-    );
+      String patientId, String labResultId) async {
+    final response =
+        await apiClient.get('/patients/$patientId/lab-results/$labResultId');
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to load lab result');
     }
     return LabResultModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   Future<LabResultModel> createLabOrder(
-    String patientId,
-    Map<String, dynamic> data,
-  ) async {
-    final response = await apiClient.post(
-      '/patients/$patientId/lab-results',
-      data: data,
-    );
+      String patientId, Map<String, dynamic> data) async {
+    final response =
+        await apiClient.post('/patients/$patientId/lab-results', data: data);
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to create lab order');
     }
     return LabResultModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   Future<LabResultModel> recordLabResult(
-    String patientId,
-    String labResultId,
-    Map<String, dynamic> data,
-  ) async {
+      String patientId, String labResultId, Map<String, dynamic> data) async {
     final response = await apiClient.post(
       '/patients/$patientId/lab-results/$labResultId/record',
       data: data,
@@ -281,8 +232,7 @@ class ClinicalRepository {
       throw Exception(response['message'] ?? 'Failed to record lab result');
     }
     return LabResultModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   // ── Medical Documents ─────────────────────────────────────────────────────
@@ -303,32 +253,23 @@ class ClinicalRepository {
       throw Exception(response['message'] ?? 'Failed to load documents');
     }
     final rawData = response['data'];
-    final list = rawData is Map
-        ? rawData['data'] as List? ?? []
-        : rawData as List? ?? [];
+    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
     return list
-        .map(
-          (e) => MedicalDocumentModel.fromJson(
-            Map<String, dynamic>.from(e as Map),
-          ),
-        )
+        .map((e) =>
+            MedicalDocumentModel.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
   /// Returns a model with a temporary signed URL for viewing.
   Future<MedicalDocumentModel> getDocumentUrl(
-    String patientId,
-    String documentId,
-  ) async {
-    final response = await apiClient.get(
-      '/patients/$patientId/documents/$documentId',
-    );
+      String patientId, String documentId) async {
+    final response =
+        await apiClient.get('/patients/$patientId/documents/$documentId');
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to get document URL');
     }
     return MedicalDocumentModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   /// Uploads a file as a multipart POST.
@@ -357,14 +298,12 @@ class ClinicalRepository {
       throw Exception(response['message'] ?? 'Failed to upload document');
     }
     return MedicalDocumentModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   Future<void> deleteDocument(String patientId, String documentId) async {
-    final response = await apiClient.delete(
-      '/patients/$patientId/documents/$documentId',
-    );
+    final response =
+        await apiClient.delete('/patients/$patientId/documents/$documentId');
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to delete document');
     }
@@ -388,13 +327,9 @@ class ClinicalRepository {
         throw Exception(response['message'] ?? 'Failed to load vital signs');
       }
       final rawData = response['data'];
-      final list = rawData is Map
-          ? rawData['data'] as List? ?? []
-          : rawData as List? ?? [];
+      final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
       final vitals = list
-          .map(
-            (e) => VitalSignModel.fromJson(Map<String, dynamic>.from(e as Map)),
-          )
+          .map((e) => VitalSignModel.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList();
       if (page == 1) await _db.replaceVitals(patientId, vitals);
       return vitals;
@@ -414,20 +349,15 @@ class ClinicalRepository {
   /// caller is expected to catch it and treat it as a soft-success, same
   /// as every other offline-write call site in this app).
   Future<VitalSignModel> createVitalSign(
-    String patientId,
-    Map<String, dynamic> data,
-  ) async {
+      String patientId, Map<String, dynamic> data) async {
     try {
-      final response = await apiClient.post(
-        '/patients/$patientId/vital-signs',
-        data: data,
-      );
+      final response =
+          await apiClient.post('/patients/$patientId/vital-signs', data: data);
       if (response['success'] != true) {
         throw Exception(response['message'] ?? 'Failed to record vital signs');
       }
       final vital = VitalSignModel.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map),
-      );
+          Map<String, dynamic>.from(response['data'] as Map));
       await _db.upsertVital(vital);
       return vital;
     } catch (e) {
@@ -454,9 +384,8 @@ class ClinicalRepository {
   }
 
   Future<void> deleteVitalSign(String patientId, String vitalSignId) async {
-    final response = await apiClient.delete(
-      '/patients/$patientId/vital-signs/$vitalSignId',
-    );
+    final response =
+        await apiClient.delete('/patients/$patientId/vital-signs/$vitalSignId');
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to delete vital sign');
     }
@@ -473,31 +402,28 @@ class ClinicalRepository {
     try {
       final response = await apiClient.get(
         '/patients/$patientId/diagnoses',
-        queryParameters: {'page': page, if (status != null) 'status': status},
+        queryParameters: {
+          'page': page,
+          if (status != null) 'status': status,
+        },
       );
       if (response['success'] != true) {
         throw Exception(response['message'] ?? 'Failed to load diagnoses');
       }
       final rawData = response['data'];
-      final list = rawData is Map
-          ? rawData['data'] as List? ?? []
-          : rawData as List? ?? [];
+      final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
       final diagnoses = list
-          .map(
-            (e) => DiagnosisModel.fromJson(Map<String, dynamic>.from(e as Map)),
-          )
+          .map((e) => DiagnosisModel.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList();
       // Only cache the unfiltered first page — a status-filtered response
       // isn't the full picture and would otherwise evict cached rows that
       // just don't match this filter.
-      if (page == 1 && status == null)
-        await _db.replaceDiagnoses(patientId, diagnoses);
+      if (page == 1 && status == null) await _db.replaceDiagnoses(patientId, diagnoses);
       return diagnoses;
     } catch (e) {
       if (_isNetworkError(e)) {
         var cached = await _db.getCachedDiagnoses(patientId);
-        if (status != null)
-          cached = cached.where((d) => d.status == status).toList();
+        if (status != null) cached = cached.where((d) => d.status == status).toList();
         if (cached.isNotEmpty || page == 1) return cached;
       }
       rethrow;
@@ -505,20 +431,15 @@ class ClinicalRepository {
   }
 
   Future<DiagnosisModel> createDiagnosis(
-    String patientId,
-    Map<String, dynamic> data,
-  ) async {
+      String patientId, Map<String, dynamic> data) async {
     try {
-      final response = await apiClient.post(
-        '/patients/$patientId/diagnoses',
-        data: data,
-      );
+      final response =
+          await apiClient.post('/patients/$patientId/diagnoses', data: data);
       if (response['success'] != true) {
         throw Exception(response['message'] ?? 'Failed to record diagnosis');
       }
       final diagnosis = DiagnosisModel.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map),
-      );
+          Map<String, dynamic>.from(response['data'] as Map));
       await _db.upsertDiagnosis(diagnosis);
       return diagnosis;
     } catch (e) {
@@ -546,9 +467,8 @@ class ClinicalRepository {
   }
 
   Future<void> deleteDiagnosis(String patientId, String diagnosisId) async {
-    final response = await apiClient.delete(
-      '/patients/$patientId/diagnoses/$diagnosisId',
-    );
+    final response =
+        await apiClient.delete('/patients/$patientId/diagnoses/$diagnosisId');
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to delete diagnosis');
     }
@@ -564,42 +484,35 @@ class ClinicalRepository {
   }) async {
     final response = await apiClient.get(
       '/patients/$patientId/problems',
-      queryParameters: {'page': page, if (status != null) 'status': status},
+      queryParameters: {
+        'page': page,
+        if (status != null) 'status': status,
+      },
     );
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to load problem list');
     }
     final rawData = response['data'];
-    final list = rawData is Map
-        ? rawData['data'] as List? ?? []
-        : rawData as List? ?? [];
+    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
     return list
-        .map(
-          (e) => ProblemListModel.fromJson(Map<String, dynamic>.from(e as Map)),
-        )
+        .map((e) => ProblemListModel.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
   Future<ProblemListModel> createProblem(
-    String patientId,
-    Map<String, dynamic> data,
-  ) async {
-    final response = await apiClient.post(
-      '/patients/$patientId/problems',
-      data: data,
-    );
+      String patientId, Map<String, dynamic> data) async {
+    final response =
+        await apiClient.post('/patients/$patientId/problems', data: data);
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to record problem');
     }
     return ProblemListModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   Future<void> deleteProblem(String patientId, String problemId) async {
-    final response = await apiClient.delete(
-      '/patients/$patientId/problems/$problemId',
-    );
+    final response =
+        await apiClient.delete('/patients/$patientId/problems/$problemId');
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to delete problem');
     }
@@ -619,36 +532,26 @@ class ClinicalRepository {
       throw Exception(response['message'] ?? 'Failed to load procedures');
     }
     final rawData = response['data'];
-    final list = rawData is Map
-        ? rawData['data'] as List? ?? []
-        : rawData as List? ?? [];
+    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
     return list
-        .map(
-          (e) => ProcedureModel.fromJson(Map<String, dynamic>.from(e as Map)),
-        )
+        .map((e) => ProcedureModel.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
   Future<ProcedureModel> createProcedure(
-    String patientId,
-    Map<String, dynamic> data,
-  ) async {
-    final response = await apiClient.post(
-      '/patients/$patientId/procedures',
-      data: data,
-    );
+      String patientId, Map<String, dynamic> data) async {
+    final response =
+        await apiClient.post('/patients/$patientId/procedures', data: data);
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to record procedure');
     }
     return ProcedureModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   Future<void> deleteProcedure(String patientId, String procedureId) async {
-    final response = await apiClient.delete(
-      '/patients/$patientId/procedures/$procedureId',
-    );
+    final response =
+        await apiClient.delete('/patients/$patientId/procedures/$procedureId');
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to delete procedure');
     }
@@ -668,40 +571,27 @@ class ClinicalRepository {
       throw Exception(response['message'] ?? 'Failed to load immunizations');
     }
     final rawData = response['data'];
-    final list = rawData is Map
-        ? rawData['data'] as List? ?? []
-        : rawData as List? ?? [];
+    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
     return list
-        .map(
-          (e) =>
-              ImmunizationModel.fromJson(Map<String, dynamic>.from(e as Map)),
-        )
+        .map((e) => ImmunizationModel.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
   Future<ImmunizationModel> createImmunization(
-    String patientId,
-    Map<String, dynamic> data,
-  ) async {
-    final response = await apiClient.post(
-      '/patients/$patientId/immunizations',
-      data: data,
-    );
+      String patientId, Map<String, dynamic> data) async {
+    final response =
+        await apiClient.post('/patients/$patientId/immunizations', data: data);
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to record immunization');
     }
     return ImmunizationModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   Future<void> deleteImmunization(
-    String patientId,
-    String immunizationId,
-  ) async {
-    final response = await apiClient.delete(
-      '/patients/$patientId/immunizations/$immunizationId',
-    );
+      String patientId, String immunizationId) async {
+    final response = await apiClient
+        .delete('/patients/$patientId/immunizations/$immunizationId');
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to delete immunization');
     }
@@ -727,37 +617,25 @@ class ClinicalRepository {
       throw Exception(response['message'] ?? 'Failed to load roster entries');
     }
     final rawData = response['data'];
-    final list = rawData is Map
-        ? rawData['data'] as List? ?? []
-        : rawData as List? ?? [];
+    final list = rawData is Map ? rawData['data'] as List? ?? [] : rawData as List? ?? [];
     return list
-        .map(
-          (e) => RosterEntryModel.fromJson(Map<String, dynamic>.from(e as Map)),
-        )
+        .map((e) => RosterEntryModel.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
   Future<RosterEntryModel> createRosterEntry(
-    String patientId,
-    Map<String, dynamic> data,
-  ) async {
-    final response = await apiClient.post(
-      '/patients/$patientId/roster',
-      data: data,
-    );
+      String patientId, Map<String, dynamic> data) async {
+    final response =
+        await apiClient.post('/patients/$patientId/roster', data: data);
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to add patient to roster');
     }
     return RosterEntryModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   Future<RosterEntryModel> updateRosterEntry(
-    String patientId,
-    String entryId,
-    Map<String, dynamic> data,
-  ) async {
+      String patientId, String entryId, Map<String, dynamic> data) async {
     final response = await apiClient.put(
       '/patients/$patientId/roster/$entryId',
       data: data,
@@ -766,8 +644,7 @@ class ClinicalRepository {
       throw Exception(response['message'] ?? 'Failed to update roster entry');
     }
     return RosterEntryModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   // ── Audit log ─────────────────────────────────────────────────────────────
@@ -775,7 +652,7 @@ class ClinicalRepository {
   /// Restricted server-side to the patient's primary provider or a super
   /// admin (PatientController::auditLog) — expect a 403 for anyone else.
   Future<({List<AuditLogEntry> items, bool hasMore, int total})>
-  getPatientAuditLog(String patientId, {int page = 1}) async {
+      getPatientAuditLog(String patientId, {int page = 1}) async {
     final response = await apiClient.get(
       '/patients/$patientId/audit-log',
       queryParameters: {'page': page, 'per_page': 30},
@@ -808,10 +685,8 @@ class ClinicalRepository {
         ? (raw['data'] as List? ?? [])
         : (raw as List? ?? []);
     return list
-        .map(
-          (e) =>
-              PatientMessageModel.fromJson(Map<String, dynamic>.from(e as Map)),
-        )
+        .map((e) =>
+            PatientMessageModel.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
@@ -832,8 +707,7 @@ class ClinicalRepository {
       throw Exception(response['message'] ?? 'Failed to send reply');
     }
     return PatientMessageModel.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   // ── Offline write helpers ────────────────────────────────────────────────

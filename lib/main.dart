@@ -92,35 +92,32 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    final apiClient = ApiClient();
+    final apiClient     = ApiClient();
     final localDatabase = LocalDatabase.instance;
 
-    final authRepository = AuthRepository(apiClient: apiClient);
+    final authRepository         = AuthRepository(apiClient: apiClient);
     final organizationRepository = OrganizationRepository(apiClient: apiClient);
-    final patientRepository = PatientRepository(
+    final patientRepository      = PatientRepository(
       apiClient: apiClient,
       localDatabase: localDatabase,
     );
-    final subscriptionRepository = SubscriptionRepository(apiClient: apiClient);
-    final clinicalRepository = ClinicalRepository(
+    final subscriptionRepository    = SubscriptionRepository(apiClient: apiClient);
+    final clinicalRepository        = ClinicalRepository(
       apiClient: apiClient,
       localDatabase: localDatabase,
     );
-    final accessGrantRepository = AccessGrantRepository(apiClient: apiClient);
-    final emergencyAccessRepository = EmergencyAccessRepository(
-      apiClient: apiClient,
-    );
-    final reportingRepository = ReportingRepository(apiClient: apiClient);
-    final syncRepository = SyncRepository(apiClient: apiClient);
-    final referralRepository = ReferralRepository(apiClient: apiClient);
-    final intraTransferRepository = IntraTransferRepository(
-      apiClient: apiClient,
-    );
+    final accessGrantRepository     = AccessGrantRepository(apiClient: apiClient);
+    final emergencyAccessRepository = EmergencyAccessRepository(apiClient: apiClient);
+    final reportingRepository       = ReportingRepository(apiClient: apiClient);
+    final syncRepository            = SyncRepository(apiClient: apiClient);
+    final referralRepository        = ReferralRepository(apiClient: apiClient);
+    final intraTransferRepository   = IntraTransferRepository(apiClient: apiClient);
 
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) => AuthProvider(repository: authRepository)..initialize(),
+          create: (_) =>
+              AuthProvider(repository: authRepository)..initialize(),
         ),
         ChangeNotifierProvider(
           create: (_) =>
@@ -137,14 +134,16 @@ class _MyAppState extends State<MyApp> {
           create: (_) => ClinicalProvider(repository: clinicalRepository),
         ),
         ChangeNotifierProvider(
-          create: (_) => AccessGrantProvider(repository: accessGrantRepository),
+          create: (_) =>
+              AccessGrantProvider(repository: accessGrantRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => EmergencyAccessProvider(
+              repository: emergencyAccessRepository),
         ),
         ChangeNotifierProvider(
           create: (_) =>
-              EmergencyAccessProvider(repository: emergencyAccessRepository),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ReportingProvider(repository: reportingRepository),
+              ReportingProvider(repository: reportingRepository),
         ),
         ChangeNotifierProvider(
           create: (_) => SyncProvider(repository: syncRepository),
@@ -155,7 +154,9 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(
           create: (_) => DeviceIntegrityProvider()..check(),
         ),
-        ChangeNotifierProvider(create: (_) => ThemeModeProvider()..load()),
+        ChangeNotifierProvider(
+          create: (_) => ThemeModeProvider()..load(),
+        ),
         ChangeNotifierProvider(
           create: (_) =>
               IntraTransferProvider(repository: intraTransferRepository),

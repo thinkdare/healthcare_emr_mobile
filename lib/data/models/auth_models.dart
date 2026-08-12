@@ -79,18 +79,14 @@ class StaffMembershipModel {
         department: json['department'] is Map
             ? (json['department'] as Map<String, dynamic>)['name'] as String?
             : json['department'] as String?,
-        isPrimary:
-            json['is_primary_affiliation'] as bool? ??
-            json['is_primary'] as bool? ??
-            false,
+        isPrimary: json['is_primary_affiliation'] as bool? ?? json['is_primary'] as bool? ?? false,
         canEmergencyAccess: json['can_emergency_access'] as bool? ?? false,
         canPrescribe: json['can_prescribe'] as bool? ?? false,
         canOrderLabs: json['can_order_labs'] as bool? ?? false,
         clinicalRank: json['clinical_rank'] == null
             ? null
             : ClinicalRankModel.fromJson(
-                json['clinical_rank'] as Map<String, dynamic>,
-              ),
+                json['clinical_rank'] as Map<String, dynamic>),
       );
 
   String get displayType {
@@ -171,13 +167,11 @@ class AuthFacilityModel {
         organization: json['organization'] == null
             ? null
             : AuthOrganizationLite.fromJson(
-                json['organization'] as Map<String, dynamic>,
-              ),
+                json['organization'] as Map<String, dynamic>),
         membership: json['membership'] == null
             ? null
             : StaffMembershipModel.fromJson(
-                json['membership'] as Map<String, dynamic>,
-              ),
+                json['membership'] as Map<String, dynamic>),
       );
 
   /// For the /auth/facilities and /auth/facility responses where tenant fields
@@ -191,8 +185,7 @@ class AuthFacilityModel {
         organization: json['organization'] == null
             ? null
             : AuthOrganizationLite.fromJson(
-                json['organization'] as Map<String, dynamic>,
-              ),
+                json['organization'] as Map<String, dynamic>),
         membership: StaffMembershipModel.fromJson(json),
       );
 
@@ -229,7 +222,8 @@ class CheckEmailResponse {
         exists: json['exists'] as bool? ?? false,
         hasPassword: json['has_password'] as bool? ?? true,
         facilities: (json['facilities'] as List? ?? [])
-            .map((e) => AuthFacilityModel.fromJson(e as Map<String, dynamic>))
+            .map((e) =>
+                AuthFacilityModel.fromJson(e as Map<String, dynamic>))
             .toList(),
       );
 }
@@ -273,8 +267,7 @@ class InvitationPreviewModel {
       staffType: json['staff_type'] as String?,
       department: json['department'] as String?,
       clinicalRankName: rank?['name'] as String?,
-      expiresAt:
-          DateTime.tryParse(json['expires_at'] as String? ?? '') ??
+      expiresAt: DateTime.tryParse(json['expires_at'] as String? ?? '') ??
           DateTime.now(),
     );
   }
@@ -398,8 +391,7 @@ class FacilityStaffMemberModel {
       clinicalRank: json['clinical_rank'] == null
           ? null
           : ClinicalRankModel.fromJson(
-              json['clinical_rank'] as Map<String, dynamic>,
-            ),
+              json['clinical_rank'] as Map<String, dynamic>),
     );
   }
 }

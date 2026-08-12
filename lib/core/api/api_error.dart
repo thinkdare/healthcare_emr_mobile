@@ -4,29 +4,33 @@ class ApiError {
   final String code;
   final String message;
   final Map<String, dynamic>? details;
-
-  ApiError({required this.code, required this.message, this.details});
-
+  
+  ApiError({
+    required this.code,
+    required this.message,
+    this.details,
+  });
+  
   // Create from API error response
   factory ApiError.fromResponse(Response response) {
     final data = response.data;
-
+    
     if (data != null && data is Map<String, dynamic>) {
       final error = data['error'] as Map<String, dynamic>?;
-
+      
       return ApiError(
         code: error?['code'] ?? 'UNKNOWN_ERROR',
         message: error?['message'] ?? 'An unknown error occurred',
         details: error?['details'] as Map<String, dynamic>?,
       );
     }
-
+    
     return ApiError(
       code: 'UNKNOWN_ERROR',
       message: 'An unknown error occurred',
     );
   }
-
+  
   // Create from Dio exception (Dio 5.x)
   factory ApiError.fromException(dynamic error) {
     if (error is DioException) {
@@ -38,7 +42,7 @@ class ApiError {
             code: 'TIMEOUT',
             message: 'Request timeout. Please check your internet connection.',
           );
-
+          
         case DioExceptionType.badResponse:
           if (error.response != null) {
             return ApiError.fromResponse(error.response!);
@@ -47,22 +51,25 @@ class ApiError {
             code: 'BAD_RESPONSE',
             message: 'Invalid response from server',
           );
-
+          
         case DioExceptionType.cancel:
-          return ApiError(code: 'CANCELLED', message: 'Request was cancelled');
-
+          return ApiError(
+            code: 'CANCELLED',
+            message: 'Request was cancelled',
+          );
+          
         case DioExceptionType.connectionError:
           return ApiError(
             code: 'CONNECTION_ERROR',
             message: 'Connection error. Please check your internet connection.',
           );
-
+          
         case DioExceptionType.badCertificate:
           return ApiError(
             code: 'BAD_CERTIFICATE',
             message: 'Security certificate error',
           );
-
+          
         case DioExceptionType.unknown:
         default:
           return ApiError(
@@ -71,10 +78,13 @@ class ApiError {
           );
       }
     }
-
-    return ApiError(code: 'UNKNOWN_ERROR', message: error.toString());
+    
+    return ApiError(
+      code: 'UNKNOWN_ERROR',
+      message: error.toString(),
+    );
   }
-
+  
   // Get user-friendly error message
   String get userMessage {
     // Handle validation errors
@@ -89,10 +99,10 @@ class ApiError {
       });
       return errors.isNotEmpty ? errors.first : message;
     }
-
+    
     return message;
   }
-
+  
   // Get all validation errors
   Map<String, List<String>> get validationErrors {
     if (code == 'VALIDATION_ERROR' && details != null) {
@@ -108,7 +118,7 @@ class ApiError {
     }
     return {};
   }
-
+  
   @override
   String toString() => 'ApiError(code: $code, message: $message)';
 }

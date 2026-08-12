@@ -7,13 +7,8 @@ import 'conflict_detail_sheet.dart';
 
 class ConflictCard extends StatelessWidget {
   final SyncConflict conflict;
-  final Future<bool> Function(
-    String id,
-    String strategy, {
-    Map<String, dynamic>? mergedData,
-    String? notes,
-  })
-  onResolve;
+  final Future<bool> Function(String id, String strategy,
+      {Map<String, dynamic>? mergedData, String? notes}) onResolve;
 
   const ConflictCard({
     super.key,
@@ -38,43 +33,32 @@ class ConflictCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  _resourceIcon(conflict.resourceType),
-                  size: 16,
-                  color: Colors.orange.shade700,
-                ),
+                Icon(_resourceIcon(conflict.resourceType),
+                    size: 16, color: Colors.orange.shade700),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text(
-                    _resourceTitle(conflict),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
+                  child: Text(_resourceTitle(conflict),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 14)),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              diff.narrative,
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
-            ),
+            Text(diff.narrative,
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade700)),
             const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: Colors.blue.shade50,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Text(
-                'Suggested: ${diff.suggestion}',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.blue.shade800,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              child: Text('Suggested: ${diff.suggestion}',
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.blue.shade800,
+                      fontWeight: FontWeight.w500)),
             ),
             const SizedBox(height: 12),
             Row(
@@ -82,10 +66,8 @@ class ConflictCard extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => _openDetailSheet(context, diff),
-                    child: const Text(
-                      'Review manually',
-                      style: TextStyle(fontSize: 12),
-                    ),
+                    child: const Text('Review manually',
+                        style: TextStyle(fontSize: 12)),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -96,7 +78,8 @@ class ConflictCard extends StatelessWidget {
                       backgroundColor: Colors.blue.shade700,
                       foregroundColor: Colors.white,
                     ),
-                    child: const Text('Accept', style: TextStyle(fontSize: 12)),
+                    child: const Text('Accept',
+                        style: TextStyle(fontSize: 12)),
                   ),
                 ),
               ],
@@ -116,8 +99,8 @@ class ConflictCard extends StatelessWidget {
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Failed to resolve conflict. Please try again.'),
-        ),
+            content:
+                Text('Failed to resolve conflict. Please try again.')),
       );
     }
   }
@@ -140,8 +123,7 @@ class ConflictCard extends StatelessWidget {
         .split(' ')
         .map((w) => w.isEmpty ? '' : w[0].toUpperCase() + w.substring(1))
         .join(' ');
-    final name =
-        c.serverData['full_name'] as String? ??
+    final name = c.serverData['full_name'] as String? ??
         c.serverData['name'] as String? ??
         c.serverData['test_name'] as String? ??
         c.serverData['medication'] as String? ??
@@ -150,10 +132,10 @@ class ConflictCard extends StatelessWidget {
   }
 
   IconData _resourceIcon(String resourceType) => switch (resourceType) {
-    'patients' => Icons.person,
-    'prescriptions' => Icons.medication,
-    'appointments' => Icons.calendar_today,
-    'lab_results' => Icons.biotech,
-    _ => Icons.description,
-  };
+        'patients'      => Icons.person,
+        'prescriptions' => Icons.medication,
+        'appointments'  => Icons.calendar_today,
+        'lab_results'   => Icons.biotech,
+        _               => Icons.description,
+      };
 }
