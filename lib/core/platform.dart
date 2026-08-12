@@ -32,6 +32,7 @@ import 'package:flutter/material.dart'
         showModalBottomSheet;
 
 import '../config/app_colors.dart';
+import '../config/app_spacing.dart';
 
 /// True when running on a physical or simulated iOS device.
 /// Always false on web — Platform.isIOS throws on web.
@@ -207,10 +208,10 @@ void showAdaptiveToast(
       child: Material(
         color: Colors.transparent,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
           decoration: BoxDecoration(
             color: CupertinoColors.systemBackground.resolveFrom(context),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.control),
             border: Border(left: BorderSide(color: borderColor, width: 4)),
             boxShadow: [
               BoxShadow(
