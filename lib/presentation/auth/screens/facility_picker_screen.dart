@@ -8,6 +8,8 @@ import '../../../data/providers/auth_provider.dart';
 import '../../dashboard/screens/provider_dashboard_screen.dart';
 import '../../shell/ios_shell.dart';
 import '../../../config/app_colors.dart';
+import '../../shared/widgets/adaptive_card.dart';
+import '../../shared/widgets/adaptive_list_row.dart';
 
 /// Shown after a successful login when the user belongs to more than one
 /// facility, or when the app restores a session that has no stored tenant.
@@ -93,41 +95,38 @@ class _FacilityPickerScreenState extends State<FacilityPickerScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // ── Greeting ─────────────────────────────────────────────
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        CircleAvatar(
-                          radius: 32,
-                          backgroundColor: AppColors.of(context).accent,
-                          child: Text(
-                            auth.initials,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          auth.displayName,
+                AdaptiveCard(
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 32,
+                        backgroundColor: AppColors.of(context).accent,
+                        child: Text(
+                          auth.initials,
                           style: const TextStyle(
-                            fontSize: 20,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          user?.email ?? '',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.of(context).textSecondary,
-                          ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        auth.displayName,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        user?.email ?? '',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.of(context).textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -199,55 +198,27 @@ class _FacilityTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final membership = facility.membership;
 
-    return Card(
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    return AdaptiveCard(
+      onTap: onTap,
+      child: AdaptiveListRow(
         leading: Container(
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: AppColors.of(context).accent.withValues(alpha: 0.1),
+            color: AppColors.of(context).accentTint,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(
-            Icons.local_hospital,
-            color: AppColors.of(context).accent,
-          ),
+          child: Icon(Icons.local_hospital, color: AppColors.of(context).accent),
         ),
-        title: Text(
-          facility.name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (facility.organization != null)
-              Text(
-                facility.organization!.name,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.of(context).textSecondary,
-                ),
-              ),
-            if (membership != null)
-              Text(
-                membership.displayType,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.of(context).accent,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-          ],
-        ),
+        title: facility.name,
+        subtitle: [
+          if (facility.organization != null) facility.organization!.name,
+          if (membership != null) membership.displayType,
+        ].join(' · '),
         trailing: isLoading
             ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
+                width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
             : const Icon(Icons.chevron_right),
-        onTap: onTap,
       ),
     );
   }
