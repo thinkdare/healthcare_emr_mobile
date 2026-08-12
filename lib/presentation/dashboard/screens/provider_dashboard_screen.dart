@@ -922,67 +922,52 @@ class _SubscriptionCard extends StatelessWidget {
             ? AppColors.of(context).warning
             : AppColors.of(context).success;
 
-        return Card(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              gradient: LinearGradient(
-                colors: [
-                  statusColor.withValues(alpha: 0.1),
-                  statusColor.withValues(alpha: 0.05),
+        return AdaptiveCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    onTrial ? Icons.schedule : Icons.check_circle,
+                    color: statusColor,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Subscription',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ],
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      onTrial ? Icons.schedule : Icons.check_circle,
-                      color: statusColor,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Subscription',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const Divider(height: 16),
+              const Divider(height: 16),
+              _InfoRow(
+                'Status',
+                onTrial ? 'Free Trial' : 'Active',
+                valueColor: statusColor,
+              ),
+              if (onTrial) ...[
+                const SizedBox(height: 8),
                 _InfoRow(
-                  'Status',
-                  onTrial ? 'Free Trial' : 'Active',
-                  valueColor: statusColor,
+                  'Days Remaining',
+                  '$daysRemaining',
+                  valueColor: daysRemaining <= 7
+                      ? AppColors.of(context).critical
+                      : AppColors.of(context).warning,
                 ),
-                if (onTrial) ...[
-                  const SizedBox(height: 8),
-                  _InfoRow(
-                    'Days Remaining',
-                    '$daysRemaining',
-                    valueColor: daysRemaining <= 7
-                        ? AppColors.of(context).critical
-                        : AppColors.of(context).warning,
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: AdaptiveFilledButton(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const SubscriptionUpgradeScreen(),
-                        ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: AdaptiveFilledButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const SubscriptionUpgradeScreen(),
                       ),
-                      child: const Text('Upgrade Plan'),
                     ),
+                    child: const Text('Upgrade Plan'),
                   ),
-                ],
+                ),
               ],
-            ),
+            ],
           ),
         );
       },
@@ -1002,88 +987,86 @@ class _AccessGrantsCard extends StatelessWidget {
 
         if (!hasActivity && !grants.isLoading) return const SizedBox.shrink();
 
-        return Card(
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AccessGrantsScreen()),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        return AdaptiveCard(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const AccessGrantsScreen()),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Row(
+                  Icon(
+                    pending > 0
+                        ? Icons.shield_outlined
+                        : Icons.lock_open_outlined,
+                    color: pending > 0
+                        ? AppColors.of(context).warning
+                        : AppColors.of(context).accent,
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Access Grants',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  if (pending > 0) ...[
+                    AdaptiveBadge(
+                      label: '$pending',
+                      variant: BadgeVariant.warning,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Icon(
+                    Icons.chevron_right,
+                    color: AppColors.of(context).textSecondary,
+                  ),
+                ],
+              ),
+              if (pending > 0) ...[
+                const Divider(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.of(
+                      context,
+                    ).warning.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
                     children: [
                       Icon(
-                        pending > 0
-                            ? Icons.shield_outlined
-                            : Icons.lock_open_outlined,
-                        color: pending > 0
-                            ? AppColors.of(context).warning
-                            : AppColors.of(context).accent,
+                        Icons.pending_actions,
+                        color: AppColors.of(context).warning,
+                        size: 18,
                       ),
                       const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          'Access Grants',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      Text(
+                        '$pending request${pending == 1 ? '' : 's'} awaiting your approval',
+                        style: TextStyle(
+                          color: AppColors.of(context).warning,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
                         ),
-                      ),
-                      Icon(
-                        Icons.chevron_right,
-                        color: AppColors.of(context).textSecondary,
                       ),
                     ],
                   ),
-                  if (pending > 0) ...[
-                    const Divider(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.of(
-                          context,
-                        ).warning.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.pending_actions,
-                            color: AppColors.of(context).warning,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '$pending request${pending == 1 ? '' : 's'} awaiting your approval',
-                            style: TextStyle(
-                              color: AppColors.of(context).warning,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ] else if (grants.myRequests.isNotEmpty) ...[
-                    const Divider(height: 16),
-                    Text(
-                      '${grants.myRequests.length} request${grants.myRequests.length == 1 ? '' : 's'} sent',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.of(context).textSecondary,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+                ),
+              ] else if (grants.myRequests.isNotEmpty) ...[
+                const Divider(height: 16),
+                Text(
+                  '${grants.myRequests.length} request${grants.myRequests.length == 1 ? '' : 's'} sent',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.of(context).textSecondary,
+                  ),
+                ),
+              ],
+            ],
           ),
         );
       },
@@ -1103,86 +1086,86 @@ class _EmergencyAccessCard extends StatelessWidget {
 
         if (!hasActivity && !em.isLoading) return const SizedBox.shrink();
 
-        return Card(
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const EmergencyAccessScreen()),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        return AdaptiveCard(
+          backgroundColor: AppColors.of(context).criticalTint,
+          borderColor: AppColors.of(context).criticalBorder,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const EmergencyAccessScreen()),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Row(
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: unreviewed > 0
+                        ? AppColors.of(context).critical
+                        : AppColors.of(context).textSecondary,
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Emergency Access',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  if (unreviewed > 0) ...[
+                    AdaptiveBadge(
+                      label: '$unreviewed',
+                      variant: BadgeVariant.critical,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Icon(
+                    Icons.chevron_right,
+                    color: AppColors.of(context).textSecondary,
+                  ),
+                ],
+              ),
+              if (unreviewed > 0) ...[
+                const Divider(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.of(
+                      context,
+                    ).critical.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
                     children: [
                       Icon(
-                        Icons.warning_amber_rounded,
-                        color: unreviewed > 0
-                            ? AppColors.of(context).critical
-                            : AppColors.of(context).textSecondary,
+                        Icons.rate_review_outlined,
+                        color: AppColors.of(context).critical,
+                        size: 18,
                       ),
                       const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          'Emergency Access',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      Text(
+                        '$unreviewed event${unreviewed == 1 ? '' : 's'} awaiting your review',
+                        style: TextStyle(
+                          color: AppColors.of(context).critical,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
                         ),
-                      ),
-                      Icon(
-                        Icons.chevron_right,
-                        color: AppColors.of(context).textSecondary,
                       ),
                     ],
                   ),
-                  if (unreviewed > 0) ...[
-                    const Divider(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.of(
-                          context,
-                        ).critical.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.rate_review_outlined,
-                            color: AppColors.of(context).critical,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '$unreviewed event${unreviewed == 1 ? '' : 's'} awaiting your review',
-                            style: TextStyle(
-                              color: AppColors.of(context).critical,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ] else if (em.logs.isNotEmpty) ...[
-                    const Divider(height: 16),
-                    Text(
-                      '${em.logs.length} event${em.logs.length == 1 ? '' : 's'} logged',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.of(context).textSecondary,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+                ),
+              ] else if (em.logs.isNotEmpty) ...[
+                const Divider(height: 16),
+                Text(
+                  '${em.logs.length} event${em.logs.length == 1 ? '' : 's'} logged',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.of(context).textSecondary,
+                  ),
+                ),
+              ],
+            ],
           ),
         );
       },
