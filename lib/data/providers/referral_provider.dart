@@ -24,11 +24,11 @@ class ReferralProvider extends ChangeNotifier {
 
   // ── Getters ────────────────────────────────────────────────────────────────
 
-  ReferralFilter get filter        => _filter;
-  bool get isLoading               => _isLoading;
-  bool get isLoadingMore           => _isLoadingMore;
-  String? get error                => _error;
-  bool get isSendingMessage        => _isSendingMessage;
+  ReferralFilter get filter => _filter;
+  bool get isLoading => _isLoading;
+  bool get isLoadingMore => _isLoadingMore;
+  String? get error => _error;
+  bool get isSendingMessage => _isSendingMessage;
 
   List<ReferralModel> get referrals =>
       _all.where((r) => _filter.matches(r.status)).toList();
@@ -124,7 +124,9 @@ class ReferralProvider extends ChangeNotifier {
       _transition(id, () => repository.cancel(id, reason));
 
   Future<bool> _transition(
-      String id, Future<ReferralModel> Function() call) async {
+    String id,
+    Future<ReferralModel> Function() call,
+  ) async {
     try {
       final updated = await call();
       _all = _all.map((r) => r.id == id ? updated : r).toList();

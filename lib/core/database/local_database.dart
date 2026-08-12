@@ -102,7 +102,8 @@ class LocalDatabase {
     final encryptedPath = path_helper.join(dbPath, _kEncryptedDatabaseName);
     final legacyPath = path_helper.join(dbPath, _kLegacyPlaintextDatabaseName);
 
-    if (!await File(encryptedPath).exists() && await File(legacyPath).exists()) {
+    if (!await File(encryptedPath).exists() &&
+        await File(legacyPath).exists()) {
       await _migrateFromLegacyPlaintextDb(legacyPath, encryptedPath);
     }
 
@@ -156,8 +157,11 @@ class LocalDatabase {
     if (pendingRows.isNotEmpty) {
       final batch = encryptedDb.batch();
       for (final row in pendingRows) {
-        batch.insert('pending_sync', row,
-            conflictAlgorithm: ConflictAlgorithm.replace);
+        batch.insert(
+          'pending_sync',
+          row,
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
       }
       await batch.commit(noResult: true);
     }
@@ -437,7 +441,9 @@ class LocalDatabase {
   /// Count of patients created (cached_at) within the last N days.
   Future<int> getRecentPatientCount(String providerId, {int days = 7}) async {
     final db = await database;
-    final since = DateTime.now().subtract(Duration(days: days)).toIso8601String();
+    final since = DateTime.now()
+        .subtract(Duration(days: days))
+        .toIso8601String();
     final result = await db.rawQuery(
       '''SELECT COUNT(*) as count FROM patients_cache
          WHERE primary_provider_id = ?
@@ -450,15 +456,26 @@ class LocalDatabase {
 
   // ── VITALS DAO ─────────────────────────────────────────────────────────────
 
-  Future<void> replaceVitals(String patientId, List<VitalSignModel> vitals) async {
+  Future<void> replaceVitals(
+    String patientId,
+    List<VitalSignModel> vitals,
+  ) async {
     final db = await database;
     final now = DateTime.now().toIso8601String();
 
     await db.transaction((txn) async {
-      await txn.delete('vitals_cache', where: 'patient_id = ?', whereArgs: [patientId]);
+      await txn.delete(
+        'vitals_cache',
+        where: 'patient_id = ?',
+        whereArgs: [patientId],
+      );
       final batch = txn.batch();
       for (final v in vitals) {
-        batch.insert('vitals_cache', _vitalToRow(v, now), conflictAlgorithm: ConflictAlgorithm.replace);
+        batch.insert(
+          'vitals_cache',
+          _vitalToRow(v, now),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
       }
       await batch.commit(noResult: true);
     });
@@ -487,31 +504,47 @@ class LocalDatabase {
       orderBy: 'recorded_at DESC',
     );
     return rows
-        .map((r) => VitalSignModel.fromJson(
-            Map<String, dynamic>.from(jsonDecode(r['data_json'] as String) as Map)))
+        .map(
+          (r) => VitalSignModel.fromJson(
+            Map<String, dynamic>.from(
+              jsonDecode(r['data_json'] as String) as Map,
+            ),
+          ),
+        )
         .toList();
   }
 
   Map<String, dynamic> _vitalToRow(VitalSignModel v, String cachedAt) => {
-        'id': v.id,
-        'patient_id': v.patientId,
-        'recorded_at': v.recordedAt.toIso8601String(),
-        'version': v.version,
-        'data_json': jsonEncode(v.toJson()),
-        'cached_at': cachedAt,
-      };
+    'id': v.id,
+    'patient_id': v.patientId,
+    'recorded_at': v.recordedAt.toIso8601String(),
+    'version': v.version,
+    'data_json': jsonEncode(v.toJson()),
+    'cached_at': cachedAt,
+  };
 
   // ── DIAGNOSES DAO ──────────────────────────────────────────────────────────
 
-  Future<void> replaceDiagnoses(String patientId, List<DiagnosisModel> diagnoses) async {
+  Future<void> replaceDiagnoses(
+    String patientId,
+    List<DiagnosisModel> diagnoses,
+  ) async {
     final db = await database;
     final now = DateTime.now().toIso8601String();
 
     await db.transaction((txn) async {
-      await txn.delete('diagnoses_cache', where: 'patient_id = ?', whereArgs: [patientId]);
+      await txn.delete(
+        'diagnoses_cache',
+        where: 'patient_id = ?',
+        whereArgs: [patientId],
+      );
       final batch = txn.batch();
       for (final d in diagnoses) {
-        batch.insert('diagnoses_cache', _diagnosisToRow(d, now), conflictAlgorithm: ConflictAlgorithm.replace);
+        batch.insert(
+          'diagnoses_cache',
+          _diagnosisToRow(d, now),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
       }
       await batch.commit(noResult: true);
     });
@@ -540,33 +573,34 @@ class LocalDatabase {
       orderBy: 'created_at DESC',
     );
     return rows
-        .map((r) => DiagnosisModel.fromJson(
-            Map<String, dynamic>.from(jsonDecode(r['data_json'] as String) as Map)))
+        .map(
+          (r) => DiagnosisModel.fromJson(
+            Map<String, dynamic>.from(
+              jsonDecode(r['data_json'] as String) as Map,
+            ),
+          ),
+        )
         .toList();
   }
 
   Map<String, dynamic> _diagnosisToRow(DiagnosisModel d, String cachedAt) => {
-        'id': d.id,
-        'patient_id': d.patientId,
-        'created_at': d.createdAt?.toIso8601String(),
-        'version': d.version,
-        'data_json': jsonEncode(d.toJson()),
-        'cached_at': cachedAt,
-      };
+    'id': d.id,
+    'patient_id': d.patientId,
+    'created_at': d.createdAt?.toIso8601String(),
+    'version': d.version,
+    'data_json': jsonEncode(d.toJson()),
+    'cached_at': cachedAt,
+  };
 
   // ── METADATA DAO ──────────────────────────────────────────────────────────
 
   Future<void> setMetadata(String key, String value) async {
     final db = await database;
-    await db.insert(
-      'cache_metadata',
-      {
-        'key': key,
-        'value': value,
-        'updated_at': DateTime.now().toIso8601String(),
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert('cache_metadata', {
+      'key': key,
+      'value': value,
+      'updated_at': DateTime.now().toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<String?> getMetadata(String key) async {
@@ -653,36 +687,38 @@ class LocalDatabase {
 
   Map<String, dynamic> _patientToRow(PatientModel p, String cachedAt) {
     return {
-      'id':                      p.id,
-      'primary_provider_id':     p.primaryProviderId,
-      'current_facility_id':     p.currentFacilityId,
-      'first_name':              p.firstName,
-      'last_name':               p.lastName,
-      'date_of_birth':           p.dateOfBirth,
-      'gender':                  p.gender,
-      'blood_type':              p.bloodType,
-      'phone':                   p.phone,
-      'email':                   p.email,
-      'address':                 p.address,
-      'emergency_contact_name':  p.emergencyContactName,
+      'id': p.id,
+      'primary_provider_id': p.primaryProviderId,
+      'current_facility_id': p.currentFacilityId,
+      'first_name': p.firstName,
+      'last_name': p.lastName,
+      'date_of_birth': p.dateOfBirth,
+      'gender': p.gender,
+      'blood_type': p.bloodType,
+      'phone': p.phone,
+      'email': p.email,
+      'address': p.address,
+      'emergency_contact_name': p.emergencyContactName,
       'emergency_contact_phone': p.emergencyContactPhone,
-      'allergies':               jsonEncode(p.allergies.map((a) => a.toJson()).toList()),
-      'current_medications':     jsonEncode(p.currentMedications.map((m) => m.toJson()).toList()),
-      'chronic_conditions':      jsonEncode(p.chronicConditions),
-      'insurance_provider':      p.insuranceProvider,
-      'insurance_number':        p.insuranceNumber,
-      'patient_portal_enabled':  p.patientPortalEnabled ? 1 : 0,
-      'is_active':               p.isActive ? 1 : 0,
-      'last_synced_at':          p.lastSyncedAt?.toIso8601String(),
-      'created_at':              p.createdAt?.toIso8601String(),
-      'updated_at':              p.updatedAt?.toIso8601String(),
-      'primary_provider_json':   p.primaryProvider != null
+      'allergies': jsonEncode(p.allergies.map((a) => a.toJson()).toList()),
+      'current_medications': jsonEncode(
+        p.currentMedications.map((m) => m.toJson()).toList(),
+      ),
+      'chronic_conditions': jsonEncode(p.chronicConditions),
+      'insurance_provider': p.insuranceProvider,
+      'insurance_number': p.insuranceNumber,
+      'patient_portal_enabled': p.patientPortalEnabled ? 1 : 0,
+      'is_active': p.isActive ? 1 : 0,
+      'last_synced_at': p.lastSyncedAt?.toIso8601String(),
+      'created_at': p.createdAt?.toIso8601String(),
+      'updated_at': p.updatedAt?.toIso8601String(),
+      'primary_provider_json': p.primaryProvider != null
           ? jsonEncode(p.primaryProvider!.toJson())
           : null,
-      'current_facility_json':   p.currentFacility != null
+      'current_facility_json': p.currentFacility != null
           ? jsonEncode(p.currentFacility!.toJson())
           : null,
-      'cached_at':               cachedAt,
+      'cached_at': cachedAt,
     };
   }
 
@@ -692,9 +728,12 @@ class LocalDatabase {
     List<String> conditions = [];
 
     try {
-      final allergyJson = jsonDecode(row['allergies'] as String? ?? '[]') as List;
+      final allergyJson =
+          jsonDecode(row['allergies'] as String? ?? '[]') as List;
       allergies = allergyJson
-          .map((e) => AllergyModel.fromJson(Map<String, dynamic>.from(e as Map)))
+          .map(
+            (e) => AllergyModel.fromJson(Map<String, dynamic>.from(e as Map)),
+          )
           .toList();
     } catch (_) {}
 
@@ -702,7 +741,10 @@ class LocalDatabase {
       final medJson =
           jsonDecode(row['current_medications'] as String? ?? '[]') as List;
       medications = medJson
-          .map((e) => MedicationModel.fromJson(Map<String, dynamic>.from(e as Map)))
+          .map(
+            (e) =>
+                MedicationModel.fromJson(Map<String, dynamic>.from(e as Map)),
+          )
           .toList();
     } catch (_) {}
 
@@ -719,7 +761,8 @@ class LocalDatabase {
       final providerJson = row['primary_provider_json'] as String?;
       if (providerJson != null) {
         provider = PatientProviderLite.fromJson(
-            Map<String, dynamic>.from(jsonDecode(providerJson) as Map));
+          Map<String, dynamic>.from(jsonDecode(providerJson) as Map),
+        );
       }
     } catch (_) {}
 
@@ -727,36 +770,37 @@ class LocalDatabase {
       final facilityJson = row['current_facility_json'] as String?;
       if (facilityJson != null) {
         facility = PatientFacilityLite.fromJson(
-            Map<String, dynamic>.from(jsonDecode(facilityJson) as Map));
+          Map<String, dynamic>.from(jsonDecode(facilityJson) as Map),
+        );
       }
     } catch (_) {}
 
     return PatientModel(
-      id:                      row['id'] as String,
-      primaryProviderId:       row['primary_provider_id'] as String,
-      currentFacilityId:       row['current_facility_id'] as String?,
-      firstName:               row['first_name'] as String,
-      lastName:                row['last_name'] as String,
-      dateOfBirth:             row['date_of_birth'] as String,
-      gender:                  row['gender'] as String,
-      bloodType:               row['blood_type'] as String?,
-      phone:                   row['phone'] as String?,
-      email:                   row['email'] as String?,
-      address:                 row['address'] as String?,
-      emergencyContactName:    row['emergency_contact_name'] as String,
-      emergencyContactPhone:   row['emergency_contact_phone'] as String,
-      allergies:               allergies,
-      currentMedications:      medications,
-      chronicConditions:       conditions,
-      insuranceProvider:       row['insurance_provider'] as String?,
-      insuranceNumber:         row['insurance_number'] as String?,
-      patientPortalEnabled:    (row['patient_portal_enabled'] as int? ?? 0) == 1,
-      isActive:                (row['is_active'] as int? ?? 1) == 1,
-      lastSyncedAt:            _parseDate(row['last_synced_at']),
-      createdAt:               _parseDate(row['created_at']),
-      updatedAt:               _parseDate(row['updated_at']),
-      primaryProvider:         provider,
-      currentFacility:         facility,
+      id: row['id'] as String,
+      primaryProviderId: row['primary_provider_id'] as String,
+      currentFacilityId: row['current_facility_id'] as String?,
+      firstName: row['first_name'] as String,
+      lastName: row['last_name'] as String,
+      dateOfBirth: row['date_of_birth'] as String,
+      gender: row['gender'] as String,
+      bloodType: row['blood_type'] as String?,
+      phone: row['phone'] as String?,
+      email: row['email'] as String?,
+      address: row['address'] as String?,
+      emergencyContactName: row['emergency_contact_name'] as String,
+      emergencyContactPhone: row['emergency_contact_phone'] as String,
+      allergies: allergies,
+      currentMedications: medications,
+      chronicConditions: conditions,
+      insuranceProvider: row['insurance_provider'] as String?,
+      insuranceNumber: row['insurance_number'] as String?,
+      patientPortalEnabled: (row['patient_portal_enabled'] as int? ?? 0) == 1,
+      isActive: (row['is_active'] as int? ?? 1) == 1,
+      lastSyncedAt: _parseDate(row['last_synced_at']),
+      createdAt: _parseDate(row['created_at']),
+      updatedAt: _parseDate(row['updated_at']),
+      primaryProvider: provider,
+      currentFacility: facility,
     );
   }
 
@@ -780,19 +824,15 @@ class LocalDatabase {
     int clientVersion = 0,
   }) async {
     final db = await database;
-    await db.insert(
-      'pending_sync',
-      {
-        'id': id,
-        'resource_type': resourceType,
-        'resource_id': resourceId,
-        'operation': operation,
-        'payload': jsonEncode(payload),
-        'client_version': clientVersion,
-        'queued_at': DateTime.now().toIso8601String(),
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert('pending_sync', {
+      'id': id,
+      'resource_type': resourceType,
+      'resource_id': resourceId,
+      'operation': operation,
+      'payload': jsonEncode(payload),
+      'client_version': clientVersion,
+      'queued_at': DateTime.now().toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<List<Map<String, dynamic>>> getPendingSyncItems() async {
@@ -812,8 +852,9 @@ class LocalDatabase {
 
   Future<int> getPendingSyncCount() async {
     final db = await database;
-    final result =
-        await db.rawQuery('SELECT COUNT(*) as count FROM pending_sync');
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM pending_sync',
+    );
     return Sqflite.firstIntValue(result) ?? 0;
   }
 

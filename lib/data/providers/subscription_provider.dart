@@ -100,7 +100,11 @@ class SubscriptionProvider extends ChangeNotifier {
   }) async {
     _setLoading(true);
     try {
-      await repository.cancelSubscription(orgId, subId, immediately: immediately);
+      await repository.cancelSubscription(
+        orgId,
+        subId,
+        immediately: immediately,
+      );
       // Refresh after cancel
       _subscription = await repository.getSubscription(orgId);
       _error = null;
@@ -115,10 +119,18 @@ class SubscriptionProvider extends ChangeNotifier {
 
   // ── Invoices ──────────────────────────────────────────────────────────────
 
-  Future<void> loadInvoices(String orgId, {int page = 1, String? status}) async {
+  Future<void> loadInvoices(
+    String orgId, {
+    int page = 1,
+    String? status,
+  }) async {
     _setLoading(true);
     try {
-      _invoices = await repository.getInvoices(orgId, page: page, status: status);
+      _invoices = await repository.getInvoices(
+        orgId,
+        page: page,
+        status: status,
+      );
       _error = null;
     } catch (e) {
       _error = e.toString();

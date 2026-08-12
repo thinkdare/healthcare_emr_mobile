@@ -29,8 +29,7 @@ class _SyncScreenState extends State<SyncScreen> {
     const title = 'Sync Status';
     return kIsIOS
         ? CupertinoPageScaffold(
-            navigationBar:
-                const CupertinoNavigationBar(middle: Text(title)),
+            navigationBar: const CupertinoNavigationBar(middle: Text(title)),
             child: SafeArea(child: _Body()),
           )
         : Scaffold(
@@ -57,15 +56,19 @@ class _Body extends StatelessWidget {
                 child: Text(
                   '${sync.pendingConflicts} pending conflict${sync.pendingConflicts == 1 ? '' : 's'}',
                   style: const TextStyle(
-                      fontWeight: FontWeight.w600, fontSize: 13),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
                 ),
               ),
               ...sync.conflicts
                   .where((c) => c.isPending)
-                  .map((c) => ConflictCard(
-                        conflict: c,
-                        onResolve: sync.resolveConflict,
-                      )),
+                  .map(
+                    (c) => ConflictCard(
+                      conflict: c,
+                      onResolve: sync.resolveConflict,
+                    ),
+                  ),
             ],
           ],
         ),
@@ -82,8 +85,7 @@ class _StatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lastSynced = sync.lastSyncedAt;
-    final lastSyncedText =
-        lastSynced == null ? 'Never' : _relative(lastSynced);
+    final lastSyncedText = lastSynced == null ? 'Never' : _relative(lastSynced);
 
     return Card(
       margin: const EdgeInsets.all(16),
@@ -96,9 +98,10 @@ class _StatusCard extends StatelessWidget {
               children: [
                 const Icon(Icons.sync, size: 18),
                 const SizedBox(width: 8),
-                const Text('Sync Status',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 15)),
+                const Text(
+                  'Sync Status',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                ),
                 const Spacer(),
                 _StatusChip(status: sync.status),
               ],
@@ -115,7 +118,8 @@ class _StatusCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: sync.status == SyncStatus.syncing ||
+                onPressed:
+                    sync.status == SyncStatus.syncing ||
                         sync.status == SyncStatus.offline
                     ? null
                     : () => sync.sync(),
@@ -150,11 +154,11 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, label) = switch (status) {
-      SyncStatus.idle    => (Colors.grey, 'Idle'),
+      SyncStatus.idle => (Colors.grey, 'Idle'),
       SyncStatus.syncing => (Colors.blue, 'Syncing'),
-      SyncStatus.synced  => (Colors.green, 'Synced'),
+      SyncStatus.synced => (Colors.green, 'Synced'),
       SyncStatus.offline => (Colors.orange, 'Offline'),
-      SyncStatus.error   => (Colors.red, 'Error'),
+      SyncStatus.error => (Colors.red, 'Error'),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
@@ -162,11 +166,14 @@ class _StatusChip extends StatelessWidget {
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(label,
-          style: TextStyle(
-              fontSize: 11,
-              color: color,
-              fontWeight: FontWeight.w600)),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }
@@ -183,13 +190,15 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
-          Text(label,
-              style:
-                  TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+          Text(
+            label,
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          ),
           const Spacer(),
-          Text(value,
-              style: const TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w500)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );
@@ -205,11 +214,16 @@ class _EmptyConflicts extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 48),
       child: Column(
         children: [
-          Icon(Icons.check_circle_outline,
-              size: 48, color: Colors.green.shade300),
+          Icon(
+            Icons.check_circle_outline,
+            size: 48,
+            color: Colors.green.shade300,
+          ),
           const SizedBox(height: 12),
-          Text('No conflicts — all changes are in sync.',
-              style: TextStyle(color: Colors.grey.shade600)),
+          Text(
+            'No conflicts — all changes are in sync.',
+            style: TextStyle(color: Colors.grey.shade600),
+          ),
         ],
       ),
     );

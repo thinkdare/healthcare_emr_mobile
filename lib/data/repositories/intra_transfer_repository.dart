@@ -13,13 +13,18 @@ class IntraTransferRepository {
 
   /// POST /api/v1/patients/{patientId}/transfers
   Future<IntraTransferModel> create(
-      String patientId, Map<String, dynamic> data) async {
-    final response =
-        await apiClient.post('/patients/$patientId/transfers', data: data);
+    String patientId,
+    Map<String, dynamic> data,
+  ) async {
+    final response = await apiClient.post(
+      '/patients/$patientId/transfers',
+      data: data,
+    );
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to send transfer request');
     }
     return IntraTransferModel.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map));
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
   }
 }

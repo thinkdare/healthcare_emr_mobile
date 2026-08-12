@@ -17,9 +17,7 @@ class ReferralCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ReferralDetailScreen(referral: r),
-          ),
+          MaterialPageRoute(builder: (_) => ReferralDetailScreen(referral: r)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(14),
@@ -36,7 +34,9 @@ class ReferralCard extends StatelessWidget {
                     child: Text(
                       r.patientName ?? 'Patient',
                       style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 14),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -55,26 +55,31 @@ class ReferralCard extends StatelessWidget {
                 children: [
                   Text(
                     r.referringProviderName,
-                    style:
-                        TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                   ),
-                  Text(' · ',
-                      style: const TextStyle(
-                          fontSize: 11, color: Colors.grey)),
+                  Text(
+                    ' · ',
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
                   Text(
                     _relative(r.referredAt),
-                    style:
-                        TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                   ),
                   if (r.isOverdue) ...[
                     const SizedBox(width: 8),
-                    const Icon(Icons.warning_amber_rounded,
-                        size: 13, color: Colors.orange),
-                    const Text(' Overdue',
-                        style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.orange,
-                            fontWeight: FontWeight.w500)),
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      size: 13,
+                      color: Colors.orange,
+                    ),
+                    const Text(
+                      ' Overdue',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.orange,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -130,8 +135,8 @@ class _UrgencyDot extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = switch (urgency) {
       'emergency' => Colors.red,
-      'urgent'    => Colors.orange,
-      _           => Colors.grey.shade400,
+      'urgent' => Colors.orange,
+      _ => Colors.grey.shade400,
     };
     return Container(
       width: 8,
@@ -148,20 +153,43 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (bg, fg, label) = switch (status) {
-      'pending'   => (const Color(0xFFFFF3E0), const Color(0xFFE65100), 'Pending'),
-      'accepted'  => (const Color(0xFFE3F2FD), const Color(0xFF1565C0), 'Accepted'),
-      'scheduled' => (const Color(0xFFE8F5E9), const Color(0xFF2E7D32), 'Scheduled'),
-      'completed' => (const Color(0xFFF3E5F5), const Color(0xFF6A1B9A), 'Completed'),
-      'cancelled' => (const Color(0xFFEEEEEE), const Color(0xFF616161), 'Cancelled'),
-      _           => (const Color(0xFFEEEEEE), const Color(0xFF616161), status),
+      'pending' => (
+        const Color(0xFFFFF3E0),
+        const Color(0xFFE65100),
+        'Pending',
+      ),
+      'accepted' => (
+        const Color(0xFFE3F2FD),
+        const Color(0xFF1565C0),
+        'Accepted',
+      ),
+      'scheduled' => (
+        const Color(0xFFE8F5E9),
+        const Color(0xFF2E7D32),
+        'Scheduled',
+      ),
+      'completed' => (
+        const Color(0xFFF3E5F5),
+        const Color(0xFF6A1B9A),
+        'Completed',
+      ),
+      'cancelled' => (
+        const Color(0xFFEEEEEE),
+        const Color(0xFF616161),
+        'Cancelled',
+      ),
+      _ => (const Color(0xFFEEEEEE), const Color(0xFF616161), status),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration:
-          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
-      child: Text(label,
-          style: TextStyle(
-              fontSize: 10, color: fg, fontWeight: FontWeight.w600)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 10, color: fg, fontWeight: FontWeight.w600),
+      ),
     );
   }
 }

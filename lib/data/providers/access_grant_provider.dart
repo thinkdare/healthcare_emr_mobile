@@ -61,8 +61,7 @@ class AccessGrantProvider extends ChangeNotifier {
   Future<bool> approve(String id, {String? notes}) async {
     try {
       final updated = await repository.approve(id, notes: notes);
-      _pendingApproval =
-          _pendingApproval.where((g) => g.id != id).toList();
+      _pendingApproval = _pendingApproval.where((g) => g.id != id).toList();
       _myRequests = _myRequests.map((g) => g.id == id ? updated : g).toList();
       notifyListeners();
       return true;
@@ -78,8 +77,7 @@ class AccessGrantProvider extends ChangeNotifier {
   Future<bool> deny(String id, String reason) async {
     try {
       final updated = await repository.deny(id, reason);
-      _pendingApproval =
-          _pendingApproval.where((g) => g.id != id).toList();
+      _pendingApproval = _pendingApproval.where((g) => g.id != id).toList();
       _myRequests = _myRequests.map((g) => g.id == id ? updated : g).toList();
       notifyListeners();
       return true;
@@ -116,13 +114,19 @@ class AccessGrantProvider extends ChangeNotifier {
       return 'No internet connection.';
     }
     if (msg.contains('401')) return 'Session expired. Please log in again.';
-    if (msg.contains('403')) return 'You do not have permission to perform this action.';
-    if (msg.contains('ALREADY_HAS_ACCESS')) return 'You already have access to this patient.';
-    if (msg.contains('SELF_ACCESS')) return 'You cannot request access to your own patient.';
-    if (msg.contains('SAME_FACILITY')) return 'Patient is at your facility. No grant needed.';
+    if (msg.contains('403'))
+      return 'You do not have permission to perform this action.';
+    if (msg.contains('ALREADY_HAS_ACCESS'))
+      return 'You already have access to this patient.';
+    if (msg.contains('SELF_ACCESS'))
+      return 'You cannot request access to your own patient.';
+    if (msg.contains('SAME_FACILITY'))
+      return 'Patient is at your facility. No grant needed.';
     // Extract message from ApiException format: "ApiException(4xx): <message>"
     final match = RegExp(r'ApiException\(\d+\): (.+)').firstMatch(msg);
     if (match != null) return match.group(1)!;
-    return msg.contains('Exception:') ? msg.split('Exception:').last.trim() : msg;
+    return msg.contains('Exception:')
+        ? msg.split('Exception:').last.trim()
+        : msg;
   }
 }

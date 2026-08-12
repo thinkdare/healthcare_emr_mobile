@@ -224,7 +224,9 @@ class PatientProvider extends ChangeNotifier {
     try {
       final updated = await repository.updatePatient(patientId, data);
       // Replace the entry in the list
-      _patients = _patients.map((p) => p.id == patientId ? updated : p).toList();
+      _patients = _patients
+          .map((p) => p.id == patientId ? updated : p)
+          .toList();
       if (_selectedPatient?.id == patientId) {
         _selectedPatient = updated;
       }
@@ -304,7 +306,8 @@ class PatientProvider extends ChangeNotifier {
       return 'No internet connection. Showing cached data.';
     }
     if (msg.contains('401')) return 'Session expired. Please log in again.';
-    if (msg.contains('403')) return 'You do not have permission to view these records.';
+    if (msg.contains('403'))
+      return 'You do not have permission to view these records.';
     if (msg.contains('404')) return 'Patient record not found.';
     return 'Something went wrong. Please try again.';
   }

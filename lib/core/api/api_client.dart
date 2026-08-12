@@ -19,7 +19,7 @@ class ApiClient {
   final FlutterSecureStorage _storage;
 
   ApiClient({FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage() {
+    : _storage = storage ?? const FlutterSecureStorage() {
     _dio = Dio(
       BaseOptions(
         baseUrl: AppConfig.baseUrl,
@@ -59,15 +59,19 @@ class ApiClient {
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          print('RESPONSE: ${response.statusCode} ${response.requestOptions.uri}');
+          print(
+            'RESPONSE: ${response.statusCode} ${response.requestOptions.uri}',
+          );
           print('DATA: ${response.data}');
           return handler.next(response);
         },
         onError: (error, handler) async {
-          print('ERROR: ${error.response?.statusCode} ${error.requestOptions.uri}');
+          print(
+            'ERROR: ${error.response?.statusCode} ${error.requestOptions.uri}',
+          );
           print('MESSAGE: ${error.message}');
           print('DATA: ${error.response?.data}');
-          
+
           if (error.response?.statusCode == 401) {
             await _storage.delete(key: 'auth_token');
             await _storage.delete(key: 'active_tenant_id');
@@ -88,31 +92,28 @@ class ApiClient {
     // Handle non-2xx status codes
     if (response.statusCode != null && response.statusCode! >= 400) {
       final data = response.data;
-      
+
       // Laravel error response format: { "success": false, "message": "...", "error": {...} }
       if (data is Map<String, dynamic>) {
         final message = data['message'] as String? ?? 'Request failed';
         final error = data['error'] as Map<String, dynamic>?;
         final details = error?['details'] as Map<String, dynamic>?;
-        
+
         throw ApiException(
           message,
           statusCode: response.statusCode,
           details: details,
         );
       }
-      
-      throw ApiException(
-        'Request failed',
-        statusCode: response.statusCode,
-      );
+
+      throw ApiException('Request failed', statusCode: response.statusCode);
     }
 
     // Handle successful response
     // Laravel success response format: { "success": true, "message": "...", "data": {...} }
     if (response.data is Map<String, dynamic>) {
       final data = response.data as Map<String, dynamic>;
-      
+
       // Return the entire response (including data, message, success)
       return data as T;
     } else if (response.data is String) {

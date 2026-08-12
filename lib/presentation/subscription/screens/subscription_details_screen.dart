@@ -4,7 +4,7 @@ import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/subscription_provider.dart';
-import '../../../config/theme.dart';
+import '../../../config/app_colors.dart';
 
 class SubscriptionDetailsScreen extends StatefulWidget {
   const SubscriptionDetailsScreen({super.key});
@@ -35,7 +35,8 @@ class _SubscriptionDetailsScreenState extends State<SubscriptionDetailsScreen> {
     await showAdaptiveActionSheet(
       context: context,
       title: 'Cancel Subscription',
-      message: 'Are you sure? You will retain access until the end of your '
+      message:
+          'Are you sure? You will retain access until the end of your '
           'current billing period.',
       destructiveLabel: 'Cancel Subscription',
       onConfirm: () => confirmed = true,
@@ -53,7 +54,11 @@ class _SubscriptionDetailsScreenState extends State<SubscriptionDetailsScreen> {
 
     if (mounted) {
       if (success) {
-        showAdaptiveToast(context, 'Subscription cancelled', type: ToastType.success);
+        showAdaptiveToast(
+          context,
+          'Subscription cancelled',
+          type: ToastType.success,
+        );
       } else {
         showAdaptiveToast(
           context,
@@ -80,9 +85,10 @@ class _SubscriptionDetailsScreenState extends State<SubscriptionDetailsScreen> {
               title: const Text('Subscription'),
               actions: [
                 IconButton(
-                    icon: const Icon(Icons.refresh),
-                    onPressed: _loadData,
-                    tooltip: 'Refresh'),
+                  icon: const Icon(Icons.refresh),
+                  onPressed: _loadData,
+                  tooltip: 'Refresh',
+                ),
               ],
             ),
       body: RefreshIndicator(
@@ -99,17 +105,28 @@ class _SubscriptionDetailsScreenState extends State<SubscriptionDetailsScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.credit_card_off,
-                        size: 64, color: AppTheme.gray600),
+                    Icon(
+                      Icons.credit_card_off,
+                      size: 64,
+                      color: AppColors.of(context).textSecondary,
+                    ),
                     const SizedBox(height: 16),
-                    Text('No active subscription',
-                        style: TextStyle(
-                            fontSize: 18, color: AppTheme.gray600)),
+                    Text(
+                      'No active subscription',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: AppColors.of(context).textSecondary,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     if (sp.error != null)
-                      Text(sp.error!,
-                          style: TextStyle(
-                              fontSize: 13, color: AppTheme.errorColor)),
+                      Text(
+                        sp.error!,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.of(context).critical,
+                        ),
+                      ),
                   ],
                 ),
               );
@@ -142,8 +159,10 @@ class _SubscriptionDetailsScreenState extends State<SubscriptionDetailsScreen> {
                       icon: const Icon(Icons.cancel),
                       label: const Text('Cancel Subscription'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.errorColor,
-                        side: const BorderSide(color: AppTheme.errorColor),
+                        foregroundColor: AppColors.of(context).critical,
+                        side: BorderSide(
+                          color: AppColors.of(context).critical,
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                     ),
@@ -152,16 +171,20 @@ class _SubscriptionDetailsScreenState extends State<SubscriptionDetailsScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppTheme.warningColor.withValues(alpha: 0.1),
+                        color: AppColors.of(
+                          context,
+                        ).warning.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                            color:
-                                AppTheme.warningColor.withValues(alpha: 0.3)),
+                          color: AppColors.of(
+                            context,
+                          ).warning.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Text(
                         'This subscription will cancel at the end of the '
                         'current billing period.',
-                        style: TextStyle(color: AppTheme.warningColor),
+                        style: TextStyle(color: AppColors.of(context).warning),
                       ),
                     ),
                 ],
@@ -189,22 +212,22 @@ class _StatusCard extends StatelessWidget {
 
     switch (sub.status as String) {
       case 'trial':
-        color = AppTheme.warningColor;
+        color = AppColors.of(context).warning;
         icon = Icons.schedule;
         label = 'Free Trial';
         break;
       case 'active':
-        color = AppTheme.successColor;
+        color = AppColors.of(context).success;
         icon = Icons.check_circle;
         label = 'Active';
         break;
       case 'past_due':
-        color = AppTheme.errorColor;
+        color = AppColors.of(context).critical;
         icon = Icons.error;
         label = 'Payment Past Due';
         break;
       default:
-        color = AppTheme.gray600;
+        color = AppColors.of(context).textSecondary;
         icon = Icons.cancel;
         label = (sub.status as String).replaceAll('_', ' ').toUpperCase();
     }
@@ -217,7 +240,7 @@ class _StatusCard extends StatelessWidget {
           gradient: LinearGradient(
             colors: [
               color.withValues(alpha: 0.1),
-              color.withValues(alpha: 0.05)
+              color.withValues(alpha: 0.05),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -227,15 +250,23 @@ class _StatusCard extends StatelessWidget {
           children: [
             Icon(icon, size: 56, color: color),
             const SizedBox(height: 12),
-            Text(label,
-                style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: color)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
             if (sub.isTrial == true && sub.trialDaysRemaining != null) ...[
               const SizedBox(height: 8),
-              Text('${sub.trialDaysRemaining} days remaining',
-                  style: TextStyle(fontSize: 16, color: AppTheme.gray600)),
+              Text(
+                '${sub.trialDaysRemaining} days remaining',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppColors.of(context).textSecondary,
+                ),
+              ),
             ],
             if (sub.currentPeriodEnd != null) ...[
               const SizedBox(height: 4),
@@ -243,7 +274,10 @@ class _StatusCard extends StatelessWidget {
                 sub.isTrial == true
                     ? 'Trial ends ${_fmt(sub.trialEndsAt ?? sub.currentPeriodEnd)}'
                     : 'Renews ${_fmt(sub.currentPeriodEnd)}',
-                style: TextStyle(fontSize: 13, color: AppTheme.gray600),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.of(context).textSecondary,
+                ),
               ),
             ],
           ],
@@ -274,22 +308,29 @@ class _DetailsCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
-              Icon(Icons.receipt_long, color: AppTheme.primaryColor),
-              const SizedBox(width: 8),
-              const Text('Plan Details',
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
-            ]),
+            Row(
+              children: [
+                Icon(Icons.receipt_long, color: AppColors.of(context).accent),
+                const SizedBox(width: 8),
+                const Text(
+                  'Plan Details',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
             const Divider(height: 24),
-            if (plan != null) ...[
-              _Row('Plan', '${plan.name} (${plan.slug})'),
-            ],
-            _Row('Billing', sub.billingCycle == 'annual' ? 'Annual' : 'Monthly'),
-            _Row('Amount', sub.formattedAmount),
-            _Row('Currency', sub.currency as String),
+            if (plan != null)
+              ...[_Row(context, 'Plan', '${plan.name} (${plan.slug})')],
+            _Row(
+              context,
+              'Billing',
+              sub.billingCycle == 'annual' ? 'Annual' : 'Monthly',
+            ),
+            _Row(context, 'Amount', sub.formattedAmount),
+            _Row(context, 'Currency', sub.currency as String),
             if (sub.currentPeriodStart != null)
               _Row(
+                context,
                 'Period',
                 '${_fmt(sub.currentPeriodStart)} – ${_fmt(sub.currentPeriodEnd)}',
               ),
@@ -299,22 +340,27 @@ class _DetailsCard extends StatelessWidget {
     );
   }
 
-  Widget _Row(String label, String value) => Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-                width: 100,
-                child: Text(label,
-                    style: TextStyle(color: AppTheme.gray600))),
-            Expanded(
-                child: Text(value,
-                    style:
-                        const TextStyle(fontWeight: FontWeight.w600))),
-          ],
+  Widget _Row(BuildContext context, String label, String value) => Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 100,
+          child: Text(
+            label,
+            style: TextStyle(color: AppColors.of(context).textSecondary),
+          ),
         ),
-      );
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
+    ),
+  );
 
   String _fmt(DateTime? dt) {
     if (dt == null) return '—';
@@ -337,29 +383,36 @@ class _InvoiceList extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
-              Icon(Icons.description, color: AppTheme.primaryColor),
-              const SizedBox(width: 8),
-              const Text('Recent Invoices',
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
-            ]),
+            Row(
+              children: [
+                Icon(Icons.description, color: AppColors.of(context).accent),
+                const SizedBox(width: 8),
+                const Text(
+                  'Recent Invoices',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
             const Divider(height: 16),
-            ...invoices.take(5).map((inv) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(
-                    inv.isPaid ? Icons.check_circle : Icons.pending,
-                    color: inv.isPaid
-                        ? AppTheme.successColor
-                        : AppTheme.warningColor,
+            ...invoices
+                .take(5)
+                .map(
+                  (inv) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      inv.isPaid ? Icons.check_circle : Icons.pending,
+                      color: inv.isPaid
+                          ? AppColors.of(context).success
+                          : AppColors.of(context).warning,
+                    ),
+                    title: Text(inv.invoiceNumber as String),
+                    subtitle: Text('${_fmt(inv.invoiceDate)} · ${inv.status}'),
+                    trailing: Text(
+                      inv.formattedTotal as String,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
-                  title: Text(inv.invoiceNumber as String),
-                  subtitle: Text(
-                      '${_fmt(inv.invoiceDate)} · ${inv.status}'),
-                  trailing: Text(inv.formattedTotal as String,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold)),
-                )),
+                ),
           ],
         ),
       ),

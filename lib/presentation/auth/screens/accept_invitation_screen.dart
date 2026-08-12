@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/platform.dart';
-import '../../../config/theme.dart';
 import '../../../data/models/auth_models.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../dashboard/screens/provider_dashboard_screen.dart';
 import 'facility_picker_screen.dart';
+import '../../../config/app_colors.dart';
 
 /// Accepts a staff invitation and creates the account.
 ///
@@ -21,8 +21,7 @@ class AcceptInvitationScreen extends StatefulWidget {
   const AcceptInvitationScreen({super.key});
 
   @override
-  State<AcceptInvitationScreen> createState() =>
-      _AcceptInvitationScreenState();
+  State<AcceptInvitationScreen> createState() => _AcceptInvitationScreenState();
 }
 
 class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
@@ -80,14 +79,18 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
     setState(() => _loading = false);
 
     if (invitation == null) {
-      setState(() => _errorMessage =
-          auth.error ?? 'Invitation not found or has expired.');
+      setState(
+        () => _errorMessage =
+            auth.error ?? 'Invitation not found or has expired.',
+      );
       return;
     }
 
     if (invitation.isExpired) {
-      setState(() => _errorMessage =
-          'This invitation expired. Ask your administrator to send a new one.');
+      setState(
+        () => _errorMessage =
+            'This invitation expired. Ask your administrator to send a new one.',
+      );
       return;
     }
 
@@ -160,21 +163,36 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppTheme.errorColor.withValues(alpha: 0.08),
+                          color: AppColors.of(
+                            context,
+                          ).critical.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Row(children: [
-                          Icon(Icons.error_outline, color: AppTheme.errorColor, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(_errorMessage!,
-                                style: TextStyle(color: AppTheme.errorColor)),
-                          ),
-                        ]),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: AppColors.of(context).critical,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _errorMessage!,
+                                style: TextStyle(
+                                  color: AppColors.of(context).critical,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 16),
                     ],
-                    if (_invitation == null) ..._buildTokenStep() else ..._buildRegistrationStep(),
+                    if (_invitation == null)
+                      ..._buildTokenStep()
+                    else
+                      ..._buildRegistrationStep(),
                   ],
                 ),
               ),
@@ -187,7 +205,7 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
 
   List<Widget> _buildTokenStep() {
     return [
-      Icon(Icons.mail_outline, size: 48, color: AppTheme.primaryColor),
+      Icon(Icons.mail_outline, size: 48, color: AppColors.of(context).accent),
       const SizedBox(height: 12),
       const Text(
         'Paste the invitation link (or just the token) from your email.',
@@ -211,7 +229,11 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
             ? const SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
             : const Text('Continue'),
       ),
     ];
@@ -223,51 +245,65 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
       Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.primaryColor.withValues(alpha: 0.08),
+          color: AppColors.of(context).accent.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(invitation.facilityName,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              invitation.facilityName,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 4),
-            Text(invitation.email, style: TextStyle(color: AppTheme.gray600)),
+            Text(
+              invitation.email,
+              style: TextStyle(color: AppColors.of(context).textSecondary),
+            ),
             if (invitation.staffType != null) ...[
               const SizedBox(height: 4),
               Text(
                 [
                   invitation.staffType!.replaceAll('_', ' '),
-                  if (invitation.clinicalRankName != null) invitation.clinicalRankName,
-                  if (invitation.department != null && invitation.department!.isNotEmpty)
+                  if (invitation.clinicalRankName != null)
+                    invitation.clinicalRankName,
+                  if (invitation.department != null &&
+                      invitation.department!.isNotEmpty)
                     invitation.department,
                 ].whereType<String>().join(' · '),
-                style: TextStyle(color: AppTheme.gray600, fontSize: 12),
+                style: TextStyle(
+                  color: AppColors.of(context).textSecondary,
+                  fontSize: 12,
+                ),
               ),
             ],
           ],
         ),
       ),
       const SizedBox(height: 20),
-      Row(children: [
-        Expanded(
-          child: TextFormField(
-            controller: _firstNameController,
-            enabled: !_loading,
-            decoration: const InputDecoration(labelText: 'First name *'),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+      Row(
+        children: [
+          Expanded(
+            child: TextFormField(
+              controller: _firstNameController,
+              enabled: !_loading,
+              decoration: const InputDecoration(labelText: 'First name *'),
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Required' : null,
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: TextFormField(
-            controller: _lastNameController,
-            enabled: !_loading,
-            decoration: const InputDecoration(labelText: 'Last name *'),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextFormField(
+              controller: _lastNameController,
+              enabled: !_loading,
+              decoration: const InputDecoration(labelText: 'Last name *'),
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Required' : null,
+            ),
           ),
-        ),
-      ]),
+        ],
+      ),
       const SizedBox(height: 16),
       TextFormField(
         controller: _phoneController,
@@ -279,7 +315,9 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
       TextFormField(
         controller: _licenseController,
         enabled: !_loading,
-        decoration: const InputDecoration(labelText: 'License number (optional)'),
+        decoration: const InputDecoration(
+          labelText: 'License number (optional)',
+        ),
       ),
       const SizedBox(height: 16),
       TextFormField(
@@ -288,16 +326,25 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
         obscureText: _obscurePassword,
         decoration: InputDecoration(
           labelText: 'Password',
-          helperText: 'At least 12 characters, with upper/lowercase, a number, and a symbol.',
+          helperText:
+              'At least 12 characters, with upper/lowercase, a number, and a symbol.',
           helperMaxLines: 2,
           suffixIcon: IconButton(
-            icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+            icon: Icon(
+              _obscurePassword
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+            ),
+            onPressed: () =>
+                setState(() => _obscurePassword = !_obscurePassword),
           ),
         ),
         validator: (v) {
-          if (v == null || v.length < 12) return 'Must be at least 12 characters';
-          final strong = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])');
+          if (v == null || v.length < 12)
+            return 'Must be at least 12 characters';
+          final strong = RegExp(
+            r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])',
+          );
           if (!strong.hasMatch(v)) {
             return 'Needs uppercase, lowercase, a number, and a symbol (@\$!%*?&)';
           }
@@ -320,7 +367,11 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
             ? const SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
             : const Text('Create Account'),
       ),
       const SizedBox(height: 12),
@@ -328,9 +379,9 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
         onPressed: _loading
             ? null
             : () => setState(() {
-                  _invitation = null;
-                  _errorMessage = null;
-                }),
+                _invitation = null;
+                _errorMessage = null;
+              }),
         child: const Text('Use a different invitation'),
       ),
     ];

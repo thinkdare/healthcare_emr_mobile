@@ -36,10 +36,11 @@ class SyncProvider extends ChangeNotifier {
   // ── Connectivity ───────────────────────────────────────────────────────────
 
   void _subscribeToConnectivity() {
-    _connectivitySub = Connectivity()
-        .onConnectivityChanged
-        .listen((List<ConnectivityResult> results) {
-      final online = results.isNotEmpty &&
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((
+      List<ConnectivityResult> results,
+    ) {
+      final online =
+          results.isNotEmpty &&
           results.any((r) => r != ConnectivityResult.none);
       if (!online) {
         _status = SyncStatus.offline;
@@ -52,7 +53,8 @@ class SyncProvider extends ChangeNotifier {
 
     // Check initial connectivity state
     Connectivity().checkConnectivity().then((results) {
-      final online = results.isNotEmpty &&
+      final online =
+          results.isNotEmpty &&
           results.any((r) => r != ConnectivityResult.none);
       if (!online) {
         _status = SyncStatus.offline;
@@ -120,8 +122,12 @@ class SyncProvider extends ChangeNotifier {
     String? notes,
   }) async {
     try {
-      await repository.resolveConflict(id, strategy,
-          mergedData: mergedData, notes: notes);
+      await repository.resolveConflict(
+        id,
+        strategy,
+        mergedData: mergedData,
+        notes: notes,
+      );
       _conflicts = _conflicts.where((c) => c.id != id).toList();
       _pendingConflicts = _conflicts.where((c) => c.isPending).length;
       notifyListeners();

@@ -8,7 +8,7 @@ import '../repositories/auth_repository.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 enum AuthState {
-  loading,        // Checking stored token on app start
+  loading, // Checking stored token on app start
   unauthenticated,
   awaitingTwoFactor,
   awaitingFacility, // Logged in but no facility selected yet
@@ -118,10 +118,7 @@ class AuthProvider extends ChangeNotifier {
 
   /// Returns true if login succeeded (or 2FA challenge was issued).
   /// Returns false on credential error.
-  Future<bool> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> login({required String email, required String password}) async {
     _error = null;
 
     try {

@@ -5,10 +5,10 @@ import '../../../core/platform.dart';
 import '../../../data/models/auth_models.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/organization_provider.dart';
-import '../../../config/theme.dart';
 import 'accept_invitation_screen.dart';
 import 'facility_picker_screen.dart';
 import '../../dashboard/screens/provider_dashboard_screen.dart';
+import '../../../config/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -207,20 +207,30 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // ── Header ───────────────────────────────────────────
-                      Icon(Icons.local_hospital,
-                          size: 80, color: AppTheme.primaryColor),
+                      Icon(
+                        Icons.local_hospital,
+                        size: 80,
+                        color: AppColors.of(context).accent,
+                      ),
                       const SizedBox(height: 16),
-                      const Text('Healthcare EMR',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontSize: 28, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Healthcare EMR',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         show2FA
                             ? 'Two-Factor Authentication'
                             : 'Provider Login',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 16, color: AppTheme.gray600),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppColors.of(context).textSecondary,
+                        ),
                       ),
                       const SizedBox(height: 48),
 
@@ -287,16 +297,17 @@ class _LoginScreenState extends State<LoginScreen> {
           // ── Step 1 ────────────────────────────────────────────────────
           AdaptiveFilledButton(
             onPressed: _loading ? null : _checkEmail,
-            child: _loading
-                ? _LoadingSpinner()
-                : const Text('Next'),
+            child: _loading ? _LoadingSpinner() : const Text('Next'),
           ),
           const SizedBox(height: 16),
           AdaptiveTextButton(
             onPressed: _loading
                 ? null
-                : () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const AcceptInvitationScreen())),
+                : () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const AcceptInvitationScreen(),
+                    ),
+                  ),
             child: const Text('Have an invitation?'),
           ),
         ] else ...[
@@ -312,9 +323,11 @@ class _LoginScreenState extends State<LoginScreen> {
               hintText: 'Enter your password',
               prefixIcon: const Icon(Icons.lock_outlined),
               suffixIcon: IconButton(
-                icon: Icon(_obscurePassword
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined),
+                icon: Icon(
+                  _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                ),
                 onPressed: () =>
                     setState(() => _obscurePassword = !_obscurePassword),
               ),
@@ -328,7 +341,10 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 16),
           AdaptiveTextButton(
             onPressed: () {
-              showAdaptiveToast(context, 'Contact your administrator to reset your password.');
+              showAdaptiveToast(
+                context,
+                'Contact your administrator to reset your password.',
+              );
             },
             child: const Text('Forgot Password?'),
           ),
@@ -346,19 +362,25 @@ class _LoginScreenState extends State<LoginScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withValues(alpha: 0.08),
+            color: AppColors.of(context).accent.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Column(children: [
-            Icon(Icons.security, color: AppTheme.primaryColor, size: 40),
-            const SizedBox(height: 12),
-            const Text(
-              'Enter the 6-digit code from your authenticator app, '
-              'or one of your backup codes.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14),
-            ),
-          ]),
+          child: Column(
+            children: [
+              Icon(
+                Icons.security,
+                color: AppColors.of(context).accent,
+                size: 40,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Enter the 6-digit code from your authenticator app, '
+                'or one of your backup codes.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 24),
         TextFormField(
@@ -413,26 +435,39 @@ class _FacilitySelector extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: AppTheme.primaryColor.withValues(alpha: 0.06),
+          color: AppColors.of(context).accent.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2)),
+          border: Border.all(
+            color: AppColors.of(context).accent.withValues(alpha: 0.2),
+          ),
         ),
         child: Row(
           children: [
-            Icon(Icons.local_hospital_outlined,
-                size: 18, color: AppTheme.primaryColor),
+            Icon(
+              Icons.local_hospital_outlined,
+              size: 18,
+              color: AppColors.of(context).accent,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(f.name,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 14)),
+                  Text(
+                    f.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
                   if (f.organization != null)
-                    Text(f.organization!.name,
-                        style: TextStyle(
-                            fontSize: 12, color: AppTheme.gray600)),
+                    Text(
+                      f.organization!.name,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.of(context).textSecondary,
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -456,12 +491,21 @@ class _FacilitySelector extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(f.name,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w500, fontSize: 14)),
+              Text(
+                f.name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                ),
+              ),
               if (f.organization != null)
-                Text(f.organization!.name,
-                    style: TextStyle(fontSize: 12, color: AppTheme.gray600)),
+                Text(
+                  f.organization!.name,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.of(context).textSecondary,
+                  ),
+                ),
             ],
           ),
         );
@@ -481,17 +525,28 @@ class _ErrorBox extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.errorColor.withValues(alpha: 0.1),
+        color: AppColors.of(context).critical.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.errorColor.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: AppColors.of(context).critical.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline, color: AppTheme.errorColor, size: 20),
+          Icon(
+            Icons.error_outline,
+            color: AppColors.of(context).critical,
+            size: 20,
+          ),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(message,
-                style: TextStyle(color: AppTheme.errorColor, fontSize: 14)),
+            child: Text(
+              message,
+              style: TextStyle(
+                color: AppColors.of(context).critical,
+                fontSize: 14,
+              ),
+            ),
           ),
         ],
       ),
@@ -506,8 +561,9 @@ class _LoadingSpinner extends StatelessWidget {
       height: 20,
       width: 20,
       child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation(Colors.white)),
+        strokeWidth: 2,
+        valueColor: AlwaysStoppedAnimation(Colors.white),
+      ),
     );
   }
 }

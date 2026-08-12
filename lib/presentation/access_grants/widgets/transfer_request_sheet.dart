@@ -44,12 +44,18 @@ class _TransferRequestSheetState extends State<TransferRequestSheet> {
   }
 
   Future<void> _loadColleagues() async {
-    setState(() { _loadingColleagues = true; _loadError = null; });
+    setState(() {
+      _loadingColleagues = true;
+      _loadError = null;
+    });
     try {
       // Capture context-dependent values before the async gap
-      final apiClient     = context.read<IntraTransferProvider>().repository.apiClient;
+      final apiClient = context
+          .read<IntraTransferProvider>()
+          .repository
+          .apiClient;
       final currentUserId = context.read<AuthProvider>().currentUserId;
-      final repo  = FacilityRepository(apiClient: apiClient);
+      final repo = FacilityRepository(apiClient: apiClient);
       final staff = await repo.listStaffAtCurrentTenant();
 
       // Exclude self — a doctor cannot transfer to themselves
@@ -73,17 +79,16 @@ class _TransferRequestSheetState extends State<TransferRequestSheet> {
 
     setState(() => _saving = true);
 
-    final success = await context.read<IntraTransferProvider>().create(
-      widget.patientId,
-      {
-        'to_provider_id':   _selectedColleague!['user_id'] as String,
-        'to_membership_id': _selectedColleague!['membership_id'] as String,
-        if (_notesCtrl.text.trim().isNotEmpty)
-          'handover_notes': _notesCtrl.text.trim(),
-        if (widget.rosterEntryId != null)
-          'roster_entry_id': widget.rosterEntryId,
-      },
-    );
+    final success = await context
+        .read<IntraTransferProvider>()
+        .create(widget.patientId, {
+          'to_provider_id': _selectedColleague!['user_id'] as String,
+          'to_membership_id': _selectedColleague!['membership_id'] as String,
+          if (_notesCtrl.text.trim().isNotEmpty)
+            'handover_notes': _notesCtrl.text.trim(),
+          if (widget.rosterEntryId != null)
+            'roster_entry_id': widget.rosterEntryId,
+        });
 
     if (!mounted) return;
     setState(() => _saving = false);
@@ -93,7 +98,8 @@ class _TransferRequestSheetState extends State<TransferRequestSheet> {
     } else {
       showAdaptiveToast(
         context,
-        context.read<IntraTransferProvider>().error ?? 'Failed to send transfer request.',
+        context.read<IntraTransferProvider>().error ??
+            'Failed to send transfer request.',
         type: ToastType.error,
       );
     }
@@ -117,9 +123,12 @@ class _TransferRequestSheetState extends State<TransferRequestSheet> {
             // Drag handle
             Container(
               margin: const EdgeInsets.symmetric(vertical: 8),
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                color: theme.colorScheme.onSurfaceVariant.withValues(
+                  alpha: 0.3,
+                ),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -130,9 +139,12 @@ class _TransferRequestSheetState extends State<TransferRequestSheet> {
                 children: [
                   const Icon(Icons.swap_horiz, size: 20),
                   const SizedBox(width: 8),
-                  Text('Transfer Patient',
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    'Transfer Patient',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -156,44 +168,52 @@ class _TransferRequestSheetState extends State<TransferRequestSheet> {
                       ),
                     )
                   else if (_loadError != null)
-                    _ErrorBanner(
-                      message: _loadError!,
-                      onRetry: _loadColleagues,
-                    )
+                    _ErrorBanner(message: _loadError!, onRetry: _loadColleagues)
                   else if (_colleagues.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       child: Text(
                         'No other doctors are available at this facility.',
                         style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant),
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     )
                   else
                     Container(
                       decoration: BoxDecoration(
                         border: Border.all(
-                            color: theme.colorScheme.outline.withValues(alpha: 0.3)),
+                          color: theme.colorScheme.outline.withValues(
+                            alpha: 0.3,
+                          ),
+                        ),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Column(
                         children: _colleagues.map((colleague) {
                           final isSelected =
-                              _selectedColleague?['user_id'] == colleague['user_id'];
+                              _selectedColleague?['user_id'] ==
+                              colleague['user_id'];
                           return InkWell(
                             onTap: () =>
                                 setState(() => _selectedColleague = colleague),
                             borderRadius: BorderRadius.circular(10),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 12),
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
                               child: Row(
                                 children: [
                                   CircleAvatar(
                                     radius: 18,
                                     backgroundColor: isSelected
-                                        ? theme.colorScheme.primary.withValues(alpha: 0.15)
-                                        : theme.colorScheme.surfaceContainerHighest,
+                                        ? theme.colorScheme.primary.withValues(
+                                            alpha: 0.15,
+                                          )
+                                        : theme
+                                              .colorScheme
+                                              .surfaceContainerHighest,
                                     child: Text(
                                       (colleague['name'] as String)
                                           .split(' ')
@@ -205,19 +225,24 @@ class _TransferRequestSheetState extends State<TransferRequestSheet> {
                                         fontWeight: FontWeight.bold,
                                         color: isSelected
                                             ? theme.colorScheme.primary
-                                            : theme.colorScheme.onSurfaceVariant,
+                                            : theme
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
                                       ),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           colleague['name'] as String,
                                           style: theme.textTheme.bodyMedium
-                                              ?.copyWith(fontWeight: FontWeight.w600),
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                         ),
                                         if ((colleague['staff_type'] as String)
                                             .isNotEmpty)
@@ -227,16 +252,20 @@ class _TransferRequestSheetState extends State<TransferRequestSheet> {
                                                 .toUpperCase(),
                                             style: theme.textTheme.labelSmall
                                                 ?.copyWith(
-                                                    color: theme.colorScheme
-                                                        .onSurfaceVariant),
+                                                  color: theme
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
                                           ),
                                       ],
                                     ),
                                   ),
                                   if (isSelected)
-                                    Icon(Icons.check_circle,
-                                        color: theme.colorScheme.primary,
-                                        size: 20),
+                                    Icon(
+                                      Icons.check_circle,
+                                      color: theme.colorScheme.primary,
+                                      size: 20,
+                                    ),
                                 ],
                               ),
                             ),
@@ -268,13 +297,18 @@ class _TransferRequestSheetState extends State<TransferRequestSheet> {
 
             Padding(
               padding: EdgeInsets.fromLTRB(
-                  16, 8, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+                16,
+                8,
+                16,
+                MediaQuery.of(context).viewInsets.bottom + 16,
+              ),
               child: Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed:
-                          _saving ? null : () => Navigator.of(context).pop(false),
+                      onPressed: _saving
+                          ? null
+                          : () => Navigator.of(context).pop(false),
                       child: const Text('Cancel'),
                     ),
                   ),
@@ -288,7 +322,10 @@ class _TransferRequestSheetState extends State<TransferRequestSheet> {
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white))
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
                           : const Text('Send Transfer Request'),
                     ),
                   ),
@@ -318,14 +355,19 @@ class _ErrorBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline,
-              size: 16,
-              color: Theme.of(context).colorScheme.onErrorContainer),
+          Icon(
+            Icons.error_outline,
+            size: 16,
+            color: Theme.of(context).colorScheme.onErrorContainer,
+          ),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(message,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onErrorContainer)),
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onErrorContainer,
+              ),
+            ),
           ),
           TextButton(onPressed: onRetry, child: const Text('Retry')),
         ],

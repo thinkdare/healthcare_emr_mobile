@@ -2,8 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
-import '../../../config/theme.dart';
 import '../../../data/providers/access_grant_provider.dart';
+import '../../../config/app_colors.dart';
 
 /// RequestAccessScreen
 ///
@@ -31,18 +31,18 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
   bool _saving = false;
 
   static const _accessLevels = [
-    ('view_only',       'View only'),
+    ('view_only', 'View only'),
     ('view_and_update', 'View & update'),
-    ('full_access',     'Full access'),
+    ('full_access', 'Full access'),
   ];
 
   static const _allDataTypes = [
-    ('demographics',    'Demographics'),
-    ('medications',     'Medications'),
-    ('allergies',       'Allergies'),
-    ('lab_results',     'Lab results'),
-    ('prescriptions',   'Prescriptions'),
-    ('appointments',    'Appointments'),
+    ('demographics', 'Demographics'),
+    ('medications', 'Medications'),
+    ('allergies', 'Allergies'),
+    ('lab_results', 'Lab results'),
+    ('prescriptions', 'Prescriptions'),
+    ('appointments', 'Appointments'),
     ('medical_history', 'Medical history'),
   ];
 
@@ -50,7 +50,8 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
   void initState() {
     super.initState();
     _patientIdCtrl = TextEditingController(
-        text: widget.prefillGlobalPatientId ?? '');
+      text: widget.prefillGlobalPatientId ?? '',
+    );
     // Default: select all data types
     for (final t in _allDataTypes) {
       _dataTypes.add(t.$1);
@@ -82,17 +83,19 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
 
     final data = <String, dynamic>{
       'global_patient_id': _patientIdCtrl.text.trim(),
-      'access_level':      _accessLevel,
-      'reason':            _reasonCtrl.text.trim(),
+      'access_level': _accessLevel,
+      'reason': _reasonCtrl.text.trim(),
       if (_dataTypes.isNotEmpty) 'data_types': _dataTypes.toList(),
       if (_expiresAt != null)
-        'expires_at': '${_expiresAt!.year}-'
+        'expires_at':
+            '${_expiresAt!.year}-'
             '${_expiresAt!.month.toString().padLeft(2, '0')}-'
             '${_expiresAt!.day.toString().padLeft(2, '0')}',
     };
 
-    final result =
-        await context.read<AccessGrantProvider>().requestAccess(data);
+    final result = await context.read<AccessGrantProvider>().requestAccess(
+      data,
+    );
 
     if (!mounted) return;
     setState(() => _saving = false);
@@ -136,13 +139,17 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation(Colors.white)))
-                      : const Text('Submit',
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Submit',
                           style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ],
             ),
@@ -158,15 +165,19 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                  color: AppColors.of(context).accent.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.2)),
+                    color: AppColors.of(context).accent.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline,
-                        color: AppTheme.primaryColor, size: 18),
+                    Icon(
+                      Icons.info_outline,
+                      color: AppColors.of(context).accent,
+                      size: 18,
+                    ),
                     const SizedBox(width: 10),
                     const Expanded(
                       child: Text(
@@ -195,8 +206,9 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
                   }
                   // Basic UUID format check
                   final uuidRe = RegExp(
-                      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-                      caseSensitive: false);
+                    r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+                    caseSensitive: false,
+                  );
                   if (!uuidRe.hasMatch(v.trim())) {
                     return 'Enter a valid UUID (from patient records or referral)';
                   }
@@ -207,11 +219,11 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
               _sectionHeader('Access Level'),
               AdaptiveDropdown<String>(
                 value: _accessLevel,
-                decoration:
-                    const InputDecoration(labelText: 'Access Level *'),
+                decoration: const InputDecoration(labelText: 'Access Level *'),
                 items: _accessLevels
-                    .map((l) => DropdownMenuItem(
-                        value: l.$1, child: Text(l.$2)))
+                    .map(
+                      (l) => DropdownMenuItem(value: l.$1, child: Text(l.$2)),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _accessLevel = v!),
               ),
@@ -239,9 +251,10 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
                         }
                       });
                     },
-                    selectedColor:
-                        AppTheme.primaryColor.withValues(alpha: 0.15),
-                    checkmarkColor: AppTheme.primaryColor,
+                    selectedColor: AppColors.of(
+                      context,
+                    ).accent.withValues(alpha: 0.15),
+                    checkmarkColor: AppColors.of(context).accent,
                   );
                 }).toList(),
               ),
@@ -278,11 +291,14 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
                   child: Text(
                     _expiresAt != null
                         ? '${_expiresAt!.day.toString().padLeft(2, '0')}/'
-                            '${_expiresAt!.month.toString().padLeft(2, '0')}/'
-                            '${_expiresAt!.year}'
+                              '${_expiresAt!.month.toString().padLeft(2, '0')}/'
+                              '${_expiresAt!.year}'
                         : 'No expiry (access until revoked)',
                     style: TextStyle(
-                        color: _expiresAt != null ? null : AppTheme.gray600),
+                      color: _expiresAt != null
+                          ? null
+                          : AppColors.of(context).textSecondary,
+                    ),
                   ),
                 ),
               ),
@@ -291,8 +307,10 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
                 AdaptiveTextButton(
                   onPressed: () => setState(() => _expiresAt = null),
                   icon: const Icon(Icons.clear, size: 14),
-                  child: const Text('Clear expiry date',
-                      style: TextStyle(fontSize: 12)),
+                  child: const Text(
+                    'Clear expiry date',
+                    style: TextStyle(fontSize: 12),
+                  ),
                 ),
               ],
 
@@ -305,17 +323,20 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
   }
 
   Widget _sectionHeader(String title) => Padding(
-        padding: const EdgeInsets.only(top: 24, bottom: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title,
-                style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor)),
-            const Divider(height: 8),
-          ],
+    padding: const EdgeInsets.only(top: 24, bottom: 12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: AppColors.of(context).accent,
+          ),
         ),
-      );
+        const Divider(height: 8),
+      ],
+    ),
+  );
 }

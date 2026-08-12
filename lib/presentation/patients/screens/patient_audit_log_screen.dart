@@ -1,10 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../config/theme.dart';
 import '../../../core/platform.dart';
 import '../../../data/providers/clinical_provider.dart';
-import '../../../data/repositories/reporting_repository.dart' show AuditLogEntry;
+import '../../../data/repositories/reporting_repository.dart'
+    show AuditLogEntry;
+import '../../../config/app_colors.dart';
 
 /// Shows the immutable access-audit trail for a single patient. Restricted
 /// server-side to the patient's primary provider or a super admin
@@ -29,7 +30,10 @@ class _PatientAuditLogScreenState extends State<PatientAuditLogScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ClinicalProvider>().loadAuditLog(widget.patientId, refresh: true);
+      context.read<ClinicalProvider>().loadAuditLog(
+        widget.patientId,
+        refresh: true,
+      );
     });
   }
 
@@ -50,8 +54,7 @@ class _PatientAuditLogScreenState extends State<PatientAuditLogScreen> {
           if (cp.auditLogError != null && cp.auditLog.isEmpty) {
             return _ErrorState(
               message: cp.auditLogError!,
-              onRetry: () =>
-                  cp.loadAuditLog(widget.patientId, refresh: true),
+              onRetry: () => cp.loadAuditLog(widget.patientId, refresh: true),
             );
           }
 
@@ -60,10 +63,18 @@ class _PatientAuditLogScreenState extends State<PatientAuditLogScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.history, size: 48, color: AppTheme.gray600),
+                  Icon(
+                    Icons.history,
+                    size: 48,
+                    color: AppColors.of(context).textSecondary,
+                  ),
                   const SizedBox(height: 12),
-                  Text('No audit events found',
-                      style: TextStyle(color: AppTheme.gray600)),
+                  Text(
+                    'No audit events found',
+                    style: TextStyle(
+                      color: AppColors.of(context).textSecondary,
+                    ),
+                  ),
                 ],
               ),
             );
@@ -112,7 +123,11 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.lock_outline, size: 48, color: AppTheme.errorColor),
+            Icon(
+              Icons.lock_outline,
+              size: 48,
+              color: AppColors.of(context).critical,
+            ),
             const SizedBox(height: 12),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 16),
@@ -130,14 +145,18 @@ class _AuditEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final emergencyColor = entry.wasEmergency ? AppTheme.errorColor : null;
+    final emergencyColor = entry.wasEmergency
+        ? AppColors.of(context).critical
+        : null;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: entry.wasEmergency
-            ? BorderSide(color: AppTheme.errorColor.withValues(alpha: 0.4))
+            ? BorderSide(
+                color: AppColors.of(context).critical.withValues(alpha: 0.4),
+              )
             : BorderSide.none,
       ),
       child: Padding(
@@ -149,14 +168,14 @@ class _AuditEntryCard extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: (emergencyColor ?? AppTheme.primaryColor)
+                color: (emergencyColor ?? AppColors.of(context).accent)
                     .withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 _actionIcon(entry.action),
                 size: 18,
-                color: emergencyColor ?? AppTheme.primaryColor,
+                color: emergencyColor ?? AppColors.of(context).accent,
               ),
             ),
             const SizedBox(width: 12),
@@ -164,54 +183,81 @@ class _AuditEntryCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: [
-                    Text(
-                      entry.actionDisplay,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                        color: emergencyColor,
-                      ),
-                    ),
-                    if (entry.resourceType != null) ...[
-                      const Text(' · ',
-                          style: TextStyle(color: AppTheme.gray600)),
-                      Text(entry.resourceType!,
-                          style: const TextStyle(
-                              fontSize: 12, color: AppTheme.gray600)),
-                    ],
-                    const Spacer(),
-                    if (entry.wasEmergency)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppTheme.errorColor.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(4),
+                  Row(
+                    children: [
+                      Text(
+                        entry.actionDisplay,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          color: emergencyColor,
                         ),
-                        child: const Text(
-                          'EMERGENCY',
+                      ),
+                      if (entry.resourceType != null) ...[
+                        Text(
+                          ' · ',
                           style: TextStyle(
+                            color: AppColors.of(context).textSecondary,
+                          ),
+                        ),
+                        Text(
+                          entry.resourceType!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.of(context).textSecondary,
+                          ),
+                        ),
+                      ],
+                      const Spacer(),
+                      if (entry.wasEmergency)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.of(
+                              context,
+                            ).critical.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'EMERGENCY',
+                            style: TextStyle(
                               fontSize: 9,
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.errorColor),
+                              color: AppColors.of(context).critical,
+                            ),
+                          ),
                         ),
-                      ),
-                  ]),
+                    ],
+                  ),
                   const SizedBox(height: 2),
-                  Text(entry.authorityDisplay,
-                      style: const TextStyle(
-                          fontSize: 11, color: AppTheme.gray600)),
+                  Text(
+                    entry.authorityDisplay,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.of(context).textSecondary,
+                    ),
+                  ),
                   if (entry.accessedAt != null)
-                    Text(_formatDate(entry.accessedAt!),
-                        style: const TextStyle(
-                            fontSize: 11, color: AppTheme.gray600)),
+                    Text(
+                      _formatDate(entry.accessedAt!),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.of(context).textSecondary,
+                      ),
+                    ),
                   if (entry.wasOffline)
                     const Padding(
                       padding: EdgeInsets.only(top: 2),
-                      child: Text('Recorded offline',
-                          style: TextStyle(
-                              fontSize: 10, fontStyle: FontStyle.italic)),
+                      child: Text(
+                        'Recorded offline',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -223,14 +269,14 @@ class _AuditEntryCard extends StatelessWidget {
   }
 
   IconData _actionIcon(String action) => switch (action) {
-        'viewed' => Icons.visibility,
-        'created' => Icons.add_circle_outline,
-        'updated' => Icons.edit_outlined,
-        'deleted' => Icons.delete_outline,
-        'emergency_access' => Icons.warning_amber,
-        'access_denied' => Icons.block,
-        _ => Icons.receipt_long_outlined,
-      };
+    'viewed' => Icons.visibility,
+    'created' => Icons.add_circle_outline,
+    'updated' => Icons.edit_outlined,
+    'deleted' => Icons.delete_outline,
+    'emergency_access' => Icons.warning_amber,
+    'access_denied' => Icons.block,
+    _ => Icons.receipt_long_outlined,
+  };
 
   String _formatDate(DateTime dt) {
     final now = DateTime.now();

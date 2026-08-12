@@ -7,8 +7,13 @@ import '../../../data/models/sync_models.dart';
 class ConflictDetailSheet extends StatefulWidget {
   final SyncConflict conflict;
   final SyncDiff diff;
-  final Future<bool> Function(String id, String strategy,
-      {Map<String, dynamic>? mergedData, String? notes}) onResolve;
+  final Future<bool> Function(
+    String id,
+    String strategy, {
+    Map<String, dynamic>? mergedData,
+    String? notes,
+  })
+  onResolve;
 
   const ConflictDetailSheet({
     super.key,
@@ -32,14 +37,16 @@ class _ConflictDetailSheetState extends State<ConflictDetailSheet> {
   }
 
   String? _notesFieldName() => switch (widget.conflict.resourceType) {
-        'appointments'  => 'notes',
-        'lab_results'   => 'notes',
-        'prescriptions' => 'special_instructions',
-        _               => null,
-      };
+    'appointments' => 'notes',
+    'lab_results' => 'notes',
+    'prescriptions' => 'special_instructions',
+    _ => null,
+  };
 
-  Future<void> _submit(String strategy,
-      {Map<String, dynamic>? mergedData}) async {
+  Future<void> _submit(
+    String strategy, {
+    Map<String, dynamic>? mergedData,
+  }) async {
     setState(() => _isSubmitting = true);
     final ok = await widget.onResolve(
       widget.conflict.id,
@@ -94,8 +101,10 @@ class _ConflictDetailSheetState extends State<ConflictDetailSheet> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Text('Resolve Conflict',
-                style: Theme.of(context).textTheme.titleMedium),
+            child: Text(
+              'Resolve Conflict',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
           ),
           const Divider(height: 1),
           Expanded(
@@ -108,48 +117,54 @@ class _ConflictDetailSheetState extends State<ConflictDetailSheet> {
                   ...conflict.serverData.entries
                       .where((e) => !_isInternal(e.key))
                       .map((e) {
-                    final clientVal = conflict.clientData[e.key];
-                    final changed =
-                        diff.changedByClient.contains(e.key);
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: 130,
-                            child: Text(_label(e.key),
-                                style: TextStyle(
+                        final clientVal = conflict.clientData[e.key];
+                        final changed = diff.changedByClient.contains(e.key);
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 130,
+                                child: Text(
+                                  _label(e.key),
+                                  style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.grey.shade600)),
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(e.value?.toString() ?? '—',
-                                    style:
-                                        const TextStyle(fontSize: 13)),
-                                if (changed && clientVal != null) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                      'Your version: ${clientVal.toString()}',
-                                      style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      e.value?.toString() ?? '—',
+                                      style: const TextStyle(fontSize: 13),
+                                    ),
+                                    if (changed && clientVal != null) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Your version: ${clientVal.toString()}',
+                                        style: TextStyle(
                                           fontSize: 11,
                                           color: Colors.orange.shade700,
-                                          fontStyle: FontStyle.italic)),
-                                ],
-                              ],
-                            ),
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    );
-                  }),
+                        );
+                      }),
                   const SizedBox(height: 16),
-                  const Text('Resolution notes (optional)',
-                      style: TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.w600)),
+                  const Text(
+                    'Resolution notes (optional)',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 4),
                   TextField(
                     controller: _notesController,
@@ -158,7 +173,9 @@ class _ConflictDetailSheetState extends State<ConflictDetailSheet> {
                       border: OutlineInputBorder(),
                       hintText: 'Why did you choose this resolution?',
                       contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                     ),
                   ),
                 ],
@@ -167,8 +184,12 @@ class _ConflictDetailSheetState extends State<ConflictDetailSheet> {
           ),
           const Divider(height: 1),
           Padding(
-            padding: EdgeInsets.fromLTRB(16, 12, 16,
-                12 + MediaQuery.of(context).viewInsets.bottom),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              12 + MediaQuery.of(context).viewInsets.bottom,
+            ),
             child: _isSubmitting
                 ? const Center(child: CircularProgressIndicator())
                 : Column(
@@ -176,16 +197,14 @@ class _ConflictDetailSheetState extends State<ConflictDetailSheet> {
                     children: [
                       _ResolutionButton(
                         label: 'Keep mine',
-                        subtitle:
-                            'Apply your offline changes to the server',
+                        subtitle: 'Apply your offline changes to the server',
                         color: Colors.green,
                         onTap: () => _submit('client_wins'),
                       ),
                       const SizedBox(height: 8),
                       _ResolutionButton(
                         label: 'Use server',
-                        subtitle:
-                            'Discard your changes, keep server version',
+                        subtitle: 'Discard your changes, keep server version',
                         color: Colors.blue,
                         onTap: () => _submit('server_wins'),
                       ),
@@ -196,15 +215,14 @@ class _ConflictDetailSheetState extends State<ConflictDetailSheet> {
                           subtitle:
                               'Server data with your ${notesField!.replaceAll('_', ' ')} preserved',
                           color: Colors.purple,
-                          onTap: () => _submit('merged',
-                              mergedData: notesOnlyMerge),
+                          onTap: () =>
+                              _submit('merged', mergedData: notesOnlyMerge),
                         ),
                       ],
                       const SizedBox(height: 8),
                       _ResolutionButton(
                         label: "I'll type it",
-                        subtitle:
-                            'Submit manual resolution with notes above',
+                        subtitle: 'Submit manual resolution with notes above',
                         color: Colors.grey,
                         onTap: () => _submit('manual'),
                       ),
@@ -217,9 +235,15 @@ class _ConflictDetailSheetState extends State<ConflictDetailSheet> {
   }
 
   bool _isInternal(String key) => const {
-        'id', 'version', 'created_at', 'updated_at', 'deleted_at',
-        'user_id', 'membership_id', 'last_modified_by',
-      }.contains(key);
+    'id',
+    'version',
+    'created_at',
+    'updated_at',
+    'deleted_at',
+    'user_id',
+    'membership_id',
+    'last_modified_by',
+  }.contains(key);
 
   String _label(String field) => field
       .replaceAll('_', ' ')
@@ -247,8 +271,7 @@ class _ResolutionButton extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           border: Border.all(color: color.withValues(alpha: 0.4)),
           borderRadius: BorderRadius.circular(8),
@@ -257,14 +280,18 @@ class _ResolutionButton extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label,
-                style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                    color: color)),
-            Text(subtitle,
-                style: TextStyle(
-                    fontSize: 11, color: Colors.grey.shade600)),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: color,
+              ),
+            ),
+            Text(
+              subtitle,
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+            ),
           ],
         ),
       ),

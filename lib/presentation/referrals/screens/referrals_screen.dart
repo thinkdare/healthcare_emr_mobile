@@ -48,10 +48,8 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
     const title = 'Referrals';
     return kIsIOS
         ? CupertinoPageScaffold(
-            navigationBar:
-                const CupertinoNavigationBar(middle: Text(title)),
-            child: SafeArea(
-                child: _Body(scrollController: _scrollController)),
+            navigationBar: const CupertinoNavigationBar(middle: Text(title)),
+            child: SafeArea(child: _Body(scrollController: _scrollController)),
           )
         : Scaffold(
             appBar: AppBar(title: const Text(title)),
@@ -84,33 +82,33 @@ class _Body extends StatelessWidget {
                   )
                 : RefreshIndicator(
                     onRefresh: () {
-                      final tenantId = context
-                              .read<AuthProvider>()
-                              .activeTenantId ??
-                          '';
+                      final tenantId =
+                          context.read<AuthProvider>().activeTenantId ?? '';
                       return provider.loadReferrals(
-                          refresh: true, currentTenantId: tenantId);
+                        refresh: true,
+                        currentTenantId: tenantId,
+                      );
                     },
                     child: provider.referrals.isEmpty
                         ? _EmptyState(filter: provider.filter)
                         : ListView.builder(
                             controller: scrollController,
-                            padding: const EdgeInsets.only(
-                                top: 8, bottom: 24),
-                            itemCount: provider.referrals.length +
+                            padding: const EdgeInsets.only(top: 8, bottom: 24),
+                            itemCount:
+                                provider.referrals.length +
                                 (provider.isLoadingMore ? 1 : 0),
                             itemBuilder: (context, i) {
                               if (i == provider.referrals.length) {
                                 return const Padding(
-                                  padding:
-                                      EdgeInsets.symmetric(vertical: 16),
+                                  padding: EdgeInsets.symmetric(vertical: 16),
                                   child: Center(
-                                      child:
-                                          CircularProgressIndicator()),
+                                    child: CircularProgressIndicator(),
+                                  ),
                                 );
                               }
                               return ReferralCard(
-                                  referral: provider.referrals[i]);
+                                referral: provider.referrals[i],
+                              );
                             },
                           ),
                   ),
@@ -157,16 +155,18 @@ class _EmptyState extends StatelessWidget {
       ReferralFilter.all =>
         'No referrals yet. Refer a patient from their profile.',
       ReferralFilter.pending => 'No pending referrals.',
-      ReferralFilter.active  => 'No active referrals.',
-      ReferralFilter.done    => 'No completed or cancelled referrals.',
+      ReferralFilter.active => 'No active referrals.',
+      ReferralFilter.done => 'No completed or cancelled referrals.',
     };
     return ListView(
       children: [
         Padding(
           padding: const EdgeInsets.all(48),
-          child: Text(message,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade600)),
+          child: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey.shade600),
+          ),
         ),
       ],
     );
@@ -188,12 +188,15 @@ class _ErrorBanner extends StatelessWidget {
           Icon(Icons.error_outline, size: 16, color: Colors.red.shade700),
           const SizedBox(width: 8),
           Expanded(
-              child: Text(message,
-                  style: TextStyle(
-                      fontSize: 12, color: Colors.red.shade700))),
+            child: Text(
+              message,
+              style: TextStyle(fontSize: 12, color: Colors.red.shade700),
+            ),
+          ),
           IconButton(
-              icon: const Icon(Icons.close, size: 16),
-              onPressed: onDismiss),
+            icon: const Icon(Icons.close, size: 16),
+            onPressed: onDismiss,
+          ),
         ],
       ),
     );

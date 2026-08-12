@@ -24,8 +24,11 @@ class SubscriptionRepository {
     }
     final data = response['data'] as List? ?? [];
     return data
-        .map((e) => SubscriptionPlanModel.fromJson(
-            Map<String, dynamic>.from(e as Map)))
+        .map(
+          (e) => SubscriptionPlanModel.fromJson(
+            Map<String, dynamic>.from(e as Map),
+          ),
+        )
         .toList();
   }
 
@@ -35,7 +38,8 @@ class SubscriptionRepository {
       throw Exception(response['message'] ?? 'Failed to get plan');
     }
     return SubscriptionPlanModel.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map));
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
   }
 
   // ── Subscriptions ─────────────────────────────────────────────────────────
@@ -44,10 +48,12 @@ class SubscriptionRepository {
   Future<SubscriptionModel?> getSubscription(String orgId) async {
     try {
       final response = await apiClient.get(
-          '/billing/organizations/$orgId/subscription');
+        '/billing/organizations/$orgId/subscription',
+      );
       if (response['success'] != true) return null;
       return SubscriptionModel.fromJson(
-          Map<String, dynamic>.from(response['data'] as Map));
+        Map<String, dynamic>.from(response['data'] as Map),
+      );
     } catch (_) {
       return null;
     }
@@ -61,16 +67,14 @@ class SubscriptionRepository {
   }) async {
     final response = await apiClient.post(
       '/billing/organizations/$orgId/subscriptions/trial',
-      data: {
-        'plan_id': planId,
-        if (trialDays != null) 'trial_days': trialDays,
-      },
+      data: {'plan_id': planId, if (trialDays != null) 'trial_days': trialDays},
     );
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to start trial');
     }
     return SubscriptionModel.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map));
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
   }
 
   /// POST /billing/organizations/{orgId}/subscriptions/{subId}/change-plan
@@ -87,7 +91,8 @@ class SubscriptionRepository {
       throw Exception(response['message'] ?? 'Failed to change plan');
     }
     return SubscriptionModel.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map));
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
   }
 
   /// DELETE /billing/organizations/{orgId}/subscriptions/{subId}
@@ -115,10 +120,7 @@ class SubscriptionRepository {
   }) async {
     final response = await apiClient.get(
       '/billing/organizations/$orgId/invoices',
-      queryParameters: {
-        'page': page,
-        if (status != null) 'status': status,
-      },
+      queryParameters: {'page': page, if (status != null) 'status': status},
     );
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to get invoices');
@@ -129,27 +131,29 @@ class SubscriptionRepository {
         ? rawData['data'] as List? ?? []
         : rawData as List? ?? [];
     return list
-        .map((e) =>
-            InvoiceModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map((e) => InvoiceModel.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
   /// GET /billing/organizations/{orgId}/invoices/{id}
   Future<InvoiceModel> getInvoice(String orgId, String invoiceId) async {
     final response = await apiClient.get(
-        '/billing/organizations/$orgId/invoices/$invoiceId');
+      '/billing/organizations/$orgId/invoices/$invoiceId',
+    );
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to get invoice');
     }
     return InvoiceModel.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map));
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
   }
 
   /// GET /billing/organizations/{orgId}/invoices/{id}/pdf
   /// Returns the raw PDF bytes — the backend streams a binary download,
   /// not the standard {success, data} JSON envelope.
   Future<List<int>> downloadInvoicePdf(String orgId, String invoiceId) {
-    return apiClient
-        .getBytes('/billing/organizations/$orgId/invoices/$invoiceId/pdf');
+    return apiClient.getBytes(
+      '/billing/organizations/$orgId/invoices/$invoiceId/pdf',
+    );
   }
 }

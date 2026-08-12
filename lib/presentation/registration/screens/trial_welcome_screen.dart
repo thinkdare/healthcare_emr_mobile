@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../config/theme.dart';
 import '../../../core/platform.dart';
+import '../../../config/app_colors.dart';
 
 /// Placeholder — organization registration happens via the web portal.
 class TrialWelcomeScreen extends StatelessWidget {
@@ -16,7 +16,11 @@ class TrialWelcomeScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.celebration, size: 80, color: AppTheme.primaryColor),
+              Icon(
+                Icons.celebration,
+                size: 80,
+                color: AppColors.of(context).accent,
+              ),
               const SizedBox(height: 24),
               const Text(
                 'Your organization has been registered!',
@@ -26,13 +30,17 @@ class TrialWelcomeScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 'Please check your email for setup instructions.',
-                style: TextStyle(fontSize: 16, color: AppTheme.gray600),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppColors.of(context).textSecondary,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
               AdaptiveFilledButton(
-                onPressed: () =>
-                    Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false),
+                onPressed: () => Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil('/', (_) => false),
                 child: const Text('Go to Login'),
               ),
             ],

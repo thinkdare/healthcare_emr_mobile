@@ -22,8 +22,7 @@ class EmergencyAccessProvider extends ChangeNotifier {
   bool get hasMore => _hasMore;
   String? get error => _error;
 
-  int get unreviewedCount =>
-      _logs.where((l) => l.needsReview).length;
+  int get unreviewedCount => _logs.where((l) => l.needsReview).length;
 
   // ── Load ───────────────────────────────────────────────────────────────────
 
@@ -42,9 +41,7 @@ class EmergencyAccessProvider extends ChangeNotifier {
         masterPatientId: masterPatientId,
         page: _currentPage,
       );
-      _logs = refresh
-          ? result.items
-          : [..._logs, ...result.items];
+      _logs = refresh ? result.items : [..._logs, ...result.items];
       _hasMore = result.hasMore;
       _currentPage = result.currentPage + 1;
     } catch (e) {
@@ -112,6 +109,8 @@ class EmergencyAccessProvider extends ChangeNotifier {
     }
     final match = RegExp(r'ApiException\(\d+\): (.+)').firstMatch(msg);
     if (match != null) return match.group(1)!;
-    return msg.contains('Exception:') ? msg.split('Exception:').last.trim() : msg;
+    return msg.contains('Exception:')
+        ? msg.split('Exception:').last.trim()
+        : msg;
   }
 }

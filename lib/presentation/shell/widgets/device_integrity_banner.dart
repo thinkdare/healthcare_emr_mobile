@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../config/theme.dart';
 import '../../../core/platform.dart';
 import '../../../data/providers/device_integrity_provider.dart';
+import '../../../config/app_colors.dart';
 
 /// Non-blocking warning shown when the device appears to be rooted/jailbroken.
 /// Advisory only — see DeviceIntegrityProvider's doc for why this doesn't
@@ -20,7 +20,7 @@ class DeviceIntegrityBanner extends StatelessWidget {
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          color: AppTheme.warningColor,
+          color: AppColors.of(context).warning,
           child: SafeArea(
             top: false,
             bottom: false,
@@ -33,9 +33,10 @@ class DeviceIntegrityBanner extends StatelessWidget {
                     'This device appears to be rooted or jailbroken. '
                     'Patient data protections may be weaker than intended.',
                     style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600),
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 GestureDetector(

@@ -30,20 +30,20 @@ class SyncConflict {
   });
 
   factory SyncConflict.fromJson(Map<String, dynamic> json) => SyncConflict(
-        id: json['id'] as String,
-        resourceType: json['resource_type'] as String,
-        resourceId: json['resource_id'] as String?,
-        clientData: Map<String, dynamic>.from(json['client_data'] as Map),
-        serverData: Map<String, dynamic>.from(json['server_data'] as Map),
-        mergedData: json['merged_data'] != null
-            ? Map<String, dynamic>.from(json['merged_data'] as Map)
-            : null,
-        resolutionStrategy: json['resolution_strategy'] as String?,
-        status: json['status'] as String,
-        resolutionNotes: json['resolution_notes'] as String?,
-        resolvedAt: json['resolved_at'] as String?,
-        createdAt: json['created_at'] as String,
-      );
+    id: json['id'] as String,
+    resourceType: json['resource_type'] as String,
+    resourceId: json['resource_id'] as String?,
+    clientData: Map<String, dynamic>.from(json['client_data'] as Map),
+    serverData: Map<String, dynamic>.from(json['server_data'] as Map),
+    mergedData: json['merged_data'] != null
+        ? Map<String, dynamic>.from(json['merged_data'] as Map)
+        : null,
+    resolutionStrategy: json['resolution_strategy'] as String?,
+    status: json['status'] as String,
+    resolutionNotes: json['resolution_notes'] as String?,
+    resolvedAt: json['resolved_at'] as String?,
+    createdAt: json['created_at'] as String,
+  );
 
   bool get isPending => status == 'pending';
 }
@@ -66,13 +66,13 @@ class SyncChange {
   });
 
   Map<String, dynamic> toJson() => {
-        'resource_type': resourceType,
-        'resource_id': resourceId,
-        'operation': operation,
-        'payload': payload,
-        'client_version': clientVersion,
-        'client_timestamp': clientTimestamp,
-      };
+    'resource_type': resourceType,
+    'resource_id': resourceId,
+    'operation': operation,
+    'payload': payload,
+    'client_version': clientVersion,
+    'client_timestamp': clientTimestamp,
+  };
 }
 
 class SyncPushResult {
@@ -87,8 +87,8 @@ class SyncPushResult {
   });
 
   factory SyncPushResult.fromJson(Map<String, dynamic> json) => SyncPushResult(
-        queued: (json['queued'] as num).toInt(),
-        conflicts: (json['conflicts'] as num).toInt(),
-        applied: (json['applied'] as num).toInt(),
-      );
+    queued: (json['queued'] as num).toInt(),
+    conflicts: (json['conflicts'] as num).toInt(),
+    applied: (json['applied'] as num).toInt(),
+  );
 }

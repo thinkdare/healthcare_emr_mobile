@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../config/theme.dart';
 import '../../../core/platform.dart';
 import '../../../data/models/clinical_models.dart';
 import '../../../data/providers/clinical_provider.dart';
+import '../../../config/app_colors.dart';
 
 /// Patient ↔ provider message thread for a single patient. Patients start
 /// the conversation from the patient portal; this screen can only reply to
@@ -99,7 +99,11 @@ class _PatientMessagesScreenState extends State<PatientMessagesScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline, size: 48, color: AppTheme.errorColor),
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: AppColors.of(context).critical,
+              ),
               const SizedBox(height: 12),
               Text(cp.messagesError!, textAlign: TextAlign.center),
               const SizedBox(height: 16),
@@ -120,15 +124,24 @@ class _PatientMessagesScreenState extends State<PatientMessagesScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.chat_bubble_outline, size: 48, color: AppTheme.gray600),
+              Icon(
+                Icons.chat_bubble_outline,
+                size: 48,
+                color: AppColors.of(context).textSecondary,
+              ),
               const SizedBox(height: 12),
-              Text('No messages yet',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
+              Text(
+                'No messages yet',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
               const SizedBox(height: 4),
               Text(
                 'The patient hasn\'t started a conversation from the patient portal yet.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: AppTheme.gray600),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.of(context).textSecondary,
+                ),
               ),
             ],
           ),
@@ -147,7 +160,11 @@ class _PatientMessagesScreenState extends State<PatientMessagesScreen> {
   Widget _buildComposer(ClinicalProvider cp) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
-          16, 8, 16, MediaQuery.of(context).viewInsets.bottom + 12),
+        16,
+        8,
+        16,
+        MediaQuery.of(context).viewInsets.bottom + 12,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -156,9 +173,12 @@ class _PatientMessagesScreenState extends State<PatientMessagesScreen> {
               decoration: InputDecoration(
                 hintText: 'Reply to patient…',
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20)),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 isDense: true,
               ),
               textInputAction: TextInputAction.send,
@@ -170,11 +190,12 @@ class _PatientMessagesScreenState extends State<PatientMessagesScreen> {
               ? const SizedBox(
                   width: 36,
                   height: 36,
-                  child: CircularProgressIndicator(strokeWidth: 2))
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : IconButton(
                   onPressed: _send,
                   icon: const Icon(Icons.send),
-                  color: AppTheme.primaryColor,
+                  color: AppColors.of(context).accent,
                 ),
         ],
       ),
@@ -195,30 +216,41 @@ class _MessageBubble extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 3),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.75),
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
         decoration: BoxDecoration(
-          color: isMe ? AppTheme.primaryColor : Colors.grey.shade200,
+          color: isMe ? AppColors.of(context).accent : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
-          crossAxisAlignment:
-              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment: isMe
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
           children: [
-            Text(isMe ? 'You' : 'Patient',
-                style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: isMe ? Colors.white70 : Colors.grey.shade600)),
+            Text(
+              isMe ? 'You' : 'Patient',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: isMe ? Colors.white70 : Colors.grey.shade600,
+              ),
+            ),
             const SizedBox(height: 2),
-            Text(message.body,
-                style: TextStyle(
-                    fontSize: 13,
-                    color: isMe ? Colors.white : Colors.grey.shade900)),
+            Text(
+              message.body,
+              style: TextStyle(
+                fontSize: 13,
+                color: isMe ? Colors.white : Colors.grey.shade900,
+              ),
+            ),
             const SizedBox(height: 2),
-            Text(_formatTime(message.createdAt),
-                style: TextStyle(
-                    fontSize: 9,
-                    color: isMe ? Colors.white60 : Colors.grey.shade500)),
+            Text(
+              _formatTime(message.createdAt),
+              style: TextStyle(
+                fontSize: 9,
+                color: isMe ? Colors.white60 : Colors.grey.shade500,
+              ),
+            ),
           ],
         ),
       ),

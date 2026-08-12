@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/platform.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../../../config/theme.dart';
 import '../../../data/providers/auth_provider.dart';
+import '../../../config/app_colors.dart';
 
 class StaffProfileScreen extends StatefulWidget {
   final int initialTab;
@@ -21,7 +21,11 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 3, vsync: this, initialIndex: widget.initialTab);
+    _tabs = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTab,
+    );
   }
 
   @override
@@ -34,9 +38,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: kIsIOS
-          ? const CupertinoNavigationBar(
-              middle: Text('My Profile'),
-            )
+          ? const CupertinoNavigationBar(middle: Text('My Profile'))
           : AppBar(
               title: const Text('My Profile'),
               bottom: TabBar(
@@ -47,14 +49,10 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
                   Tab(text: '2FA'),
                 ],
               ),
-      ),
+            ),
       body: TabBarView(
         controller: _tabs,
-        children: const [
-          _ProfileTab(),
-          _SecurityTab(),
-          _TwoFactorTab(),
-        ],
+        children: const [_ProfileTab(), _SecurityTab(), _TwoFactorTab()],
       ),
     );
   }
@@ -83,16 +81,16 @@ class _ProfileTab extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  color: AppColors.of(context).accent.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
                   child: Text(
                     auth.initials,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
+                      color: AppColors.of(context).accent,
                     ),
                   ),
                 ),
@@ -101,14 +99,18 @@ class _ProfileTab extends StatelessWidget {
               Text(
                 auth.displayName,
                 style: const TextStyle(
-                    fontSize: 22, fontWeight: FontWeight.bold),
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               if (user != null) ...[
                 const SizedBox(height: 4),
                 Text(
                   user.email,
-                  style: const TextStyle(
-                      color: AppTheme.gray600, fontSize: 14),
+                  style: TextStyle(
+                    color: AppColors.of(context).textSecondary,
+                    fontSize: 14,
+                  ),
                 ),
               ],
               const SizedBox(height: 24),
@@ -121,14 +123,13 @@ class _ProfileTab extends StatelessWidget {
                   _InfoRow('Name', auth.displayName),
                   if (user != null) ...[
                     _InfoRow('Email', user.email),
-                    _InfoRow('Account type',
-                        _userTypeLabel(user.userType)),
+                    _InfoRow('Account type', _userTypeLabel(user.userType)),
                     _InfoRow(
                       '2FA',
                       user.twoFactorEnabled ? 'Enabled' : 'Disabled',
                       valueColor: user.twoFactorEnabled
-                          ? AppTheme.successColor
-                          : AppTheme.gray600,
+                          ? AppColors.of(context).success
+                          : AppColors.of(context).textSecondary,
                     ),
                   ],
                 ],
@@ -144,12 +145,15 @@ class _ProfileTab extends StatelessWidget {
                     if (membership.department != null)
                       _InfoRow('Department', membership.department!),
                     _InfoRow(
-                        'Primary affiliation',
-                        membership.isPrimary ? 'Yes' : 'No'),
+                      'Primary affiliation',
+                      membership.isPrimary ? 'Yes' : 'No',
+                    ),
                     if (rank != null) ...[
                       _InfoRow('Clinical rank', rank.name),
-                      _InfoRow('Hierarchy level',
-                          rank.hierarchyLevel.toString()),
+                      _InfoRow(
+                        'Hierarchy level',
+                        rank.hierarchyLevel.toString(),
+                      ),
                     ],
                   ],
                 ),
@@ -162,10 +166,14 @@ class _ProfileTab extends StatelessWidget {
                   children: [
                     _CapRow('Prescribe medications', rank.canPrescribe),
                     _CapRow('Order lab tests', rank.canOrderLabs),
-                    _CapRow('Approve access grants',
-                        rank.canApproveAccessGrants),
-                    _CapRow('Emergency (break-glass) access',
-                        rank.canPerformEmergencyAccess),
+                    _CapRow(
+                      'Approve access grants',
+                      rank.canApproveAccessGrants,
+                    ),
+                    _CapRow(
+                      'Emergency (break-glass) access',
+                      rank.canPerformEmergencyAccess,
+                    ),
                   ],
                 ),
 
@@ -177,8 +185,7 @@ class _ProfileTab extends StatelessWidget {
                   children: [
                     _InfoRow('Name', facility.name),
                     if (facility.organization != null)
-                      _InfoRow(
-                          'Organisation', facility.organization!.name),
+                      _InfoRow('Organisation', facility.organization!.name),
                     _InfoRow('Type', facility.displayType),
                     if (facility.address != null)
                       _InfoRow('Address', facility.address!),
@@ -194,10 +201,10 @@ class _ProfileTab extends StatelessWidget {
   }
 
   String _userTypeLabel(String t) => switch (t) {
-        'super_admin' => 'Super Administrator',
-        'org_admin' => 'Organisation Administrator',
-        _ => 'Clinical Staff',
-      };
+    'super_admin' => 'Super Administrator',
+    'org_admin' => 'Organisation Administrator',
+    _ => 'Clinical Staff',
+  };
 }
 
 // ── Security Tab ──────────────────────────────────────────────────────────────
@@ -232,9 +239,9 @@ class _SecurityTabState extends State<_SecurityTab> {
     setState(() => _saving = true);
 
     final ok = await context.read<AuthProvider>().changePassword(
-          currentPassword: _currentCtrl.text,
-          newPassword: _newCtrl.text,
-        );
+      currentPassword: _currentCtrl.text,
+      newPassword: _newCtrl.text,
+    );
 
     if (!mounted) return;
     setState(() => _saving = false);
@@ -243,10 +250,18 @@ class _SecurityTabState extends State<_SecurityTab> {
       _currentCtrl.clear();
       _newCtrl.clear();
       _confirmCtrl.clear();
-      showAdaptiveToast(context, 'Password changed successfully.', type: ToastType.success);
+      showAdaptiveToast(
+        context,
+        'Password changed successfully.',
+        type: ToastType.success,
+      );
     } else {
       final err = context.read<AuthProvider>().error;
-      showAdaptiveToast(context, err ?? 'Failed to change password.', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        err ?? 'Failed to change password.',
+        type: ToastType.error,
+      );
     }
   }
 
@@ -270,16 +285,18 @@ class _SecurityTabState extends State<_SecurityTab> {
                       decoration: InputDecoration(
                         labelText: 'Current password',
                         suffixIcon: IconButton(
-                          icon: Icon(_obscureCurrent
-                              ? Icons.visibility_off
-                              : Icons.visibility),
+                          icon: Icon(
+                            _obscureCurrent
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
                           onPressed: () => setState(
-                              () => _obscureCurrent = !_obscureCurrent),
+                            () => _obscureCurrent = !_obscureCurrent,
+                          ),
                         ),
                       ),
-                      validator: (v) => (v == null || v.isEmpty)
-                          ? 'Required'
-                          : null,
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Required' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -288,9 +305,11 @@ class _SecurityTabState extends State<_SecurityTab> {
                       decoration: InputDecoration(
                         labelText: 'New password',
                         suffixIcon: IconButton(
-                          icon: Icon(_obscureNew
-                              ? Icons.visibility_off
-                              : Icons.visibility),
+                          icon: Icon(
+                            _obscureNew
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
                           onPressed: () =>
                               setState(() => _obscureNew = !_obscureNew),
                         ),
@@ -310,11 +329,14 @@ class _SecurityTabState extends State<_SecurityTab> {
                       decoration: InputDecoration(
                         labelText: 'Confirm new password',
                         suffixIcon: IconButton(
-                          icon: Icon(_obscureConfirm
-                              ? Icons.visibility_off
-                              : Icons.visibility),
+                          icon: Icon(
+                            _obscureConfirm
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
                           onPressed: () => setState(
-                              () => _obscureConfirm = !_obscureConfirm),
+                            () => _obscureConfirm = !_obscureConfirm,
+                          ),
                         ),
                       ),
                       validator: (v) {
@@ -336,7 +358,8 @@ class _SecurityTabState extends State<_SecurityTab> {
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation(
-                                      Colors.white),
+                                    Colors.white,
+                                  ),
                                 ),
                               )
                             : const Text('Update Password'),
@@ -351,9 +374,12 @@ class _SecurityTabState extends State<_SecurityTab> {
             title: 'Active Sessions',
             icon: Icons.devices_outlined,
             children: [
-              const Text(
+              Text(
                 'You are currently signed in on this device.',
-                style: TextStyle(color: AppTheme.gray600, fontSize: 13),
+                style: TextStyle(
+                  color: AppColors.of(context).textSecondary,
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(height: 12),
               SizedBox(
@@ -362,8 +388,10 @@ class _SecurityTabState extends State<_SecurityTab> {
                   icon: const Icon(Icons.logout, size: 18),
                   label: const Text('Sign out of this device'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.errorColor,
-                    side: const BorderSide(color: AppTheme.errorColor),
+                    foregroundColor: AppColors.of(context).critical,
+                    side: BorderSide(
+                      color: AppColors.of(context).critical,
+                    ),
                   ),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
@@ -416,8 +444,7 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
 
   Future<void> _startSetup() async {
     setState(() => _loading = true);
-    final data =
-        await context.read<AuthProvider>().twoFactorSetup();
+    final data = await context.read<AuthProvider>().twoFactorSetup();
     if (!mounted) return;
     setState(() {
       _loading = false;
@@ -425,20 +452,26 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
     });
     if (data == null) {
       final err = context.read<AuthProvider>().error;
-      showAdaptiveToast(context, err ?? 'Failed to start 2FA setup', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        err ?? 'Failed to start 2FA setup',
+        type: ToastType.error,
+      );
     }
   }
 
   Future<void> _enable() async {
     final code = _codeCtrl.text.trim();
     if (code.length != 6) {
-      showAdaptiveToast(context, 'Enter the 6-digit code from your authenticator app');
+      showAdaptiveToast(
+        context,
+        'Enter the 6-digit code from your authenticator app',
+      );
       return;
     }
 
     setState(() => _loading = true);
-    final codes =
-        await context.read<AuthProvider>().twoFactorEnable(code);
+    final codes = await context.read<AuthProvider>().twoFactorEnable(code);
     if (!mounted) return;
 
     setState(() {
@@ -451,7 +484,11 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
       setState(() => _backupCodes = codes);
     } else {
       final err = context.read<AuthProvider>().error;
-      showAdaptiveToast(context, err ?? 'Invalid code. Try again.', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        err ?? 'Invalid code. Try again.',
+        type: ToastType.error,
+      );
     }
   }
 
@@ -464,23 +501,25 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Disabling two-factor authentication makes your account less secure.',
-              style: TextStyle(color: AppTheme.gray600),
+              style: TextStyle(color: AppColors.of(context).textSecondary),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: pwCtrl,
               obscureText: true,
-              decoration:
-                  const InputDecoration(labelText: 'Confirm your password'),
+              decoration: const InputDecoration(
+                labelText: 'Confirm your password',
+              ),
             ),
           ],
         ),
         actions: [
           AdaptiveTextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
           AdaptiveFilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Disable'),
@@ -492,9 +531,7 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
     if (confirmed != true || !mounted) return;
 
     setState(() => _loading = true);
-    final ok = await context
-        .read<AuthProvider>()
-        .twoFactorDisable(pwCtrl.text);
+    final ok = await context.read<AuthProvider>().twoFactorDisable(pwCtrl.text);
     pwCtrl.dispose();
     if (!mounted) return;
     setState(() {
@@ -505,7 +542,11 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
     if (ok) {
       showAdaptiveToast(context, '2FA disabled.');
     } else {
-      showAdaptiveToast(context, context.read<AuthProvider>().error ?? 'Failed', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        context.read<AuthProvider>().error ?? 'Failed',
+        type: ToastType.error,
+      );
     }
   }
 
@@ -514,7 +555,8 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
     await showAdaptiveActionSheet(
       context: context,
       title: 'Regenerate Backup Codes',
-      message: 'Your old backup codes will be invalidated immediately. Save the new codes somewhere safe.',
+      message:
+          'Your old backup codes will be invalidated immediately. Save the new codes somewhere safe.',
       destructiveLabel: 'Regenerate',
       onConfirm: () => confirmed = true,
     );
@@ -533,7 +575,11 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
 
     if (codes == null) {
       final err = context.read<AuthProvider>().error;
-      showAdaptiveToast(context, err ?? 'Failed to regenerate codes', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        err ?? 'Failed to regenerate codes',
+        type: ToastType.error,
+      );
     }
   }
 
@@ -585,8 +631,8 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
                             ? Icons.verified_user
                             : Icons.gpp_bad_outlined,
                         color: isEnabled
-                            ? AppTheme.successColor
-                            : AppTheme.warningColor,
+                            ? AppColors.of(context).success
+                            : AppColors.of(context).warning,
                         size: 32,
                       ),
                       const SizedBox(width: 12),
@@ -600,8 +646,8 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
                                 color: isEnabled
-                                    ? AppTheme.successColor
-                                    : AppTheme.warningColor,
+                                    ? AppColors.of(context).success
+                                    : AppColors.of(context).warning,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -609,8 +655,10 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
                               isEnabled
                                   ? 'Your account is protected with TOTP authentication.'
                                   : 'Add an extra layer of security to your account.',
-                              style: const TextStyle(
-                                  fontSize: 12, color: AppTheme.gray600),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.of(context).textSecondary,
+                              ),
                             ),
                           ],
                         ),
@@ -622,13 +670,16 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
                     width: double.infinity,
                     child: isEnabled
                         ? OutlinedButton.icon(
-                            icon: const Icon(Icons.no_encryption_outlined,
-                                size: 18),
+                            icon: const Icon(
+                              Icons.no_encryption_outlined,
+                              size: 18,
+                            ),
                             label: const Text('Disable 2FA'),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: AppTheme.errorColor,
-                              side: const BorderSide(
-                                  color: AppTheme.errorColor),
+                              foregroundColor: AppColors.of(context).critical,
+                              side: BorderSide(
+                                color: AppColors.of(context).critical,
+                              ),
                             ),
                             onPressed: _loading ? null : _showDisableDialog,
                           )
@@ -655,34 +706,38 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
                     if (_backupCodeCount != null)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(children: [
-                          Icon(
-                            _backupCodeCount! > 2
-                                ? Icons.check_circle_outline
-                                : Icons.warning_amber_outlined,
-                            size: 18,
-                            color: _backupCodeCount! > 2
-                                ? AppTheme.successColor
-                                : AppTheme.warningColor,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '$_backupCodeCount backup code${_backupCodeCount == 1 ? '' : 's'} remaining',
-                            style: TextStyle(
-                              fontSize: 13,
+                        child: Row(
+                          children: [
+                            Icon(
+                              _backupCodeCount! > 2
+                                  ? Icons.check_circle_outline
+                                  : Icons.warning_amber_outlined,
+                              size: 18,
                               color: _backupCodeCount! > 2
-                                  ? AppTheme.successColor
-                                  : AppTheme.warningColor,
-                              fontWeight: FontWeight.w600,
+                                  ? AppColors.of(context).success
+                                  : AppColors.of(context).warning,
                             ),
-                          ),
-                        ]),
+                            const SizedBox(width: 8),
+                            Text(
+                              '$_backupCodeCount backup code${_backupCodeCount == 1 ? '' : 's'} remaining',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: _backupCodeCount! > 2
+                                    ? AppColors.of(context).success
+                                    : AppColors.of(context).warning,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    const Text(
+                    Text(
                       'Backup codes let you sign in if you lose access to '
                       'your authenticator app. Each code can only be used once.',
-                      style:
-                          TextStyle(fontSize: 12, color: AppTheme.gray600),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.of(context).textSecondary,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -690,8 +745,7 @@ class _TwoFactorTabState extends State<_TwoFactorTab> {
                       child: OutlinedButton.icon(
                         icon: const Icon(Icons.refresh, size: 18),
                         label: const Text('Regenerate backup codes'),
-                        onPressed:
-                            _loading ? null : _regenerateBackupCodes,
+                        onPressed: _loading ? null : _regenerateBackupCodes,
                       ),
                     ),
                   ],
@@ -730,34 +784,43 @@ class _SetupFlow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Step 1',
             style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.primaryColor),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.of(context).accent,
+            ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Open your authenticator app (e.g. Google Authenticator, '
             'Authy) and add a new account.',
-            style: TextStyle(color: AppTheme.gray600, fontSize: 13),
+            style: TextStyle(
+              color: AppColors.of(context).textSecondary,
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'Step 2 — Enter this secret key manually',
             style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.primaryColor),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.of(context).accent,
+            ),
           ),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppTheme.gray100,
+              color: AppColors.of(context).surfaceTint,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppTheme.gray600.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: AppColors.of(
+                  context,
+                ).textSecondary.withValues(alpha: 0.3),
+              ),
             ),
             child: Row(
               children: [
@@ -765,10 +828,11 @@ class _SetupFlow extends StatelessWidget {
                   child: Text(
                     secret,
                     style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2),
+                      fontFamily: 'monospace',
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -783,12 +847,13 @@ class _SetupFlow extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Step 3 — Verify',
             style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.primaryColor),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.of(context).accent,
+            ),
           ),
           const SizedBox(height: 8),
           TextField(
@@ -819,9 +884,9 @@ class _SetupFlow extends StatelessWidget {
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation(Colors.white)),
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                          ),
                         )
                       : const Text('Enable 2FA'),
                 ),
@@ -851,29 +916,33 @@ class _BackupCodesView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppTheme.successColor.withValues(alpha: 0.08),
+              color: AppColors.of(context).success.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                  color: AppTheme.successColor.withValues(alpha: 0.3)),
-            ),
-            child: const Row(children: [
-              Icon(Icons.check_circle, color: AppTheme.successColor),
-              SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  '2FA is now enabled. Save these backup codes somewhere safe — '
-                  'each can only be used once.',
-                  style: TextStyle(
-                      color: AppTheme.successColor, fontSize: 13),
-                ),
+                color: AppColors.of(context).success.withValues(alpha: 0.3),
               ),
-            ]),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.check_circle, color: AppColors.of(context).success),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '2FA is now enabled. Save these backup codes somewhere safe — '
+                    'each can only be used once.',
+                    style: TextStyle(
+                      color: AppColors.of(context).success,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 20),
           Expanded(
             child: GridView.builder(
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
@@ -882,19 +951,23 @@ class _BackupCodesView extends StatelessWidget {
               itemCount: codes.length,
               itemBuilder: (_, i) => Container(
                 decoration: BoxDecoration(
-                  color: AppTheme.gray100,
+                  color: AppColors.of(context).surfaceTint,
                   borderRadius: BorderRadius.circular(6),
-                  border:
-                      Border.all(color: AppTheme.gray600.withValues(alpha: 0.2)),
+                  border: Border.all(
+                    color: AppColors.of(
+                      context,
+                    ).textSecondary.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Center(
                   child: Text(
                     codes[i],
                     style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5),
+                      fontFamily: 'monospace',
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.5,
+                    ),
                   ),
                 ),
               ),
@@ -908,9 +981,11 @@ class _BackupCodesView extends StatelessWidget {
                   icon: const Icon(Icons.copy, size: 18),
                   label: const Text('Copy all'),
                   onPressed: () {
-                    Clipboard.setData(
-                        ClipboardData(text: codes.join('\n')));
-                    showAdaptiveToast(context, 'Backup codes copied to clipboard');
+                    Clipboard.setData(ClipboardData(text: codes.join('\n')));
+                    showAdaptiveToast(
+                      context,
+                      'Backup codes copied to clipboard',
+                    );
                   },
                 ),
               ),
@@ -951,15 +1026,19 @@ class _SectionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
-              Icon(icon, color: AppTheme.primaryColor, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ]),
+            Row(
+              children: [
+                Icon(icon, color: AppColors.of(context).accent, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
             const Divider(height: 20),
             ...children,
           ],
@@ -987,17 +1066,20 @@ class _InfoRow extends StatelessWidget {
             width: 130,
             child: Text(
               label,
-              style: const TextStyle(
-                  color: AppTheme.gray600, fontSize: 13),
+              style: TextStyle(
+                color: AppColors.of(context).textSecondary,
+                fontSize: 13,
+              ),
             ),
           ),
           Expanded(
             child: Text(
               value,
               style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                  color: valueColor),
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: valueColor,
+              ),
             ),
           ),
         ],
@@ -1021,14 +1103,16 @@ class _CapRow extends StatelessWidget {
           Icon(
             capable ? Icons.check_circle : Icons.cancel_outlined,
             size: 18,
-            color: capable ? AppTheme.successColor : AppTheme.gray600,
+            color: capable
+                ? AppColors.of(context).success
+                : AppColors.of(context).textSecondary,
           ),
           const SizedBox(width: 10),
           Text(
             label,
             style: TextStyle(
               fontSize: 13,
-              color: capable ? null : AppTheme.gray600,
+              color: capable ? null : AppColors.of(context).textSecondary,
             ),
           ),
         ],

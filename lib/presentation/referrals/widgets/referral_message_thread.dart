@@ -52,19 +52,18 @@ class _ReferralMessageThreadState extends State<ReferralMessageThread> {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
     _controller.clear();
-    final ok = await context
-        .read<ReferralProvider>()
-        .sendMessage(widget.referralId, text);
+    final ok = await context.read<ReferralProvider>().sendMessage(
+      widget.referralId,
+      text,
+    );
     if (ok && mounted) {
-      WidgetsBinding.instance
-          .addPostFrameCallback((_) => _scrollToBottom());
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId =
-        context.read<AuthProvider>().currentUserId ?? '';
+    final currentUserId = context.read<AuthProvider>().currentUserId ?? '';
 
     return Consumer<ReferralProvider>(
       builder: (context, provider, _) {
@@ -75,17 +74,21 @@ class _ReferralMessageThreadState extends State<ReferralMessageThread> {
             const Divider(),
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Text('Messages',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w600, fontSize: 14)),
+              child: Text(
+                'Messages',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              ),
             ),
             if (messages.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 8),
-                child: Text('No messages yet.',
-                    style: TextStyle(
-                        fontSize: 12, color: Colors.grey.shade500)),
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Text(
+                  'No messages yet.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                ),
               )
             else
               ConstrainedBox(
@@ -93,7 +96,9 @@ class _ReferralMessageThreadState extends State<ReferralMessageThread> {
                 child: ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 4),
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
                   itemCount: messages.length,
                   itemBuilder: (_, i) {
                     final m = messages[i];
@@ -103,14 +108,14 @@ class _ReferralMessageThreadState extends State<ReferralMessageThread> {
                           ? Alignment.centerRight
                           : Alignment.centerLeft,
                       child: Container(
-                        margin:
-                            const EdgeInsets.symmetric(vertical: 3),
+                        margin: const EdgeInsets.symmetric(vertical: 3),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         constraints: BoxConstraints(
-                            maxWidth:
-                                MediaQuery.of(context).size.width *
-                                    0.75),
+                          maxWidth: MediaQuery.of(context).size.width * 0.75,
+                        ),
                         decoration: BoxDecoration(
                           color: isMe
                               ? Colors.blue.shade600
@@ -123,17 +128,23 @@ class _ReferralMessageThreadState extends State<ReferralMessageThread> {
                               : CrossAxisAlignment.start,
                           children: [
                             if (!isMe)
-                              Text(m.senderName,
-                                  style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.grey.shade600,
-                                      fontWeight: FontWeight.w600)),
-                            Text(m.message,
+                              Text(
+                                m.senderName,
                                 style: TextStyle(
-                                    fontSize: 13,
-                                    color: isMe
-                                        ? Colors.white
-                                        : Colors.grey.shade900)),
+                                  fontSize: 10,
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            Text(
+                              m.message,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isMe
+                                    ? Colors.white
+                                    : Colors.grey.shade900,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -143,8 +154,7 @@ class _ReferralMessageThreadState extends State<ReferralMessageThread> {
               ),
             if (widget.isOpen)
               Padding(
-                padding:
-                    const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                 child: Row(
                   children: [
                     Expanded(
@@ -153,11 +163,12 @@ class _ReferralMessageThreadState extends State<ReferralMessageThread> {
                         decoration: InputDecoration(
                           hintText: 'Send a message…',
                           border: OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.circular(20)),
-                          contentPadding:
-                              const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 8),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
                           isDense: true,
                         ),
                         textInputAction: TextInputAction.send,
@@ -169,8 +180,8 @@ class _ReferralMessageThreadState extends State<ReferralMessageThread> {
                         ? const SizedBox(
                             width: 36,
                             height: 36,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2))
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
                         : IconButton(
                             onPressed: _send,
                             icon: const Icon(Icons.send),

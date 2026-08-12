@@ -52,12 +52,13 @@ class _SyncBannerState extends State<SyncBanner> {
               : null,
           onSyncNow: _canSyncNow(sync) ? () => sync.sync() : null,
           onTap: sync.hasPendingConflicts
-              ? () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SyncScreen()),
-                  )
+              ? () => Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const SyncScreen()))
               : null,
-          scheduleAutoDismiss:
-              sync.status == SyncStatus.synced ? _scheduleAutoDismiss : null,
+          scheduleAutoDismiss: sync.status == SyncStatus.synced
+              ? _scheduleAutoDismiss
+              : null,
         );
       },
     );
@@ -123,7 +124,9 @@ class _BannerTileState extends State<_BannerTile> {
                         width: 14,
                         height: 14,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: fg),
+                          strokeWidth: 2,
+                          color: fg,
+                        ),
                       ),
               )
             else
@@ -132,20 +135,28 @@ class _BannerTileState extends State<_BannerTile> {
                 child: Icon(icon, size: 14, color: fg),
               ),
             Expanded(
-              child: Text(text,
-                  style: TextStyle(
-                      color: fg, fontSize: 12, fontWeight: FontWeight.w500)),
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: fg,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
             if (widget.onSyncNow != null) ...[
               const SizedBox(width: 8),
               GestureDetector(
                 onTap: widget.onSyncNow,
-                child: Text('Sync now',
-                    style: TextStyle(
-                        color: fg,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        decoration: TextDecoration.underline)),
+                child: Text(
+                  'Sync now',
+                  style: TextStyle(
+                    color: fg,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
               ),
             ],
             if (widget.onDismiss != null) ...[
@@ -172,37 +183,37 @@ class _BannerTileState extends State<_BannerTile> {
     }
     return switch (sync.status) {
       SyncStatus.offline => (
-          const Color(0xFFFFF8E1),
-          const Color(0xFFF57F17),
-          Icons.wifi_off,
-          'No connection — changes saved locally',
-        ),
+        const Color(0xFFFFF8E1),
+        const Color(0xFFF57F17),
+        Icons.wifi_off,
+        'No connection — changes saved locally',
+      ),
       SyncStatus.syncing => (
-          const Color(0xFFE3F2FD),
-          const Color(0xFF1565C0),
-          Icons.sync,
-          sync.pendingLocalChanges > 0
-              ? 'Syncing ${sync.pendingLocalChanges} change${sync.pendingLocalChanges == 1 ? '' : 's'}…'
-              : 'Syncing…',
-        ),
+        const Color(0xFFE3F2FD),
+        const Color(0xFF1565C0),
+        Icons.sync,
+        sync.pendingLocalChanges > 0
+            ? 'Syncing ${sync.pendingLocalChanges} change${sync.pendingLocalChanges == 1 ? '' : 's'}…'
+            : 'Syncing…',
+      ),
       SyncStatus.synced => (
-          const Color(0xFFE8F5E9),
-          const Color(0xFF2E7D32),
-          Icons.check_circle_outline,
-          'All changes synced',
-        ),
+        const Color(0xFFE8F5E9),
+        const Color(0xFF2E7D32),
+        Icons.check_circle_outline,
+        'All changes synced',
+      ),
       SyncStatus.error => (
-          const Color(0xFFFFEBEE),
-          const Color(0xFFC62828),
-          Icons.error_outline,
-          'Sync failed — tap "Sync now" to retry',
-        ),
+        const Color(0xFFFFEBEE),
+        const Color(0xFFC62828),
+        Icons.error_outline,
+        'Sync failed — tap "Sync now" to retry',
+      ),
       SyncStatus.idle => (
-          Colors.transparent,
-          Colors.transparent,
-          Icons.sync,
-          '',
-        ),
+        Colors.transparent,
+        Colors.transparent,
+        Icons.sync,
+        '',
+      ),
     };
   }
 }

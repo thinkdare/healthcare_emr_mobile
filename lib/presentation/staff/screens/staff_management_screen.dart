@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../config/theme.dart';
 import '../../../data/models/auth_models.dart';
 import '../../../data/repositories/staff_repository.dart';
+import '../../../config/app_colors.dart';
 
 class StaffManagementScreen extends StatefulWidget {
   final StaffRepository repository;
@@ -80,7 +80,9 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
       if (_searchQuery.length >= 2) {
         final q = _searchQuery.toLowerCase();
         if (!m.fullName.toLowerCase().contains(q) &&
-            !m.email.toLowerCase().contains(q)) { return false; }
+            !m.email.toLowerCase().contains(q)) {
+          return false;
+        }
       }
       return true;
     }).toList();
@@ -91,21 +93,24 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (_) => _EditSheet(
         member: member,
         ranks: _ranks,
         repository: widget.repository,
         onSaved: (updated) {
           setState(() {
-            final idx = _allStaff
-                .indexWhere((m) => m.membershipId == updated.membershipId);
+            final idx = _allStaff.indexWhere(
+              (m) => m.membershipId == updated.membershipId,
+            );
             if (idx >= 0) _allStaff[idx] = updated;
           });
         },
         onRemoved: (membershipId) {
-          setState(() =>
-              _allStaff.removeWhere((m) => m.membershipId == membershipId));
+          setState(
+            () => _allStaff.removeWhere((m) => m.membershipId == membershipId),
+          );
         },
       ),
     );
@@ -145,88 +150,97 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
                   Text(_error!),
                   const SizedBox(height: 12),
-                  ElevatedButton(
-                      onPressed: _load, child: const Text('Retry')),
-                ]))
-              : Column(
-                  children: [
-                    // Type filter chips
-                    SizedBox(
-                      height: 44,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        children: _staffTypeFilters.map((f) {
-                          final selected = _typeFilter == f.$1;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: FilterChip(
-                              label: Text(f.$2),
-                              selected: selected,
-                              onSelected: (_) =>
-                                  setState(() => _typeFilter = f.$1),
-                              selectedColor: AppTheme.primaryColor
-                                  .withValues(alpha: 0.2),
-                            ),
-                          );
-                        }).toList(),
-                      ),
+                  ElevatedButton(onPressed: _load, child: const Text('Retry')),
+                ],
+              ),
+            )
+          : Column(
+              children: [
+                // Type filter chips
+                SizedBox(
+                  height: 44,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
                     ),
-                    // Status filter
-                    Padding(
-                      padding:
-                          const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                      child: Row(children: [
-                        for (final s in [
-                          ('active', 'Active'),
-                          ('inactive', 'Inactive'),
-                          ('all', 'All')
-                        ])
-                          Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: ChoiceChip(
-                              label: Text(s.$2),
-                              selected: _statusFilter == s.$1,
-                              onSelected: (_) =>
-                                  setState(() => _statusFilter = s.$1),
-                              selectedColor: s.$1 == 'active'
-                                  ? Colors.green.withValues(alpha: 0.2)
-                                  : s.$1 == 'inactive'
-                                      ? Colors.red.withValues(alpha: 0.2)
-                                      : AppTheme.primaryColor
-                                          .withValues(alpha: 0.2),
+                    children: _staffTypeFilters.map((f) {
+                      final selected = _typeFilter == f.$1;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: FilterChip(
+                          label: Text(f.$2),
+                          selected: selected,
+                          onSelected: (_) => setState(() => _typeFilter = f.$1),
+                          selectedColor: AppColors.of(
+                            context,
+                          ).accent.withValues(alpha: 0.2),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                // Status filter
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                  child: Row(
+                    children: [
+                      for (final s in [
+                        ('active', 'Active'),
+                        ('inactive', 'Inactive'),
+                        ('all', 'All'),
+                      ])
+                        Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: ChoiceChip(
+                            label: Text(s.$2),
+                            selected: _statusFilter == s.$1,
+                            onSelected: (_) =>
+                                setState(() => _statusFilter = s.$1),
+                            selectedColor: s.$1 == 'active'
+                                ? Colors.green.withValues(alpha: 0.2)
+                                : s.$1 == 'inactive'
+                                ? Colors.red.withValues(alpha: 0.2)
+                                : AppColors.of(
+                                    context,
+                                  ).accent.withValues(alpha: 0.2),
+                          ),
+                        ),
+                      const Spacer(),
+                      Text(
+                        '${filtered.length} members',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _load,
+                    child: filtered.isEmpty
+                        ? const Center(child: Text('No staff found'))
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            itemCount: filtered.length,
+                            itemBuilder: (_, i) => _StaffCard(
+                              member: filtered[i],
+                              onTap: () => _openEditSheet(filtered[i]),
                             ),
                           ),
-                        const Spacer(),
-                        Text('${filtered.length} members',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600)),
-                      ]),
-                    ),
-                    Expanded(
-                      child: RefreshIndicator(
-                        onRefresh: _load,
-                        child: filtered.isEmpty
-                            ? const Center(child: Text('No staff found'))
-                            : ListView.builder(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12),
-                                itemCount: filtered.length,
-                                itemBuilder: (_, i) => _StaffCard(
-                                  member: filtered[i],
-                                  onTap: () => _openEditSheet(filtered[i]),
-                                ),
-                              ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
+              ],
+            ),
     );
   }
 }
@@ -260,21 +274,32 @@ class _StaffCard extends StatelessWidget {
           contentPadding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
           leading: CircleAvatar(
             backgroundColor: _avatarColor,
-            child: Text(member.initials,
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(
+              member.initials,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
-          title: Text(member.fullName,
-              style: const TextStyle(fontWeight: FontWeight.w600)),
+          title: Text(
+            member.fullName,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
           subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(children: [
-                  Text('${member.displayStaffType} · ',
-                      style: const TextStyle(fontSize: 12)),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    '${member.displayStaffType} · ',
+                    style: const TextStyle(fontSize: 12),
+                  ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 5, vertical: 1),
+                      horizontal: 5,
+                      vertical: 1,
+                    ),
                     decoration: BoxDecoration(
                       color: member.isActive
                           ? Colors.green.withValues(alpha: 0.1)
@@ -284,23 +309,30 @@ class _StaffCard extends StatelessWidget {
                     child: Text(
                       member.isActive ? 'Active' : 'Inactive',
                       style: TextStyle(
-                          fontSize: 10,
-                          color: member.isActive
-                              ? Colors.green.shade700
-                              : Colors.red.shade700),
+                        fontSize: 10,
+                        color: member.isActive
+                            ? Colors.green.shade700
+                            : Colors.red.shade700,
+                      ),
                     ),
                   ),
-                ]),
-                if (rank != null) ...[
-                  const SizedBox(height: 4),
-                  Wrap(spacing: 4, runSpacing: 2, children: [
+                ],
+              ),
+              if (rank != null) ...[
+                const SizedBox(height: 4),
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 2,
+                  children: [
                     if (rank.canPrescribe) _Chip('Rx', Colors.purple),
                     if (rank.canOrderLabs) _Chip('Labs', Colors.orange),
                     if (rank.canPerformEmergencyAccess)
                       _Chip('Emergency', Colors.red),
-                  ]),
-                ],
-              ]),
+                  ],
+                ),
+              ],
+            ],
+          ),
           trailing: const Icon(Icons.chevron_right, color: Colors.grey),
           onTap: onTap,
         ),
@@ -387,8 +419,10 @@ class _EditSheetState extends State<_EditSheet> {
       if (mounted) {
         final rank = _rankId == null
             ? null
-            : widget.ranks.firstWhere((r) => r.id == _rankId,
-                orElse: () => widget.member.clinicalRank!);
+            : widget.ranks.firstWhere(
+                (r) => r.id == _rankId,
+                orElse: () => widget.member.clinicalRank!,
+              );
         final updated = FacilityStaffMemberModel(
           membershipId: widget.member.membershipId,
           userId: widget.member.userId,
@@ -405,9 +439,7 @@ class _EditSheetState extends State<_EditSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(e.toString()),
-              backgroundColor: Colors.red),
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -424,31 +456,34 @@ class _EditSheetState extends State<_EditSheet> {
       builder: (_) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
           title: const Text('Remove from Facility'),
-          content: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text('Remove ${widget.member.fullName} from this facility?'),
-            const SizedBox(height: 12),
-            TextField(
-              controller: reasonCtrl,
-              maxLines: 3,
-              decoration: InputDecoration(
-                labelText: 'Reason (required, min 10 chars)',
-                errorText: reasonError,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Remove ${widget.member.fullName} from this facility?'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Reason (required, min 10 chars)',
+                  errorText: reasonError,
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
               child: const Text('Cancel'),
             ),
             TextButton(
-              style:
-                  TextButton.styleFrom(foregroundColor: Colors.red),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
               onPressed: () {
                 final reason = reasonCtrl.text.trim();
                 if (reason.length < 10) {
-                  setS(() => reasonError =
-                      'Reason must be at least 10 characters');
+                  setS(
+                    () => reasonError = 'Reason must be at least 10 characters',
+                  );
                   return;
                 }
                 Navigator.of(ctx).pop(true);
@@ -465,7 +500,9 @@ class _EditSheetState extends State<_EditSheet> {
     setState(() => _removing = true);
     try {
       await widget.repository.deleteMembership(
-          widget.member.membershipId, reasonCtrl.text.trim());
+        widget.member.membershipId,
+        reasonCtrl.text.trim(),
+      );
       if (mounted) {
         widget.onRemoved(widget.member.membershipId);
         Navigator.of(context).pop();
@@ -473,9 +510,7 @@ class _EditSheetState extends State<_EditSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(e.toString()),
-              backgroundColor: Colors.red),
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -492,116 +527,150 @@ class _EditSheetState extends State<_EditSheet> {
       expand: false,
       builder: (_, ctrl) => Padding(
         padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: Column(children: [
-          Container(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Column(
+          children: [
+            Container(
               width: 40,
               height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 8),
               decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2))),
-          Expanded(
-            child: ListView(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Expanded(
+              child: ListView(
                 controller: ctrl,
                 padding: const EdgeInsets.all(16),
                 children: [
                   // Header
-                  Row(children: [
-                    CircleAvatar(
-                      backgroundColor: AppTheme.primaryColor,
-                      child: Text(widget.member.initials,
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: AppColors.of(context).accent,
+                        child: Text(
+                          widget.member.initials,
                           style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(widget.member.fullName,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16)),
-                          Text(widget.member.email,
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600)),
-                        ]),
-                  ]),
+                          Text(
+                            widget.member.fullName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            widget.member.email,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                   const Divider(height: 24),
 
                   // Staff type
                   DropdownButtonFormField<String>(
                     key: ValueKey(_staffType),
                     initialValue: _staffType,
-                    decoration:
-                        const InputDecoration(labelText: 'Staff Type'),
+                    decoration: const InputDecoration(labelText: 'Staff Type'),
                     items: _staffTypes
-                        .map((t) => DropdownMenuItem(
-                            value: t.$1, child: Text(t.$2)))
+                        .map(
+                          (t) =>
+                              DropdownMenuItem(value: t.$1, child: Text(t.$2)),
+                        )
                         .toList(),
                     onChanged: (v) => setState(() => _staffType = v!),
                   ),
                   const SizedBox(height: 16),
 
                   // Clinical rank
-                  const Text('Clinical Rank',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey)),
+                  const Text(
+                    'Clinical Rank',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  ...widget.ranks.map((rank) => GestureDetector(
-                        onTap: () =>
-                            setState(() => _rankId = rank.id),
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 6),
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
+                  ...widget.ranks.map(
+                    (rank) => GestureDetector(
+                      onTap: () => setState(() => _rankId = rank.id),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: _rankId == rank.id
+                              ? AppColors.of(
+                                  context,
+                                ).accent.withValues(alpha: 0.06)
+                              : Colors.white,
+                          border: Border.all(
                             color: _rankId == rank.id
-                                ? AppTheme.primaryColor
-                                    .withValues(alpha: 0.06)
-                                : Colors.white,
-                            border: Border.all(
-                              color: _rankId == rank.id
-                                  ? AppTheme.primaryColor
-                                  : Colors.grey.shade300,
-                              width: _rankId == rank.id ? 2 : 1,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
+                                ? AppColors.of(context).accent
+                                : Colors.grey.shade300,
+                            width: _rankId == rank.id ? 2 : 1,
                           ),
-                          child: Row(children: [
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
                             Expanded(
                               child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Text(rank.name,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w600)),
-                                    Text('Level ${rank.hierarchyLevel}',
-                                        style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey.shade600)),
-                                    const SizedBox(height: 4),
-                                    Wrap(spacing: 4, children: [
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    rank.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Level ${rank.hierarchyLevel}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Wrap(
+                                    spacing: 4,
+                                    children: [
                                       if (rank.canPrescribe)
                                         _RankChip('Rx', Colors.purple),
                                       if (rank.canOrderLabs)
                                         _RankChip('Labs', Colors.orange),
                                       if (rank.canPerformEmergencyAccess)
-                                        _RankChip(
-                                            'Emergency', Colors.red),
-                                    ]),
-                                  ]),
+                                        _RankChip('Emergency', Colors.red),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                             if (_rankId == rank.id)
-                              Icon(Icons.check_circle,
-                                  color: AppTheme.primaryColor),
-                          ]),
+                              Icon(
+                                Icons.check_circle,
+                                color: AppColors.of(context).accent,
+                              ),
+                          ],
                         ),
-                      )),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
 
                   // Active toggle
@@ -609,8 +678,7 @@ class _EditSheetState extends State<_EditSheet> {
                     value: _isActive,
                     onChanged: (v) => setState(() => _isActive = v),
                     title: const Text('Active'),
-                    subtitle: const Text(
-                        'Inactive staff can no longer log in'),
+                    subtitle: const Text('Inactive staff can no longer log in'),
                     contentPadding: EdgeInsets.zero,
                   ),
                   const SizedBox(height: 16),
@@ -621,20 +689,25 @@ class _EditSheetState extends State<_EditSheet> {
                     child: ElevatedButton(
                       onPressed: _saving ? null : _save,
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 14)),
+                        backgroundColor: AppColors.of(context).accent,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
                       child: _saving
                           ? const SizedBox(
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white))
-                          : const Text('Save Changes',
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              'Save Changes',
                               style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold)),
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -647,21 +720,25 @@ class _EditSheetState extends State<_EditSheet> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red,
                         side: const BorderSide(color: Colors.red),
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: _removing
                           ? const SizedBox(
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.red))
+                                strokeWidth: 2,
+                                color: Colors.red,
+                              ),
+                            )
                           : const Text('Remove from Facility'),
                     ),
                   ),
-                ]),
-          ),
-        ]),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -677,8 +754,9 @@ class _RankChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(4)),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
       child: Text(label, style: TextStyle(fontSize: 10, color: color)),
     );
   }

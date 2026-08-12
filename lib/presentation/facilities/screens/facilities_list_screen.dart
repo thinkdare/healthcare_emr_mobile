@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../data/models/organization_models_enhanced.dart';
 import '../../../data/repositories/facility_repository.dart';
 import '../../../core/api/api_client.dart';
-import '../../../config/theme.dart';
+import '../../../config/app_colors.dart';
 
 class FacilitiesListScreen extends StatefulWidget {
   const FacilitiesListScreen({super.key});
@@ -23,9 +23,7 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
   @override
   void initState() {
     super.initState();
-    _repository = FacilityRepository(
-      apiClient: context.read<ApiClient>(),
-    );
+    _repository = FacilityRepository(apiClient: context.read<ApiClient>());
     _loadFacilities();
   }
 
@@ -54,7 +52,8 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
     await showAdaptiveActionSheet(
       context: context,
       title: 'Delete Facility',
-      message: 'Are you sure you want to delete "${facility.name}"? This action cannot be undone.',
+      message:
+          'Are you sure you want to delete "${facility.name}"? This action cannot be undone.',
       destructiveLabel: 'Delete',
       onConfirm: () => confirmed = true,
     );
@@ -64,12 +63,20 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
         await _repository.deleteFacility(facility.id);
 
         if (mounted) {
-          showAdaptiveToast(context, 'Facility deleted successfully', type: ToastType.success);
+          showAdaptiveToast(
+            context,
+            'Facility deleted successfully',
+            type: ToastType.success,
+          );
           _loadFacilities();
         }
       } catch (e) {
         if (mounted) {
-          showAdaptiveToast(context, 'Failed to delete facility: $e', type: ToastType.error);
+          showAdaptiveToast(
+            context,
+            'Failed to delete facility: $e',
+            type: ToastType.error,
+          );
         }
       }
     }
@@ -102,9 +109,9 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
       body: _buildBody(isWeb),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          final result = await Navigator.of(context).pushNamed(
-            '/facilities/add',
-          );
+          final result = await Navigator.of(
+            context,
+          ).pushNamed('/facilities/add');
           if (result == true) {
             _loadFacilities();
           }
@@ -125,20 +132,24 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: AppTheme.errorColor),
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: AppColors.of(context).critical,
+            ),
             const SizedBox(height: 16),
             Text(
               'Failed to load facilities',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.gray900,
+                color: AppColors.of(context).textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               _error!,
-              style: TextStyle(color: AppTheme.gray600),
+              style: TextStyle(color: AppColors.of(context).textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -156,27 +167,31 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.business, size: 80, color: AppTheme.gray600.withValues(alpha: 0.5)),
+            Icon(
+              Icons.business,
+              size: 80,
+              color: AppColors.of(context).textSecondary.withValues(alpha: 0.5),
+            ),
             const SizedBox(height: 16),
             Text(
               'No facilities yet',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.gray900,
+                color: AppColors.of(context).textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Add your first facility to get started',
-              style: TextStyle(color: AppTheme.gray600),
+              style: TextStyle(color: AppColors.of(context).textSecondary),
             ),
             const SizedBox(height: 24),
             AdaptiveFilledButton(
               onPressed: () async {
-                final result = await Navigator.of(context).pushNamed(
-                  '/facilities/add',
-                );
+                final result = await Navigator.of(
+                  context,
+                ).pushNamed('/facilities/add');
                 if (result == true) {
                   _loadFacilities();
                 }
@@ -191,9 +206,7 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadFacilities,
-      child: isWeb
-          ? _buildGridView()
-          : _buildListView(),
+      child: isWeb ? _buildGridView() : _buildListView(),
     );
   }
 
@@ -236,10 +249,9 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
       elevation: 2,
       child: InkWell(
         onTap: () {
-          Navigator.of(context).pushNamed(
-            '/facilities/edit',
-            arguments: facility,
-          ).then((result) {
+          Navigator.of(
+            context,
+          ).pushNamed('/facilities/edit', arguments: facility).then((result) {
             if (result == true) {
               _loadFacilities();
             }
@@ -256,12 +268,14 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      color: AppColors.of(
+                        context,
+                      ).accent.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       _getFacilityIcon(facility.type),
-                      color: AppTheme.primaryColor,
+                      color: AppColors.of(context).accent,
                       size: 24,
                     ),
                   ),
@@ -284,7 +298,7 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                           facilityTypes[facility.type] ?? facility.type,
                           style: TextStyle(
                             fontSize: 14,
-                            color: AppTheme.gray600,
+                            color: AppColors.of(context).textSecondary,
                           ),
                         ),
                       ],
@@ -293,14 +307,13 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                   PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == 'edit') {
-                        Navigator.of(context).pushNamed(
-                          '/facilities/edit',
-                          arguments: facility,
-                        ).then((result) {
-                          if (result == true) {
-                            _loadFacilities();
-                          }
-                        });
+                        Navigator.of(context)
+                            .pushNamed('/facilities/edit', arguments: facility)
+                            .then((result) {
+                              if (result == true) {
+                                _loadFacilities();
+                              }
+                            });
                       } else if (value == 'delete') {
                         _deleteFacility(facility);
                       }
@@ -316,13 +329,22 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                           ],
                         ),
                       ),
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'delete',
                         child: Row(
                           children: [
-                            Icon(Icons.delete, size: 20, color: AppTheme.errorColor),
+                            Icon(
+                              Icons.delete,
+                              size: 20,
+                              color: AppColors.of(context).critical,
+                            ),
                             SizedBox(width: 8),
-                            Text('Delete', style: TextStyle(color: AppTheme.errorColor)),
+                            Text(
+                              'Delete',
+                              style: TextStyle(
+                                color: AppColors.of(context).critical,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -346,8 +368,10 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                     ),
                     decoration: BoxDecoration(
                       color: facility.isActive
-                          ? AppTheme.successColor.withValues(alpha: 0.1)
-                          : AppTheme.errorColor.withValues(alpha: 0.1),
+                          ? AppColors.of(context).success.withValues(alpha: 0.1)
+                          : AppColors.of(
+                              context,
+                            ).critical.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Row(
@@ -357,8 +381,8 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                           facility.isActive ? Icons.check_circle : Icons.cancel,
                           size: 14,
                           color: facility.isActive
-                              ? AppTheme.successColor
-                              : AppTheme.errorColor,
+                              ? AppColors.of(context).success
+                              : AppColors.of(context).critical,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -367,8 +391,8 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: facility.isActive
-                                ? AppTheme.successColor
-                                : AppTheme.errorColor,
+                                ? AppColors.of(context).success
+                                : AppColors.of(context).critical,
                           ),
                         ),
                       ],
@@ -382,7 +406,9 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppTheme.warningColor.withValues(alpha: 0.1),
+                        color: AppColors.of(
+                          context,
+                        ).warning.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Row(
@@ -391,7 +417,7 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                           Icon(
                             Icons.emergency,
                             size: 14,
-                            color: AppTheme.warningColor,
+                            color: AppColors.of(context).warning,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -399,7 +425,7 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: AppTheme.warningColor,
+                              color: AppColors.of(context).warning,
                             ),
                           ),
                         ],
@@ -418,14 +444,14 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
   Widget _buildInfoRow(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: AppTheme.gray600),
+        Icon(icon, size: 16, color: AppColors.of(context).textSecondary),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             text,
             style: TextStyle(
               fontSize: 14,
-              color: AppTheme.gray600,
+              color: AppColors.of(context).textSecondary,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,

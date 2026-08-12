@@ -2,18 +2,17 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
-import '../../../config/theme.dart';
 import '../../../data/models/emergency_access_models.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/emergency_access_provider.dart';
 import 'trigger_emergency_access_screen.dart';
+import '../../../config/app_colors.dart';
 
 class EmergencyAccessScreen extends StatefulWidget {
   const EmergencyAccessScreen({super.key});
 
   @override
-  State<EmergencyAccessScreen> createState() =>
-      _EmergencyAccessScreenState();
+  State<EmergencyAccessScreen> createState() => _EmergencyAccessScreenState();
 }
 
 class _EmergencyAccessScreenState extends State<EmergencyAccessScreen> {
@@ -23,9 +22,7 @@ class _EmergencyAccessScreenState extends State<EmergencyAccessScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context
-          .read<EmergencyAccessProvider>()
-          .loadLogs(refresh: true);
+      context.read<EmergencyAccessProvider>().loadLogs(refresh: true);
     });
     _scrollCtrl.addListener(_onScroll);
   }
@@ -61,16 +58,14 @@ class _EmergencyAccessScreenState extends State<EmergencyAccessScreen> {
                 'Provider: ${log.providerName ?? "Unknown"}',
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
-              Text(
-                'Patient: ${log.patientName ?? log.masterPatientId}',
-              ),
-              Text(
-                'Type: ${log.emergencyTypeDisplay}',
-              ),
+              Text('Patient: ${log.patientName ?? log.masterPatientId}'),
+              Text('Type: ${log.emergencyTypeDisplay}'),
               Text(
                 'Date: ${_formatDate(log.accessedAt)}',
-                style:
-                    const TextStyle(color: AppTheme.gray600, fontSize: 13),
+                style: TextStyle(
+                  color: AppColors.of(context).textSecondary,
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -116,16 +111,25 @@ class _EmergencyAccessScreenState extends State<EmergencyAccessScreen> {
 
     if (!mounted) return;
     if (ok) {
-      showAdaptiveToast(context, 'Emergency access event marked as reviewed.', type: ToastType.success);
+      showAdaptiveToast(
+        context,
+        'Emergency access event marked as reviewed.',
+        type: ToastType.success,
+      );
     } else {
-      showAdaptiveToast(context, provider.error ?? 'Failed to mark reviewed', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        provider.error ?? 'Failed to mark reviewed',
+        type: ToastType.error,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final canTrigger =
-        context.select<AuthProvider, bool>((a) => a.canEmergencyAccess);
+    final canTrigger = context.select<AuthProvider, bool>(
+      (a) => a.canEmergencyAccess,
+    );
 
     return Scaffold(
       appBar: kIsIOS
@@ -153,19 +157,18 @@ class _EmergencyAccessScreenState extends State<EmergencyAccessScreen> {
             ),
       floatingActionButton: canTrigger
           ? FloatingActionButton.extended(
-              backgroundColor: AppTheme.errorColor,
+              backgroundColor: AppColors.of(context).critical,
               foregroundColor: Colors.white,
               onPressed: () async {
-                final provider =
-                    context.read<EmergencyAccessProvider>();
+                final provider = context.read<EmergencyAccessProvider>();
                 final created = await Navigator.of(context).push<bool>(
                   kIsIOS
                       ? CupertinoPageRoute(
-                          builder: (_) =>
-                              const TriggerEmergencyAccessScreen())
+                          builder: (_) => const TriggerEmergencyAccessScreen(),
+                        )
                       : MaterialPageRoute(
-                          builder: (_) =>
-                              const TriggerEmergencyAccessScreen()),
+                          builder: (_) => const TriggerEmergencyAccessScreen(),
+                        ),
                 );
                 if (created == true && mounted) {
                   provider.loadLogs(refresh: true);
@@ -188,15 +191,16 @@ class _EmergencyAccessScreenState extends State<EmergencyAccessScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.error_outline,
-                        size: 48, color: AppTheme.errorColor),
+                    Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: AppColors.of(context).critical,
+                    ),
                     const SizedBox(height: 12),
-                    Text(provider.error!,
-                        textAlign: TextAlign.center),
+                    Text(provider.error!, textAlign: TextAlign.center),
                     const SizedBox(height: 16),
                     FilledButton(
-                      onPressed: () =>
-                          provider.loadLogs(refresh: true),
+                      onPressed: () => provider.loadLogs(refresh: true),
                       child: const Text('Retry'),
                     ),
                   ],
@@ -206,30 +210,35 @@ class _EmergencyAccessScreenState extends State<EmergencyAccessScreen> {
           }
 
           if (provider.logs.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.verified_user_outlined,
-                      size: 56, color: AppTheme.gray600),
+                  Icon(
+                    Icons.verified_user_outlined,
+                    size: 56,
+                    color: AppColors.of(context).textSecondary,
+                  ),
                   SizedBox(height: 12),
-                  Text('No emergency access events.',
-                      style: TextStyle(color: AppTheme.gray600)),
+                  Text(
+                    'No emergency access events.',
+                    style: TextStyle(
+                      color: AppColors.of(context).textSecondary,
+                    ),
+                  ),
                 ],
               ),
             );
           }
 
-          final currentUserId =
-              context.read<AuthProvider>().currentUser?.id;
+          final currentUserId = context.read<AuthProvider>().currentUser?.id;
 
           return RefreshIndicator(
             onRefresh: () => provider.loadLogs(refresh: true),
             child: ListView.separated(
               controller: _scrollCtrl,
               padding: const EdgeInsets.all(16),
-              itemCount: provider.logs.length +
-                  (provider.hasMore ? 1 : 0),
+              itemCount: provider.logs.length + (provider.hasMore ? 1 : 0),
               separatorBuilder: (context, index) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 if (index == provider.logs.length) {
@@ -243,7 +252,7 @@ class _EmergencyAccessScreenState extends State<EmergencyAccessScreen> {
                   log: log,
                   isNotifiedProvider:
                       currentUserId != null &&
-                          log.notifiedProviderId == currentUserId,
+                      log.notifiedProviderId == currentUserId,
                   onReview: () => _showReviewDialog(log),
                 );
               },
@@ -278,8 +287,8 @@ class _EmergencyLogCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
           color: needsReview
-              ? AppTheme.warningColor.withValues(alpha: 0.6)
-              : AppTheme.gray100,
+              ? AppColors.of(context).warning.withValues(alpha: 0.6)
+              : AppColors.of(context).surfaceTint,
         ),
       ),
       child: Padding(
@@ -296,29 +305,31 @@ class _EmergencyLogCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             _LabeledText(
-                label: 'Patient',
-                value: log.patientName ?? log.masterPatientId),
-            _LabeledText(
-                label: 'Provider', value: log.providerName ?? '—'),
+              label: 'Patient',
+              value: log.patientName ?? log.masterPatientId,
+            ),
+            _LabeledText(label: 'Provider', value: log.providerName ?? '—'),
             if (log.facilityName != null)
               _LabeledText(label: 'Facility', value: log.facilityName!),
             _LabeledText(
-                label: 'Accessed',
-                value: _formatDate(log.accessedAt),
-                muted: true),
+              label: 'Accessed',
+              value: _formatDate(log.accessedAt),
+              muted: true,
+            ),
 
             if (log.escalatedToSupervisor) ...[
               const SizedBox(height: 8),
               _AlertRow(
                 icon: Icons.escalator_warning,
-                color: AppTheme.errorColor,
-                text: 'Escalated to supervisor${log.escalatedAt != null ? ' on ${_formatDate(log.escalatedAt!)}' : ''}',
+                color: AppColors.of(context).critical,
+                text:
+                    'Escalated to supervisor${log.escalatedAt != null ? ' on ${_formatDate(log.escalatedAt!)}' : ''}',
               ),
             ] else if (log.needsEscalation && !log.reviewedByPrimary) ...[
               const SizedBox(height: 8),
-              const _AlertRow(
+              _AlertRow(
                 icon: Icons.timer_outlined,
-                color: AppTheme.warningColor,
+                color: AppColors.of(context).warning,
                 text: 'Pending review — may be escalated',
               ),
             ],
@@ -329,7 +340,8 @@ class _EmergencyLogCard extends StatelessWidget {
                 width: double.infinity,
                 child: FilledButton.icon(
                   style: FilledButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor),
+                    backgroundColor: AppColors.of(context).accent,
+                  ),
                   onPressed: onReview,
                   icon: const Icon(Icons.rate_review_outlined, size: 18),
                   label: const Text('Review This Event'),
@@ -352,24 +364,27 @@ class _TypeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppTheme.errorColor.withValues(alpha: 0.12),
+        color: AppColors.of(context).critical.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.warning_amber_rounded,
-              size: 13, color: AppTheme.errorColor),
+          Icon(
+            Icons.warning_amber_rounded,
+            size: 13,
+            color: AppColors.of(context).critical,
+          ),
           const SizedBox(width: 4),
           Text(
             _label(type),
-            style: const TextStyle(
-                color: AppTheme.errorColor,
-                fontSize: 12,
-                fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: AppColors.of(context).critical,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -377,12 +392,12 @@ class _TypeChip extends StatelessWidget {
   }
 
   String _label(String type) => switch (type) {
-        'life_threatening'  => 'Life Threatening',
-        'unconscious'       => 'Unconscious',
-        'unable_to_consent' => 'Cannot Consent',
-        'critical_care'     => 'Critical Care',
-        _                   => type,
-      };
+    'life_threatening' => 'Life Threatening',
+    'unconscious' => 'Unconscious',
+    'unable_to_consent' => 'Cannot Consent',
+    'critical_care' => 'Critical Care',
+    _ => type,
+  };
 }
 
 class _StatusChip extends StatelessWidget {
@@ -392,23 +407,25 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color) = log.reviewedByPrimary
-        ? ('Reviewed', AppTheme.successColor)
+        ? ('Reviewed', AppColors.of(context).success)
         : log.escalatedToSupervisor
-            ? ('Escalated', AppTheme.errorColor)
-            : ('Pending Review', AppTheme.warningColor);
+        ? ('Escalated', AppColors.of(context).critical)
+        : ('Pending Review', AppColors.of(context).warning);
 
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(label,
-          style: TextStyle(
-              color: color,
-              fontSize: 11,
-              fontWeight: FontWeight.w600)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }
@@ -418,8 +435,11 @@ class _LabeledText extends StatelessWidget {
   final String value;
   final bool muted;
 
-  const _LabeledText(
-      {required this.label, required this.value, this.muted = false});
+  const _LabeledText({
+    required this.label,
+    required this.value,
+    this.muted = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -432,18 +452,20 @@ class _LabeledText extends StatelessWidget {
             width: 70,
             child: Text(
               '$label:',
-              style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.gray600),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.of(context).textSecondary,
+              ),
             ),
           ),
           Expanded(
             child: Text(
               value,
               style: TextStyle(
-                  fontSize: 13,
-                  color: muted ? AppTheme.gray600 : null),
+                fontSize: 13,
+                color: muted ? AppColors.of(context).textSecondary : null,
+              ),
             ),
           ),
         ],
@@ -457,8 +479,11 @@ class _AlertRow extends StatelessWidget {
   final Color color;
   final String text;
 
-  const _AlertRow(
-      {required this.icon, required this.color, required this.text});
+  const _AlertRow({
+    required this.icon,
+    required this.color,
+    required this.text,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -467,11 +492,14 @@ class _AlertRow extends StatelessWidget {
         Icon(icon, size: 14, color: color),
         const SizedBox(width: 6),
         Expanded(
-          child: Text(text,
-              style: TextStyle(
-                  fontSize: 12,
-                  color: color,
-                  fontWeight: FontWeight.w500)),
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
       ],
     );

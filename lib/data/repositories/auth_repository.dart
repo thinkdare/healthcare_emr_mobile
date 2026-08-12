@@ -93,10 +93,13 @@ class AuthRepository {
       queryParameters: {'token': token},
     );
     if (response['success'] != true) {
-      throw Exception(response['message'] ?? 'Invitation not found or has expired.');
+      throw Exception(
+        response['message'] ?? 'Invitation not found or has expired.',
+      );
     }
     return InvitationPreviewModel.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map));
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
   }
 
   /// Accepts an invitation and creates the account. Saves the returned
@@ -111,16 +114,19 @@ class AuthRepository {
     String? phone,
     String? licenseNumber,
   }) async {
-    final response = await apiClient.post('/staff/register', data: {
-      'token': token,
-      'first_name': firstName,
-      'last_name': lastName,
-      'password': password,
-      'password_confirmation': passwordConfirmation,
-      if (phone != null && phone.isNotEmpty) 'phone': phone,
-      if (licenseNumber != null && licenseNumber.isNotEmpty)
-        'license_number': licenseNumber,
-    });
+    final response = await apiClient.post(
+      '/staff/register',
+      data: {
+        'token': token,
+        'first_name': firstName,
+        'last_name': lastName,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+        if (phone != null && phone.isNotEmpty) 'phone': phone,
+        if (licenseNumber != null && licenseNumber.isNotEmpty)
+          'license_number': licenseNumber,
+      },
+    );
 
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Registration failed');
@@ -167,8 +173,10 @@ class AuthRepository {
     final data = Map<String, dynamic>.from(response['data'] as Map);
     final list = data['facilities'] as List? ?? [];
     return list
-        .map((e) =>
-            AuthFacilityModel.fromMembershipJson(e as Map<String, dynamic>))
+        .map(
+          (e) =>
+              AuthFacilityModel.fromMembershipJson(e as Map<String, dynamic>),
+        )
         .toList();
   }
 
@@ -249,10 +257,7 @@ class AuthRepository {
 
   /// Disable 2FA. Requires the current TOTP code (or a backup code).
   Future<void> twoFactorDisable(String code) async {
-    final response = await apiClient.delete(
-      '/auth/2fa',
-      data: {'code': code},
-    );
+    final response = await apiClient.delete('/auth/2fa', data: {'code': code});
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Could not disable 2FA');
     }
@@ -272,7 +277,9 @@ class AuthRepository {
   Future<List<String>> twoFactorRegenerateBackupCodes() async {
     final response = await apiClient.post('/auth/2fa/backup-codes');
     if (response['success'] != true) {
-      throw Exception(response['message'] ?? 'Failed to regenerate backup codes');
+      throw Exception(
+        response['message'] ?? 'Failed to regenerate backup codes',
+      );
     }
     final data = Map<String, dynamic>.from(response['data'] as Map);
     return List<String>.from(data['backup_codes'] as List? ?? []);

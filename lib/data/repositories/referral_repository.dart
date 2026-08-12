@@ -13,16 +13,18 @@ class ReferralRepository {
   ReferralRepository({required this.apiClient});
 
   List<ReferralModel> _parseList(List raw) => raw
-      .map((e) => ReferralModel.fromJson(
-            Map<String, dynamic>.from(e as Map),
-            currentTenantId: currentTenantId,
-          ))
+      .map(
+        (e) => ReferralModel.fromJson(
+          Map<String, dynamic>.from(e as Map),
+          currentTenantId: currentTenantId,
+        ),
+      )
       .toList();
 
   ReferralModel _parseOne(Map raw) => ReferralModel.fromJson(
-        Map<String, dynamic>.from(raw),
-        currentTenantId: currentTenantId,
-      );
+    Map<String, dynamic>.from(raw),
+    currentTenantId: currentTenantId,
+  );
 
   // ── GET /api/v1/referrals ─────────────────────────────────────────────────
 
@@ -35,8 +37,9 @@ class ReferralRepository {
       throw Exception(response['message'] ?? 'Failed to load referrals');
     }
     final data = response['data'];
-    final raw =
-        data is Map ? (data['data'] as List? ?? []) : (data as List? ?? []);
+    final raw = data is Map
+        ? (data['data'] as List? ?? [])
+        : (data as List? ?? []);
     return _parseList(raw);
   }
 
@@ -73,12 +76,18 @@ class ReferralRepository {
   // ── POST /api/v1/referrals/{id}/schedule ─────────────────────────────────
 
   Future<ReferralModel> schedule(
-      String id, String appointmentDate, String? location) async {
-    final response = await apiClient.post('/referrals/$id/schedule', data: {
-      'appointment_date': appointmentDate,
-      if (location != null && location.isNotEmpty)
-        'appointment_location': location,
-    });
+    String id,
+    String appointmentDate,
+    String? location,
+  ) async {
+    final response = await apiClient.post(
+      '/referrals/$id/schedule',
+      data: {
+        'appointment_date': appointmentDate,
+        if (location != null && location.isNotEmpty)
+          'appointment_location': location,
+      },
+    );
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to schedule referral');
     }
@@ -88,12 +97,18 @@ class ReferralRepository {
   // ── POST /api/v1/referrals/{id}/complete ─────────────────────────────────
 
   Future<ReferralModel> complete(
-      String id, String notes, String? recommendations) async {
-    final response = await apiClient.post('/referrals/$id/complete', data: {
-      'consultation_notes': notes,
-      if (recommendations != null && recommendations.isNotEmpty)
-        'recommendations': recommendations,
-    });
+    String id,
+    String notes,
+    String? recommendations,
+  ) async {
+    final response = await apiClient.post(
+      '/referrals/$id/complete',
+      data: {
+        'consultation_notes': notes,
+        if (recommendations != null && recommendations.isNotEmpty)
+          'recommendations': recommendations,
+      },
+    );
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to complete referral');
     }
@@ -122,9 +137,11 @@ class ReferralRepository {
     }
     final raw = response['data'] as List? ?? [];
     return raw
-        .map((e) => ReferralMessageModel.fromJson(
-              Map<String, dynamic>.from(e as Map),
-            ))
+        .map(
+          (e) => ReferralMessageModel.fromJson(
+            Map<String, dynamic>.from(e as Map),
+          ),
+        )
         .toList();
   }
 
@@ -139,6 +156,7 @@ class ReferralRepository {
       throw Exception(response['message'] ?? 'Failed to send message');
     }
     return ReferralMessageModel.fromJson(
-        Map<String, dynamic>.from(response['data'] as Map));
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
   }
 }

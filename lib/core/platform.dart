@@ -65,12 +65,13 @@ Future<void> showAdaptiveDialog({
         title: Text(title),
         content: Text(content),
         actions: actions
-            .map((a) => CupertinoDialogAction(
-                  isDestructiveAction: a.isDestructive,
-                  onPressed:
-                      a.onPressed ?? () => Navigator.of(context).pop(),
-                  child: Text(a.label),
-                ))
+            .map(
+              (a) => CupertinoDialogAction(
+                isDestructiveAction: a.isDestructive,
+                onPressed: a.onPressed ?? () => Navigator.of(context).pop(),
+                child: Text(a.label),
+              ),
+            )
             .toList(),
       ),
     );
@@ -81,15 +82,19 @@ Future<void> showAdaptiveDialog({
       title: Text(title),
       content: Text(content),
       actions: actions
-          .map((a) => TextButton(
-                onPressed:
-                    a.onPressed ?? () => Navigator.of(context).pop(),
-                child: Text(
-                  a.label,
-                  style: TextStyle(
-                      color: a.isDestructive ? AppColors.error : null),
+          .map(
+            (a) => TextButton(
+              onPressed: a.onPressed ?? () => Navigator.of(context).pop(),
+              child: Text(
+                a.label,
+                style: TextStyle(
+                  color: a.isDestructive
+                      ? AppColors.of(context).critical
+                      : null,
                 ),
-              ))
+              ),
+            ),
+          )
           .toList(),
     ),
   );
@@ -137,15 +142,21 @@ Future<void> showAdaptiveActionSheet({
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
-            title: Text(title,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text(message),
           ),
           ListTile(
-            leading:
-                const Icon(Icons.delete_outline, color: AppColors.error),
-            title: Text(destructiveLabel,
-                style: const TextStyle(color: AppColors.error)),
+            leading: Icon(
+              Icons.delete_outline,
+              color: AppColors.of(context).critical,
+            ),
+            title: Text(
+              destructiveLabel,
+              style: TextStyle(color: AppColors.of(context).critical),
+            ),
             onTap: () {
               Navigator.of(context).pop();
               onConfirm();
@@ -173,8 +184,9 @@ void showAdaptiveToast(
   ToastType type = ToastType.info,
 }) {
   if (!kIsIOS) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
     return;
   }
 
@@ -182,9 +194,9 @@ void showAdaptiveToast(
   late OverlayEntry entry;
 
   final borderColor = switch (type) {
-    ToastType.success => AppColors.success,
-    ToastType.error   => AppColors.error,
-    ToastType.info    => AppColors.primary,
+    ToastType.success => AppColors.of(context).success,
+    ToastType.error => AppColors.of(context).critical,
+    ToastType.info => AppColors.of(context).accent,
   };
 
   entry = OverlayEntry(
@@ -195,13 +207,11 @@ void showAdaptiveToast(
       child: Material(
         color: Colors.transparent,
         child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: CupertinoColors.systemBackground.resolveFrom(context),
             borderRadius: BorderRadius.circular(12),
-            border: Border(
-                left: BorderSide(color: borderColor, width: 4)),
+            border: Border(left: BorderSide(color: borderColor, width: 4)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.12),
@@ -212,8 +222,7 @@ void showAdaptiveToast(
           ),
           child: Text(
             message,
-            style: const TextStyle(
-                fontSize: 14, color: CupertinoColors.label),
+            style: const TextStyle(fontSize: 14, color: CupertinoColors.label),
           ),
         ),
       ),
@@ -418,7 +427,8 @@ class AdaptiveDropdown<T> extends StatelessWidget {
                           ? Text(
                               decoration.hintText ?? '',
                               style: const TextStyle(
-                                  color: CupertinoColors.placeholderText),
+                                color: CupertinoColors.placeholderText,
+                              ),
                             )
                           : Text(currentLabel),
                     ),

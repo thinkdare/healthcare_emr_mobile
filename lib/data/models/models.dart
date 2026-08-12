@@ -129,18 +129,12 @@ class ApiResponse<T> {
   final String? message;
   final ApiMeta? meta;
 
-  ApiResponse({
-    required this.success,
-    this.data,
-    this.message,
-    this.meta,
-  });
+  ApiResponse({required this.success, this.data, this.message, this.meta});
 
   factory ApiResponse.fromJson(
     Map<String, dynamic> json,
     T Function(Object? json) fromJsonT,
-  ) =>
-      _$ApiResponseFromJson(json, fromJsonT);
+  ) => _$ApiResponseFromJson(json, fromJsonT);
 
   Map<String, dynamic> toJson(Object? Function(T value) toJsonT) =>
       _$ApiResponseToJson(this, toJsonT);

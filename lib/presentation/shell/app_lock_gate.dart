@@ -12,7 +12,6 @@ import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/app_colors.dart';
-import '../../config/theme.dart';
 import '../../core/platform.dart';
 import '../../data/providers/auth_provider.dart';
 
@@ -66,7 +65,8 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
     if (!_hasProtectableSession) return;
     _armed = true;
 
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
       setState(() => _locked = true);
     } else if (state == AppLifecycleState.resumed && _locked) {
       _attemptUnlock();
@@ -131,19 +131,28 @@ class _LockScreen extends StatelessWidget {
         Icon(
           kIsIOS ? CupertinoIcons.lock_shield : Icons.lock_outline,
           size: 64,
-          color: kIsIOS ? AppColors.primary : AppTheme.primaryColor,
+          color: kIsIOS
+              ? AppColors.of(context).accent
+              : AppColors.of(context).accent,
         ),
         const SizedBox(height: 24),
-        const Text('Voya is locked',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        const Text(
+          'Voya is locked',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 8),
-        const Text('Unlock to view patient data',
-            style: TextStyle(fontSize: 14, color: CupertinoColors.systemGrey)),
+        const Text(
+          'Unlock to view patient data',
+          style: TextStyle(fontSize: 14, color: CupertinoColors.systemGrey),
+        ),
         const SizedBox(height: 32),
         if (checking)
           const CircularProgressIndicator()
         else
-          AdaptiveFilledButton(onPressed: onUnlock, child: const Text('Unlock')),
+          AdaptiveFilledButton(
+            onPressed: onUnlock,
+            child: const Text('Unlock'),
+          ),
       ],
     );
 

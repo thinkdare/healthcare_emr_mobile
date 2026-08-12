@@ -108,14 +108,14 @@ class ClinicalProvider extends ChangeNotifier {
         repository.getProcedures(patientId),
         repository.getImmunizations(patientId),
       ]);
-      _appointments  = results[0] as List<AppointmentModel>;
+      _appointments = results[0] as List<AppointmentModel>;
       _prescriptions = results[1] as List<PrescriptionModel>;
-      _labResults    = results[2] as List<LabResultModel>;
-      _documents     = results[3] as List<MedicalDocumentModel>;
-      _vitalSigns    = results[4] as List<VitalSignModel>;
-      _diagnoses     = results[5] as List<DiagnosisModel>;
-      _problems      = results[6] as List<ProblemListModel>;
-      _procedures    = results[7] as List<ProcedureModel>;
+      _labResults = results[2] as List<LabResultModel>;
+      _documents = results[3] as List<MedicalDocumentModel>;
+      _vitalSigns = results[4] as List<VitalSignModel>;
+      _diagnoses = results[5] as List<DiagnosisModel>;
+      _problems = results[6] as List<ProblemListModel>;
+      _procedures = results[7] as List<ProcedureModel>;
       _immunizations = results[8] as List<ImmunizationModel>;
       _error = null;
     } catch (e) {
@@ -131,7 +131,10 @@ class ClinicalProvider extends ChangeNotifier {
   Future<void> loadAppointments({String? status}) async {
     if (_patientId == null) return;
     try {
-      _appointments = await repository.getAppointments(_patientId!, status: status);
+      _appointments = await repository.getAppointments(
+        _patientId!,
+        status: status,
+      );
       notifyListeners();
     } catch (e) {
       _error = _friendlyError(e);
@@ -142,7 +145,10 @@ class ClinicalProvider extends ChangeNotifier {
   Future<void> loadPrescriptions({String? status}) async {
     if (_patientId == null) return;
     try {
-      _prescriptions = await repository.getPrescriptions(_patientId!, status: status);
+      _prescriptions = await repository.getPrescriptions(
+        _patientId!,
+        status: status,
+      );
       notifyListeners();
     } catch (e) {
       _error = _friendlyError(e);
@@ -342,7 +348,8 @@ class ClinicalProvider extends ChangeNotifier {
   }
 
   Future<ImmunizationModel?> createImmunization(
-      Map<String, dynamic> data) async {
+    Map<String, dynamic> data,
+  ) async {
     if (_patientId == null) return null;
     try {
       final i = await repository.createImmunization(_patientId!, data);
@@ -360,8 +367,9 @@ class ClinicalProvider extends ChangeNotifier {
     if (_patientId == null) return false;
     try {
       await repository.deleteImmunization(_patientId!, immunizationId);
-      _immunizations =
-          _immunizations.where((i) => i.id != immunizationId).toList();
+      _immunizations = _immunizations
+          .where((i) => i.id != immunizationId)
+          .toList();
       notifyListeners();
       return true;
     } catch (e) {
@@ -371,8 +379,7 @@ class ClinicalProvider extends ChangeNotifier {
     }
   }
 
-  Future<AppointmentModel?> createAppointment(
-      Map<String, dynamic> data) async {
+  Future<AppointmentModel?> createAppointment(Map<String, dynamic> data) async {
     if (_patientId == null) return null;
     try {
       final appt = await repository.createAppointment(_patientId!, data);
@@ -390,8 +397,10 @@ class ClinicalProvider extends ChangeNotifier {
     if (_patientId == null) return false;
     try {
       final updated = await repository.cancelAppointment(
-          _patientId!, appointmentId,
-          reason: reason);
+        _patientId!,
+        appointmentId,
+        reason: reason,
+      );
       _appointments = _appointments
           .map((a) => a.id == appointmentId ? updated : a)
           .toList();
@@ -405,7 +414,8 @@ class ClinicalProvider extends ChangeNotifier {
   }
 
   Future<PrescriptionModel?> createPrescription(
-      Map<String, dynamic> data) async {
+    Map<String, dynamic> data,
+  ) async {
     if (_patientId == null) return null;
     try {
       final rx = await repository.createPrescription(_patientId!, data);
@@ -420,12 +430,16 @@ class ClinicalProvider extends ChangeNotifier {
   }
 
   Future<PrescriptionModel?> fillPrescription(
-      String prescriptionId, int quantityDispensed) async {
+    String prescriptionId,
+    int quantityDispensed,
+  ) async {
     if (_patientId == null) return null;
     try {
       final updated = await repository.fillPrescription(
-          _patientId!, prescriptionId,
-          quantityDispensed: quantityDispensed);
+        _patientId!,
+        prescriptionId,
+        quantityDispensed: quantityDispensed,
+      );
       _prescriptions = _prescriptions
           .map((p) => p.id == prescriptionId ? updated : p)
           .toList();
@@ -438,13 +452,17 @@ class ClinicalProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> discontinuePrescription(String prescriptionId,
-      {String? reason}) async {
+  Future<bool> discontinuePrescription(
+    String prescriptionId, {
+    String? reason,
+  }) async {
     if (_patientId == null) return false;
     try {
       final updated = await repository.discontinuePrescription(
-          _patientId!, prescriptionId,
-          reason: reason);
+        _patientId!,
+        prescriptionId,
+        reason: reason,
+      );
       _prescriptions = _prescriptions
           .map((p) => p.id == prescriptionId ? updated : p)
           .toList();
@@ -472,11 +490,16 @@ class ClinicalProvider extends ChangeNotifier {
   }
 
   Future<LabResultModel?> recordLabResult(
-      String labResultId, Map<String, dynamic> data) async {
+    String labResultId,
+    Map<String, dynamic> data,
+  ) async {
     if (_patientId == null) return null;
     try {
-      final updated =
-          await repository.recordLabResult(_patientId!, labResultId, data);
+      final updated = await repository.recordLabResult(
+        _patientId!,
+        labResultId,
+        data,
+      );
       _labResults = _labResults
           .map((l) => l.id == labResultId ? updated : l)
           .toList();
@@ -557,8 +580,10 @@ class ClinicalProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result =
-          await repository.getPatientAuditLog(patientId, page: _auditLogPage);
+      final result = await repository.getPatientAuditLog(
+        patientId,
+        page: _auditLogPage,
+      );
       _auditLog = refresh ? result.items : [..._auditLog, ...result.items];
       _auditLogHasMore = result.hasMore;
     } catch (e) {
@@ -607,7 +632,10 @@ class ClinicalProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final reply = await repository.replyToPatientMessage(
-          patientId, _messages.last.id, body);
+        patientId,
+        _messages.last.id,
+        body,
+      );
       _messages = [..._messages, reply];
       return true;
     } catch (e) {
@@ -623,19 +651,19 @@ class ClinicalProvider extends ChangeNotifier {
 
   void clear() {
     _patientId = null;
-    _appointments  = [];
+    _appointments = [];
     _prescriptions = [];
-    _labResults    = [];
-    _documents     = [];
-    _vitalSigns    = [];
-    _diagnoses     = [];
-    _problems      = [];
-    _procedures    = [];
+    _labResults = [];
+    _documents = [];
+    _vitalSigns = [];
+    _diagnoses = [];
+    _problems = [];
+    _procedures = [];
     _immunizations = [];
-    _auditLog      = [];
-    _auditLogPage  = 1;
+    _auditLog = [];
+    _auditLogPage = 1;
     _auditLogHasMore = false;
-    _messages      = [];
+    _messages = [];
     _error = null;
     notifyListeners();
   }
@@ -653,7 +681,8 @@ class ClinicalProvider extends ChangeNotifier {
       return 'No internet connection.';
     }
     if (msg.contains('401')) return 'Session expired. Please log in again.';
-    if (msg.contains('403')) return 'You do not have permission to view this data.';
+    if (msg.contains('403'))
+      return 'You do not have permission to view this data.';
     if (msg.contains('404')) return 'Record not found.';
     return 'Something went wrong. Please try again.';
   }

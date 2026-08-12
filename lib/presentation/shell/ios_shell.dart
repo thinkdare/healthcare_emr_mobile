@@ -28,8 +28,9 @@ class IOSShell extends StatelessWidget {
         return Builder(
           builder: (context) {
             final brightness = themeModeProvider.resolvedBrightness(context);
-            final tokens =
-                brightness == Brightness.dark ? AppColorTokens.dark : AppColorTokens.light;
+            final tokens = brightness == Brightness.dark
+                ? AppColorTokens.dark
+                : AppColorTokens.light;
             return AppColorScope(
               tokens: tokens,
               child: CupertinoApp(
@@ -65,9 +66,7 @@ class _IOSAuthWrapper extends StatelessWidget {
             child: Center(child: CupertinoActivityIndicator()),
           );
         }
-        return auth.isAuthenticated
-            ? const _IOSTabs()
-            : const LoginScreen();
+        return auth.isAuthenticated ? const _IOSTabs() : const LoginScreen();
       },
     );
   }

@@ -12,7 +12,8 @@ class SubscriptionPlanModel {
   final String? description;
   final String billingCycle; // 'monthly' | 'annual'
   final Map<String, double> prices; // {usd, eur, cad, ngn}
-  final Map<String, dynamic> limits; // {max_facilities, max_staff, max_patients}
+  final Map<String, dynamic>
+  limits; // {max_facilities, max_staff, max_patients}
   final List<String> features;
   final bool isActive;
   final bool isPublic;
@@ -40,7 +41,9 @@ class SubscriptionPlanModel {
       billingCycle: json['billing_cycle'] as String? ?? 'monthly',
       prices: rawPrices.map((k, v) => MapEntry(k, (v as num).toDouble())),
       limits: Map<String, dynamic>.from(json['limits'] as Map? ?? {}),
-      features: (json['features'] as List? ?? []).map((e) => e.toString()).toList(),
+      features: (json['features'] as List? ?? [])
+          .map((e) => e.toString())
+          .toList(),
       isActive: json['is_active'] as bool? ?? true,
       isPublic: json['is_public'] as bool? ?? true,
     );
@@ -54,7 +57,8 @@ class SubscriptionModel {
   final String organizationId;
   final String planId;
   final SubscriptionPlanModel? plan;
-  final String status; // 'trial' | 'active' | 'past_due' | 'cancelled' | 'suspended'
+  final String
+  status; // 'trial' | 'active' | 'past_due' | 'cancelled' | 'suspended'
   final String currency;
   final int amount; // in smallest currency unit (kobo / cents)
   final String billingCycle; // 'monthly' | 'annual'
@@ -91,7 +95,8 @@ class SubscriptionModel {
       planId: json['plan_id'] as String,
       plan: json['plan'] != null
           ? SubscriptionPlanModel.fromJson(
-              Map<String, dynamic>.from(json['plan'] as Map))
+              Map<String, dynamic>.from(json['plan'] as Map),
+            )
           : null,
       status: json['status'] as String? ?? 'active',
       currency: json['currency'] as String? ?? 'NGN',
@@ -136,11 +141,10 @@ class SubscriptionModel {
   /// Assumes NGN amounts are in kobo (divide by 100); USD/EUR in cents.
   String get formattedAmount {
     final major = amount / 100;
-    final symbol = currency == 'NGN' ? '₦' : (currency == 'USD' ? '\$' : currency);
-    return '$symbol${major.toStringAsFixed(2).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]},',
-    )}';
+    final symbol = currency == 'NGN'
+        ? '₦'
+        : (currency == 'USD' ? '\$' : currency);
+    return '$symbol${major.toStringAsFixed(2).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
   }
 }
 
@@ -190,7 +194,8 @@ class InvoiceModel {
   final int totalAmount;
   final int amountPaid;
   final int balanceDue;
-  final String status; // 'draft'|'sent'|'viewed'|'partially_paid'|'paid'|'overdue'|'cancelled'|'refunded'
+  final String
+  status; // 'draft'|'sent'|'viewed'|'partially_paid'|'paid'|'overdue'|'cancelled'|'refunded'
   final DateTime? invoiceDate;
   final DateTime? dueDate;
   final DateTime? servicePeriodStart;
@@ -258,8 +263,10 @@ class InvoiceModel {
           ? DateTime.tryParse(json['paid_at'] as String)
           : null,
       items: rawItems
-          .map((e) =>
-              InvoiceItemModel.fromJson(Map<String, dynamic>.from(e as Map)))
+          .map(
+            (e) =>
+                InvoiceItemModel.fromJson(Map<String, dynamic>.from(e as Map)),
+          )
           .toList(),
     );
   }
@@ -268,10 +275,9 @@ class InvoiceModel {
 
   String get formattedTotal {
     final major = totalAmount / 100;
-    final symbol = currency == 'NGN' ? '₦' : (currency == 'USD' ? '\$' : currency);
-    return '$symbol${major.toStringAsFixed(2).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]},',
-    )}';
+    final symbol = currency == 'NGN'
+        ? '₦'
+        : (currency == 'USD' ? '\$' : currency);
+    return '$symbol${major.toStringAsFixed(2).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
   }
 }

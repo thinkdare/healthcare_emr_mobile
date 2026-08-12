@@ -6,7 +6,7 @@ import '../../../data/models/organization_models_enhanced.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/repositories/facility_repository.dart';
 import '../../../core/api/api_client.dart';
-import '../../../config/theme.dart';
+import '../../../config/app_colors.dart';
 
 class FacilityFormScreen extends StatefulWidget {
   final FacilityModel? facility; // null for create, populated for edit
@@ -20,25 +20,23 @@ class FacilityFormScreen extends StatefulWidget {
 class _FacilityFormScreenState extends State<FacilityFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late FacilityRepository _repository;
-  
+
   // Form controllers
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
-  
+
   String _selectedType = 'branch';
   bool _supportsEmergencyAccess = false;
   bool _isLoading = false;
-  
+
   bool get _isEditing => widget.facility != null;
 
   @override
   void initState() {
     super.initState();
-    _repository = FacilityRepository(
-      apiClient: context.read<ApiClient>(),
-    );
-    
+    _repository = FacilityRepository(apiClient: context.read<ApiClient>());
+
     // Populate form if editing
     if (_isEditing) {
       final facility = widget.facility!;
@@ -71,8 +69,8 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
           name: _nameController.text.trim(),
           type: _selectedType,
           address: _addressController.text.trim(),
-          phone: _phoneController.text.trim().isEmpty 
-              ? null 
+          phone: _phoneController.text.trim().isEmpty
+              ? null
               : _phoneController.text.trim(),
           supportsEmergencyAccess: _supportsEmergencyAccess,
         );
@@ -87,8 +85,8 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
           name: _nameController.text.trim(),
           type: _selectedType,
           address: _addressController.text.trim(),
-          phone: _phoneController.text.trim().isEmpty 
-              ? null 
+          phone: _phoneController.text.trim().isEmpty
+              ? null
               : _phoneController.text.trim(),
           supportsEmergencyAccess: _supportsEmergencyAccess,
         );
@@ -97,14 +95,20 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
       if (mounted) {
         showAdaptiveToast(
           context,
-          _isEditing ? 'Facility updated successfully' : 'Facility created successfully',
+          _isEditing
+              ? 'Facility updated successfully'
+              : 'Facility created successfully',
           type: ToastType.success,
         );
         Navigator.of(context).pop(true); // Return true to indicate success
       }
     } catch (e) {
       if (mounted) {
-        showAdaptiveToast(context, 'Failed to ${_isEditing ? 'update' : 'create'} facility: $e', type: ToastType.error);
+        showAdaptiveToast(
+          context,
+          'Failed to ${_isEditing ? 'update' : 'create'} facility: $e',
+          type: ToastType.error,
+        );
       }
     } finally {
       if (mounted) {
@@ -120,20 +124,18 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
     return Scaffold(
       appBar: kIsIOS
           ? CupertinoNavigationBar(
-              middle:
-                  Text(_isEditing ? 'Edit Facility' : 'Add Facility'),
+              middle: Text(_isEditing ? 'Edit Facility' : 'Add Facility'),
             )
-          : AppBar(
-              title:
-                  Text(_isEditing ? 'Edit Facility' : 'Add Facility'),
-            ),
+          : AppBar(title: Text(_isEditing ? 'Edit Facility' : 'Add Facility')),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
           padding: EdgeInsets.all(isWeb ? 32 : 16),
           child: Center(
             child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: isWeb ? 600 : double.infinity),
+              constraints: BoxConstraints(
+                maxWidth: isWeb ? 600 : double.infinity,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -148,12 +150,12 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _isEditing 
+                      _isEditing
                           ? 'Update the facility information below'
                           : 'Fill in the details for your new facility',
                       style: TextStyle(
                         fontSize: 16,
-                        color: AppTheme.gray600,
+                        color: AppColors.of(context).textSecondary,
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -174,7 +176,7 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
                             ),
                           ),
                           const Divider(height: 24),
-                          
+
                           // Name
                           TextFormField(
                             controller: _nameController,
@@ -262,19 +264,20 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: AppTheme.gray50,
+                              color: AppColors.of(context).surfaceTint,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
                               children: [
                                 Icon(
                                   Icons.emergency,
-                                  color: AppTheme.warningColor,
+                                  color: AppColors.of(context).warning,
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         'Emergency Access',
@@ -288,7 +291,9 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
                                         'Allow providers to access patient records in emergency situations',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: AppTheme.gray600,
+                                          color: AppColors.of(
+                                            context,
+                                          ).textSecondary,
                                         ),
                                       ),
                                     ],
@@ -298,13 +303,19 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
                                     ? CupertinoSwitch(
                                         value: _supportsEmergencyAccess,
                                         onChanged: (value) {
-                                          setState(() => _supportsEmergencyAccess = value);
+                                          setState(
+                                            () => _supportsEmergencyAccess =
+                                                value,
+                                          );
                                         },
                                       )
                                     : Switch(
                                         value: _supportsEmergencyAccess,
                                         onChanged: (value) {
-                                          setState(() => _supportsEmergencyAccess = value);
+                                          setState(
+                                            () => _supportsEmergencyAccess =
+                                                value,
+                                          );
                                         },
                                       ),
                               ],
@@ -327,7 +338,9 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(Colors.white),
+                                valueColor: AlwaysStoppedAnimation(
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : Icon(_isEditing ? Icons.save : Icons.add),
@@ -335,8 +348,8 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
                         _isLoading
                             ? 'Saving...'
                             : _isEditing
-                                ? 'Update Facility'
-                                : 'Create Facility',
+                            ? 'Update Facility'
+                            : 'Create Facility',
                       ),
                     ),
                   ),
@@ -346,8 +359,8 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
                   SizedBox(
                     height: 56,
                     child: OutlinedButton(
-                      onPressed: _isLoading 
-                          ? null 
+                      onPressed: _isLoading
+                          ? null
                           : () => Navigator.of(context).pop(),
                       child: const Text('Cancel'),
                     ),
@@ -359,7 +372,7 @@ class _FacilityFormScreenState extends State<FacilityFormScreen> {
                     '* Required fields',
                     style: TextStyle(
                       fontSize: 12,
-                      color: AppTheme.gray600,
+                      color: AppColors.of(context).textSecondary,
                       fontStyle: FontStyle.italic,
                     ),
                   ),

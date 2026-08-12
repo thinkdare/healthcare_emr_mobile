@@ -29,10 +29,9 @@ class _ReferralDetailScreenState extends State<ReferralDetailScreen> {
 
   Future<void> _loadDetail() async {
     try {
-      final full = await context
-          .read<ReferralProvider>()
-          .repository
-          .show(_referral.id);
+      final full = await context.read<ReferralProvider>().repository.show(
+        _referral.id,
+      );
       if (mounted) setState(() => _referral = full);
     } catch (_) {}
   }
@@ -42,8 +41,9 @@ class _ReferralDetailScreenState extends State<ReferralDetailScreen> {
     final r = _referral;
     return kIsIOS
         ? CupertinoPageScaffold(
-            navigationBar:
-                const CupertinoNavigationBar(middle: Text('Referral')),
+            navigationBar: const CupertinoNavigationBar(
+              middle: Text('Referral'),
+            ),
             child: SafeArea(child: _buildBody(r)),
           )
         : Scaffold(
@@ -67,33 +67,33 @@ class _ReferralDetailScreenState extends State<ReferralDetailScreen> {
           if (r.relevantHistory != null)
             _Section(title: 'Relevant History', body: r.relevantHistory!),
           if (r.currentMedications != null)
-            _Section(
-                title: 'Current Medications', body: r.currentMedications!),
+            _Section(title: 'Current Medications', body: r.currentMedications!),
           if (r.diagnosticResults != null)
-            _Section(
-                title: 'Diagnostic Results', body: r.diagnosticResults!),
+            _Section(title: 'Diagnostic Results', body: r.diagnosticResults!),
           if (r.consultationNotes != null)
             _Section(
-                title: 'Consultation Notes',
-                body: r.consultationNotes!,
-                expanded: true),
+              title: 'Consultation Notes',
+              body: r.consultationNotes!,
+              expanded: true,
+            ),
           if (r.recommendations != null)
             _Section(title: 'Recommendations', body: r.recommendations!),
           if (r.requiresFollowUp && r.followUpDate != null)
             _InfoRow(label: 'Follow-up date', value: r.followUpDate!),
           if (r.appointmentDate != null) ...[
             _InfoRow(
-                label: 'Appointment',
-                value: r.appointmentDate!.split('T').first),
+              label: 'Appointment',
+              value: r.appointmentDate!.split('T').first,
+            ),
             if (r.appointmentLocation != null)
-              _InfoRow(
-                  label: 'Location', value: r.appointmentLocation!),
+              _InfoRow(label: 'Location', value: r.appointmentLocation!),
           ],
           if (r.statusHistory.isNotEmpty) ...[
             const SizedBox(height: 16),
-            const Text('Status Timeline',
-                style: TextStyle(
-                    fontWeight: FontWeight.w600, fontSize: 14)),
+            const Text(
+              'Status Timeline',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
             const SizedBox(height: 8),
             ...r.statusHistory.map((h) => _TimelineEntry(entry: h)),
           ],
@@ -102,10 +102,7 @@ class _ReferralDetailScreenState extends State<ReferralDetailScreen> {
             referral: r,
             onUpdated: (updated) => setState(() => _referral = updated),
           ),
-          ReferralMessageThread(
-            referralId: r.id,
-            isOpen: r.isOpen,
-          ),
+          ReferralMessageThread(referralId: r.id, isOpen: r.isOpen),
           const SizedBox(height: 32),
         ],
       ),
@@ -130,29 +127,30 @@ class _HeaderCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(r.patientName ?? 'Patient',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 18)),
+                  child: Text(
+                    r.patientName ?? 'Patient',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                    ),
+                  ),
                 ),
                 _UrgencyBadge(urgency: r.urgency),
               ],
             ),
             if (r.patientDob != null)
-              Text(r.patientDob!,
-                  style: TextStyle(
-                      fontSize: 12, color: Colors.grey.shade600)),
+              Text(
+                r.patientDob!,
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ),
             const Divider(height: 16),
             _InfoRow(label: 'Specialty', value: r.specialty),
             _InfoRow(label: 'From', value: r.fromTenantName),
             _InfoRow(label: 'To', value: r.toTenantName),
-            _InfoRow(
-                label: 'Referred by', value: r.referringProviderName),
+            _InfoRow(label: 'Referred by', value: r.referringProviderName),
             if (r.referredToProviderName != null)
-              _InfoRow(
-                  label: 'Referred to',
-                  value: r.referredToProviderName!),
-            _InfoRow(
-                label: 'Date', value: r.referredAt.split('T').first),
+              _InfoRow(label: 'Referred to', value: r.referredToProviderName!),
+            _InfoRow(label: 'Date', value: r.referredAt.split('T').first),
           ],
         ),
       ),
@@ -190,14 +188,14 @@ class _SectionState extends State<_Section> {
       margin: const EdgeInsets.only(bottom: 8),
       child: ExpansionTile(
         initiallyExpanded: _expanded,
-        title: Text(widget.title,
-            style: const TextStyle(
-                fontWeight: FontWeight.w600, fontSize: 13)),
+        title: Text(
+          widget.title,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        ),
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Text(widget.body,
-                style: const TextStyle(fontSize: 13)),
+            child: Text(widget.body, style: const TextStyle(fontSize: 13)),
           ),
         ],
       ),
@@ -219,20 +217,21 @@ class _TimelineEntry extends StatelessWidget {
             width: 8,
             height: 8,
             decoration: const BoxDecoration(
-                color: Colors.blue, shape: BoxShape.circle),
+              color: Colors.blue,
+              shape: BoxShape.circle,
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              entry.from != null
-                  ? '${entry.from} → ${entry.to}'
-                  : entry.to,
+              entry.from != null ? '${entry.from} → ${entry.to}' : entry.to,
               style: const TextStyle(fontSize: 12),
             ),
           ),
-          Text(entry.at.split('T').first,
-              style: TextStyle(
-                  fontSize: 11, color: Colors.grey.shade500)),
+          Text(
+            entry.at.split('T').first,
+            style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+          ),
         ],
       ),
     );
@@ -256,35 +255,39 @@ class _ActionBar extends StatelessWidget {
         children: [
           if (r.canAccept)
             Expanded(
-                child: _ActionButton(
-              label: 'Accept',
-              color: Colors.green,
-              onTap: () => _accept(context),
-            )),
+              child: _ActionButton(
+                label: 'Accept',
+                color: Colors.green,
+                onTap: () => _accept(context),
+              ),
+            ),
           if (r.canSchedule)
             Expanded(
-                child: _ActionButton(
-              label: 'Schedule',
-              color: Colors.blue,
-              onTap: () => _schedule(context),
-            )),
+              child: _ActionButton(
+                label: 'Schedule',
+                color: Colors.blue,
+                onTap: () => _schedule(context),
+              ),
+            ),
           if (r.canComplete)
             Expanded(
-                child: _ActionButton(
-              label: 'Mark complete',
-              color: Colors.purple,
-              onTap: () => _complete(context),
-            )),
+              child: _ActionButton(
+                label: 'Mark complete',
+                color: Colors.purple,
+                onTap: () => _complete(context),
+              ),
+            ),
           if (r.canCancel) ...[
             if (r.canAccept || r.canSchedule || r.canComplete)
               const SizedBox(width: 8),
             Expanded(
-                child: _ActionButton(
-              label: 'Cancel',
-              color: Colors.red,
-              outlined: true,
-              onTap: () => _cancel(context),
-            )),
+              child: _ActionButton(
+                label: 'Cancel',
+                color: Colors.red,
+                outlined: true,
+                onTap: () => _cancel(context),
+              ),
+            ),
           ],
         ],
       ),
@@ -296,8 +299,9 @@ class _ActionBar extends StatelessWidget {
     final ok = await provider.accept(referral.id);
     if (ok && context.mounted) {
       final updated = provider.referrals.firstWhere(
-          (r) => r.id == referral.id,
-          orElse: () => referral);
+        (r) => r.id == referral.id,
+        orElse: () => referral,
+      );
       onUpdated(updated);
     }
   }
@@ -311,11 +315,15 @@ class _ActionBar extends StatelessWidget {
     if (result == null || !context.mounted) return;
     final provider = context.read<ReferralProvider>();
     final ok = await provider.schedule(
-        referral.id, result['date']!, result['location']);
+      referral.id,
+      result['date']!,
+      result['location'],
+    );
     if (ok && context.mounted) {
       final updated = provider.referrals.firstWhere(
-          (r) => r.id == referral.id,
-          orElse: () => referral);
+        (r) => r.id == referral.id,
+        orElse: () => referral,
+      );
       onUpdated(updated);
     }
   }
@@ -329,11 +337,15 @@ class _ActionBar extends StatelessWidget {
     if (result == null || !context.mounted) return;
     final provider = context.read<ReferralProvider>();
     final ok = await provider.complete(
-        referral.id, result['notes']!, result['recommendations']);
+      referral.id,
+      result['notes']!,
+      result['recommendations'],
+    );
     if (ok && context.mounted) {
       final updated = provider.referrals.firstWhere(
-          (r) => r.id == referral.id,
-          orElse: () => referral);
+        (r) => r.id == referral.id,
+        orElse: () => referral,
+      );
       onUpdated(updated);
     }
   }
@@ -371,15 +383,15 @@ class _ActionButton extends StatelessWidget {
     return outlined
         ? OutlinedButton(
             onPressed: onTap,
-            style:
-                OutlinedButton.styleFrom(foregroundColor: color),
+            style: OutlinedButton.styleFrom(foregroundColor: color),
             child: Text(label),
           )
         : ElevatedButton(
             onPressed: onTap,
             style: ElevatedButton.styleFrom(
-                backgroundColor: color,
-                foregroundColor: Colors.white),
+              backgroundColor: color,
+              foregroundColor: Colors.white,
+            ),
             child: Text(label),
           );
   }
@@ -407,35 +419,39 @@ class _ScheduleSheetState extends State<_ScheduleSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 24, 16,
-          16 + MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        24,
+        16,
+        16 + MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Schedule Appointment',
-              style: TextStyle(
-                  fontWeight: FontWeight.w600, fontSize: 16)),
+          const Text(
+            'Schedule Appointment',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          ),
           const SizedBox(height: 16),
           OutlinedButton.icon(
             onPressed: () async {
               final picked = await showDatePicker(
                 context: context,
-                initialDate:
-                    DateTime.now().add(const Duration(days: 1)),
+                initialDate: DateTime.now().add(const Duration(days: 1)),
                 firstDate: DateTime.now(),
-                lastDate: DateTime.now()
-                    .add(const Duration(days: 365)),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
               );
               if (picked != null) {
-                setState(
-                    () => _date = picked.toIso8601String());
+                setState(() => _date = picked.toIso8601String());
               }
             },
             icon: const Icon(Icons.calendar_today, size: 16),
-            label: Text(_date == null
-                ? 'Select appointment date'
-                : _date!.split('T').first),
+            label: Text(
+              _date == null
+                  ? 'Select appointment date'
+                  : _date!.split('T').first,
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -450,9 +466,9 @@ class _ScheduleSheetState extends State<_ScheduleSheet> {
             onPressed: _date == null
                 ? null
                 : () => Navigator.of(context).pop({
-                      'date': _date!,
-                      'location': _locationCtrl.text.trim(),
-                    }),
+                    'date': _date!,
+                    'location': _locationCtrl.text.trim(),
+                  }),
             child: const Text('Schedule'),
           ),
         ],
@@ -482,15 +498,20 @@ class _CompleteSheetState extends State<_CompleteSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 24, 16,
-          16 + MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        24,
+        16,
+        16 + MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Mark as Complete',
-              style: TextStyle(
-                  fontWeight: FontWeight.w600, fontSize: 16)),
+          const Text(
+            'Mark as Complete',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          ),
           const SizedBox(height: 16),
           TextField(
             controller: _notesCtrl,
@@ -516,9 +537,9 @@ class _CompleteSheetState extends State<_CompleteSheet> {
             onPressed: _notesCtrl.text.trim().length < 10
                 ? null
                 : () => Navigator.of(context).pop({
-                      'notes': _notesCtrl.text.trim(),
-                      'recommendations': _recsCtrl.text.trim(),
-                    }),
+                    'notes': _notesCtrl.text.trim(),
+                    'recommendations': _recsCtrl.text.trim(),
+                  }),
             child: const Text('Mark complete'),
           ),
         ],
@@ -546,17 +567,24 @@ class _CancelSheetState extends State<_CancelSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 24, 16,
-          16 + MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        24,
+        16,
+        16 + MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Cancel Referral',
-              style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  color: Colors.red)),
+          const Text(
+            'Cancel Referral',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: Colors.red,
+            ),
+          ),
           const SizedBox(height: 16),
           TextField(
             controller: _reasonCtrl,
@@ -572,11 +600,11 @@ class _CancelSheetState extends State<_CancelSheet> {
           ElevatedButton(
             onPressed: _reasonCtrl.text.trim().length < 10
                 ? null
-                : () =>
-                    Navigator.of(context).pop(_reasonCtrl.text.trim()),
+                : () => Navigator.of(context).pop(_reasonCtrl.text.trim()),
             style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white),
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Confirm cancellation'),
           ),
         ],
@@ -600,14 +628,16 @@ class _InfoRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 100,
-            child: Text(label,
-                style: TextStyle(
-                    fontSize: 12, color: Colors.grey.shade600)),
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: const TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.w500)),
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
           ),
         ],
       ),
@@ -626,17 +656,19 @@ class _UrgencyBadge extends StatelessWidget {
         ? (Colors.red, 'EMERGENCY')
         : (Colors.orange, 'URGENT');
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(6),
       ),
-      child: Text(label,
-          style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: color)),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
+      ),
     );
   }
 }

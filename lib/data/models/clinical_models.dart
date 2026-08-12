@@ -170,7 +170,8 @@ class PrescriptionModel {
       status: json['status'] as String? ?? 'active',
       specialInstructions: json['special_instructions'] as String?,
       discontinuationReason: json['discontinuation_reason'] as String?,
-      drugInteractionsChecked: json['drug_interactions_checked'] as bool? ?? false,
+      drugInteractionsChecked:
+          json['drug_interactions_checked'] as bool? ?? false,
       wardId: json['ward_id'] as String?,
       medicationCodingSystem: json['medication_coding_system'] as String?,
       createdAt: date('created_at'),
@@ -277,7 +278,10 @@ class LabResultModel {
   }
 
   bool get isCompleted => status == 'completed';
-  bool get isPending => status == 'pending' || status == 'sample_collected' || status == 'processing';
+  bool get isPending =>
+      status == 'pending' ||
+      status == 'sample_collected' ||
+      status == 'processing';
   bool get isUrgent => priority == 'urgent' || priority == 'stat';
   bool get hasAbnormalResults => abnormalFlags.isNotEmpty;
 }
@@ -346,7 +350,8 @@ class MedicalDocumentModel {
   String get fileSizeDisplay {
     if (fileSize == null) return '';
     if (fileSize! < 1024) return '${fileSize}B';
-    if (fileSize! < 1024 * 1024) return '${(fileSize! / 1024).toStringAsFixed(1)}KB';
+    if (fileSize! < 1024 * 1024)
+      return '${(fileSize! / 1024).toStringAsFixed(1)}KB';
     return '${(fileSize! / (1024 * 1024)).toStringAsFixed(1)}MB';
   }
 }
@@ -394,7 +399,8 @@ class PatientMessageModel {
         readAt: json['read_at'] == null
             ? null
             : DateTime.tryParse(json['read_at'] as String),
-        createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
+        createdAt:
+            DateTime.tryParse(json['created_at'] as String? ?? '') ??
             DateTime.now(),
         hasReplies: json['has_replies'] as bool? ?? false,
       );

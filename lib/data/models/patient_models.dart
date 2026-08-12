@@ -40,11 +40,7 @@ class MedicationModel {
   final String? dosage;
   final String? frequency;
 
-  const MedicationModel({
-    required this.name,
-    this.dosage,
-    this.frequency,
-  });
+  const MedicationModel({required this.name, this.dosage, this.frequency});
 
   factory MedicationModel.fromJson(Map<String, dynamic> json) =>
       _$MedicationModelFromJson(json);
@@ -52,7 +48,10 @@ class MedicationModel {
   Map<String, dynamic> toJson() => _$MedicationModelToJson(this);
 
   String get displayDose {
-    final parts = [if (dosage != null) dosage!, if (frequency != null) frequency!];
+    final parts = [
+      if (dosage != null) dosage!,
+      if (frequency != null) frequency!,
+    ];
     return parts.isNotEmpty ? parts.join(' — ') : name;
   }
 }
@@ -99,11 +98,7 @@ class PatientFacilityLite {
   final String name;
   final String? type;
 
-  const PatientFacilityLite({
-    required this.id,
-    required this.name,
-    this.type,
-  });
+  const PatientFacilityLite({required this.id, required this.name, this.type});
 
   factory PatientFacilityLite.fromJson(Map<String, dynamic> json) =>
       _$PatientFacilityLiteFromJson(json);

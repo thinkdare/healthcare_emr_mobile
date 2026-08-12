@@ -71,7 +71,8 @@ class VitalSignModel {
       wardId: json['ward_id'] as String?,
       recordedAt: DateTime.parse(json['recorded_at'] as String),
       bloodPressureSystolic: (json['blood_pressure_systolic'] as num?)?.toInt(),
-      bloodPressureDiastolic: (json['blood_pressure_diastolic'] as num?)?.toInt(),
+      bloodPressureDiastolic: (json['blood_pressure_diastolic'] as num?)
+          ?.toInt(),
       heartRate: (json['heart_rate'] as num?)?.toInt(),
       respiratoryRate: (json['respiratory_rate'] as num?)?.toInt(),
       temperature: (json['temperature'] as num?)?.toDouble(),
@@ -91,32 +92,33 @@ class VitalSignModel {
   /// Round-trips through fromJson — used to cache the full record as a JSON
   /// blob in vitals_cache rather than mapping every field to its own column.
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'patient_id': patientId,
-        'recorded_by_id': recordedById,
-        'encounter_id': encounterId,
-        'roster_entry_id': rosterEntryId,
-        'ward_id': wardId,
-        'recorded_at': recordedAt.toIso8601String(),
-        'blood_pressure_systolic': bloodPressureSystolic,
-        'blood_pressure_diastolic': bloodPressureDiastolic,
-        'heart_rate': heartRate,
-        'respiratory_rate': respiratoryRate,
-        'temperature': temperature,
-        'temperature_unit': temperatureUnit,
-        'oxygen_saturation': oxygenSaturation,
-        'weight': weight,
-        'weight_unit': weightUnit,
-        'height': height,
-        'height_unit': heightUnit,
-        'bmi': bmi,
-        'notes': notes,
-        'version': version,
-        'created_at': createdAt?.toIso8601String(),
-      };
+    'id': id,
+    'patient_id': patientId,
+    'recorded_by_id': recordedById,
+    'encounter_id': encounterId,
+    'roster_entry_id': rosterEntryId,
+    'ward_id': wardId,
+    'recorded_at': recordedAt.toIso8601String(),
+    'blood_pressure_systolic': bloodPressureSystolic,
+    'blood_pressure_diastolic': bloodPressureDiastolic,
+    'heart_rate': heartRate,
+    'respiratory_rate': respiratoryRate,
+    'temperature': temperature,
+    'temperature_unit': temperatureUnit,
+    'oxygen_saturation': oxygenSaturation,
+    'weight': weight,
+    'weight_unit': weightUnit,
+    'height': height,
+    'height_unit': heightUnit,
+    'bmi': bmi,
+    'notes': notes,
+    'version': version,
+    'created_at': createdAt?.toIso8601String(),
+  };
 
   String get bpDisplay {
-    if (bloodPressureSystolic == null || bloodPressureDiastolic == null) return '—';
+    if (bloodPressureSystolic == null || bloodPressureDiastolic == null)
+      return '—';
     return '$bloodPressureSystolic/$bloodPressureDiastolic mmHg';
   }
 
@@ -143,8 +145,9 @@ class DiagnosisModel {
   final String? icdCode;
   final String? icdVersion; // '10' | '11'
   final String description;
-  final String diagnosisType; // 'primary'|'secondary'|'differential'|'comorbidity'
-  final String status;        // 'active'|'resolved'|'in_remission'|'ruled_out'
+  final String
+  diagnosisType; // 'primary'|'secondary'|'differential'|'comorbidity'
+  final String status; // 'active'|'resolved'|'in_remission'|'ruled_out'
   final DateTime? onsetDate;
   final DateTime? resolvedDate;
   final String? notes;
@@ -202,23 +205,23 @@ class DiagnosisModel {
   /// Round-trips through fromJson — used to cache the full record as a JSON
   /// blob in diagnoses_cache rather than mapping every field to its own column.
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'patient_id': patientId,
-        'diagnosed_by_id': diagnosedById,
-        'encounter_id': encounterId,
-        'ward_id': wardId,
-        'icd_code': icdCode,
-        'icd_version': icdVersion,
-        'description': description,
-        'diagnosis_type': diagnosisType,
-        'status': status,
-        'onset_date': onsetDate?.toIso8601String(),
-        'resolved_date': resolvedDate?.toIso8601String(),
-        'notes': notes,
-        'version': version,
-        'created_at': createdAt?.toIso8601String(),
-        'updated_at': updatedAt?.toIso8601String(),
-      };
+    'id': id,
+    'patient_id': patientId,
+    'diagnosed_by_id': diagnosedById,
+    'encounter_id': encounterId,
+    'ward_id': wardId,
+    'icd_code': icdCode,
+    'icd_version': icdVersion,
+    'description': description,
+    'diagnosis_type': diagnosisType,
+    'status': status,
+    'onset_date': onsetDate?.toIso8601String(),
+    'resolved_date': resolvedDate?.toIso8601String(),
+    'notes': notes,
+    'version': version,
+    'created_at': createdAt?.toIso8601String(),
+    'updated_at': updatedAt?.toIso8601String(),
+  };
 }
 
 // ── ProblemList ───────────────────────────────────────────────────────────────
@@ -231,7 +234,7 @@ class ProblemListModel {
   final String? snomedCode;
   final String codingSystem; // 'ICD10'|'ICD11'|'SNOMED'|'local'
   final String description;
-  final String status;       // 'active'|'resolved'|'in_remission'|'chronic'
+  final String status; // 'active'|'resolved'|'in_remission'|'chronic'
   final DateTime? onsetDate;
   final DateTime? resolvedDate;
   final String? notes;
@@ -296,7 +299,7 @@ class ProcedureModel {
   final String description;
   final DateTime? performedAt;
   final int? durationMinutes;
-  final String status;  // 'planned'|'in_progress'|'completed'|'cancelled'
+  final String status; // 'planned'|'in_progress'|'completed'|'cancelled'
   final String? notes;
   final int version;
   final DateTime? createdAt;
@@ -354,7 +357,7 @@ class ImmunizationModel {
   final String id;
   final String patientId;
   final String administeredById;
-  final String vaccineCode;    // CVX code
+  final String vaccineCode; // CVX code
   final String vaccineName;
   final int doseNumber;
   final int? seriesTotal;
@@ -412,8 +415,9 @@ class ImmunizationModel {
     );
   }
 
-  String get doseDisplay =>
-      seriesTotal != null ? 'Dose $doseNumber of $seriesTotal' : 'Dose $doseNumber';
+  String get doseDisplay => seriesTotal != null
+      ? 'Dose $doseNumber of $seriesTotal'
+      : 'Dose $doseNumber';
 }
 
 // ── RosterEntry ───────────────────────────────────────────────────────────────
@@ -485,7 +489,9 @@ class RosterEntryModel {
       seenAt: d('seen_at'),
       consultationNotes: json['consultation_notes'] as String?,
       carryOverCount: (json['carry_over_count'] as num?)?.toInt() ?? 0,
-      originalRosterDate: DateTime.parse(json['original_roster_date'] as String),
+      originalRosterDate: DateTime.parse(
+        json['original_roster_date'] as String,
+      ),
       isCarriedOver: json['is_carried_over'] as bool? ?? false,
       isTerminal: json['is_terminal'] as bool? ?? false,
       version: (json['version'] as num?)?.toInt() ?? 1,
@@ -497,10 +503,10 @@ class RosterEntryModel {
   bool get isInConsultation => status == 'in_consultation';
 
   int get triagePriority => switch (triageSeverity) {
-        'critical' => 0,
-        'urgent'   => 1,
-        'moderate' => 2,
-        'low'      => 3,
-        _          => 4,
-      };
+    'critical' => 0,
+    'urgent' => 1,
+    'moderate' => 2,
+    'low' => 3,
+    _ => 4,
+  };
 }

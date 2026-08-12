@@ -8,9 +8,9 @@ library;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../config/theme.dart';
 import '../../../core/platform.dart';
 import '../../../data/providers/clinical_provider.dart';
+import '../../../config/app_colors.dart';
 
 // ── Appointment Form ──────────────────────────────────────────────────────────
 
@@ -77,8 +77,11 @@ class _AppointmentFormState extends State<AppointmentForm> {
     setState(() => _saving = true);
 
     final dt = DateTime(
-      _appointmentDate!.year, _appointmentDate!.month, _appointmentDate!.day,
-      _appointmentTime!.hour, _appointmentTime!.minute,
+      _appointmentDate!.year,
+      _appointmentDate!.month,
+      _appointmentDate!.day,
+      _appointmentTime!.hour,
+      _appointmentTime!.minute,
     );
 
     final data = <String, dynamic>{
@@ -89,14 +92,20 @@ class _AppointmentFormState extends State<AppointmentForm> {
       if (_notesCtrl.text.trim().isNotEmpty) 'notes': _notesCtrl.text.trim(),
     };
 
-    final result = await context.read<ClinicalProvider>().createAppointment(data);
+    final result = await context.read<ClinicalProvider>().createAppointment(
+      data,
+    );
     if (!mounted) return;
     setState(() => _saving = false);
 
     if (result != null) {
       Navigator.of(context).pop(true);
     } else {
-      showAdaptiveToast(context, context.read<ClinicalProvider>().error ?? 'Failed to book appointment', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        context.read<ClinicalProvider>().error ?? 'Failed to book appointment',
+        type: ToastType.error,
+      );
     }
   }
 
@@ -139,7 +148,9 @@ class _AppointmentFormState extends State<AppointmentForm> {
             const SizedBox(height: 16),
             AdaptiveDropdown<String>(
               value: _type,
-              decoration: const InputDecoration(labelText: 'Appointment Type *'),
+              decoration: const InputDecoration(
+                labelText: 'Appointment Type *',
+              ),
               items: _types
                   .map((t) => DropdownMenuItem(value: t.$1, child: Text(t.$2)))
                   .toList(),
@@ -150,8 +161,9 @@ class _AppointmentFormState extends State<AppointmentForm> {
               controller: _durationCtrl,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                  labelText: 'Duration (minutes)',
-                  hintText: '30'),
+                labelText: 'Duration (minutes)',
+                hintText: '30',
+              ),
               validator: (v) {
                 final n = int.tryParse(v ?? '');
                 if (n == null || n < 5 || n > 480) {
@@ -191,13 +203,13 @@ class PrescriptionForm extends StatefulWidget {
 class _PrescriptionFormState extends State<PrescriptionForm> {
   final _formKey = GlobalKey<FormState>();
 
-  final _medicationCtrl    = TextEditingController();
-  final _dosageCtrl        = TextEditingController();
-  final _frequencyCtrl     = TextEditingController();
-  final _durationCtrl      = TextEditingController();
-  final _quantityCtrl      = TextEditingController();
-  final _refillsCtrl       = TextEditingController(text: '0');
-  final _instructionsCtrl  = TextEditingController();
+  final _medicationCtrl = TextEditingController();
+  final _dosageCtrl = TextEditingController();
+  final _frequencyCtrl = TextEditingController();
+  final _durationCtrl = TextEditingController();
+  final _quantityCtrl = TextEditingController();
+  final _refillsCtrl = TextEditingController(text: '0');
+  final _instructionsCtrl = TextEditingController();
 
   String _route = 'oral';
   DateTime? _prescribedDate;
@@ -217,8 +229,15 @@ class _PrescriptionFormState extends State<PrescriptionForm> {
 
   @override
   void dispose() {
-    for (final c in [_medicationCtrl, _dosageCtrl, _frequencyCtrl,
-        _durationCtrl, _quantityCtrl, _refillsCtrl, _instructionsCtrl]) {
+    for (final c in [
+      _medicationCtrl,
+      _dosageCtrl,
+      _frequencyCtrl,
+      _durationCtrl,
+      _quantityCtrl,
+      _refillsCtrl,
+      _instructionsCtrl,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -257,27 +276,34 @@ class _PrescriptionFormState extends State<PrescriptionForm> {
     setState(() => _saving = true);
 
     final data = <String, dynamic>{
-      'medication_name':      _medicationCtrl.text.trim(),
-      'dosage':               _dosageCtrl.text.trim(),
-      'frequency':            _frequencyCtrl.text.trim(),
-      'route':                _route,
-      'duration_days':        int.tryParse(_durationCtrl.text) ?? 1,
-      'quantity':             int.tryParse(_quantityCtrl.text) ?? 1,
-      'refills_allowed':      int.tryParse(_refillsCtrl.text) ?? 0,
-      'prescribed_date':      _fmt(_prescribedDate!),
-      'expires_date':         _fmt(_expiresDate!),
+      'medication_name': _medicationCtrl.text.trim(),
+      'dosage': _dosageCtrl.text.trim(),
+      'frequency': _frequencyCtrl.text.trim(),
+      'route': _route,
+      'duration_days': int.tryParse(_durationCtrl.text) ?? 1,
+      'quantity': int.tryParse(_quantityCtrl.text) ?? 1,
+      'refills_allowed': int.tryParse(_refillsCtrl.text) ?? 0,
+      'prescribed_date': _fmt(_prescribedDate!),
+      'expires_date': _fmt(_expiresDate!),
       if (_instructionsCtrl.text.trim().isNotEmpty)
         'special_instructions': _instructionsCtrl.text.trim(),
     };
 
-    final result = await context.read<ClinicalProvider>().createPrescription(data);
+    final result = await context.read<ClinicalProvider>().createPrescription(
+      data,
+    );
     if (!mounted) return;
     setState(() => _saving = false);
 
     if (result != null) {
       Navigator.of(context).pop(true);
     } else {
-      showAdaptiveToast(context, context.read<ClinicalProvider>().error ?? 'Failed to create prescription', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        context.read<ClinicalProvider>().error ??
+            'Failed to create prescription',
+        type: ToastType.error,
+      );
     }
   }
 
@@ -297,25 +323,31 @@ class _PrescriptionFormState extends State<PrescriptionForm> {
               validator: _req('Medication name'),
             ),
             const SizedBox(height: 12),
-            Row(children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _dosageCtrl,
-                  decoration: const InputDecoration(
-                      labelText: 'Dosage *', hintText: 'e.g. 500mg'),
-                  validator: _req('Dosage'),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _dosageCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Dosage *',
+                      hintText: 'e.g. 500mg',
+                    ),
+                    validator: _req('Dosage'),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: _frequencyCtrl,
-                  decoration: const InputDecoration(
-                      labelText: 'Frequency *', hintText: 'e.g. twice daily'),
-                  validator: _req('Frequency'),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _frequencyCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Frequency *',
+                      hintText: 'e.g. twice daily',
+                    ),
+                    validator: _req('Frequency'),
+                  ),
                 ),
-              ),
-            ]),
+              ],
+            ),
             const SizedBox(height: 12),
             AdaptiveDropdown<String>(
               value: _route,
@@ -326,68 +358,75 @@ class _PrescriptionFormState extends State<PrescriptionForm> {
               onChanged: (v) => setState(() => _route = v!),
             ),
             const SizedBox(height: 12),
-            Row(children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _durationCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Duration (days) *'),
-                  validator: (v) {
-                    final n = int.tryParse(v ?? '');
-                    if (n == null || n < 1) return 'Enter days';
-                    return null;
-                  },
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _durationCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Duration (days) *',
+                    ),
+                    validator: (v) {
+                      final n = int.tryParse(v ?? '');
+                      if (n == null || n < 1) return 'Enter days';
+                      return null;
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: _quantityCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Quantity *'),
-                  validator: (v) {
-                    final n = int.tryParse(v ?? '');
-                    if (n == null || n < 1) return 'Enter quantity';
-                    return null;
-                  },
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _quantityCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Quantity *'),
+                    validator: (v) {
+                      final n = int.tryParse(v ?? '');
+                      if (n == null || n < 1) return 'Enter quantity';
+                      return null;
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: _refillsCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Refills'),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _refillsCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Refills'),
+                  ),
                 ),
-              ),
-            ]),
+              ],
+            ),
             const SizedBox(height: 12),
-            Row(children: [
-              Expanded(
-                child: _DateButton(
-                  label: 'Prescribed Date *',
-                  value: _prescribedDate != null
-                      ? _fmt(_prescribedDate!)
-                      : 'Select',
-                  onTap: _pickPrescribedDate,
+            Row(
+              children: [
+                Expanded(
+                  child: _DateButton(
+                    label: 'Prescribed Date *',
+                    value: _prescribedDate != null
+                        ? _fmt(_prescribedDate!)
+                        : 'Select',
+                    onTap: _pickPrescribedDate,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _DateButton(
-                  label: 'Expires *',
-                  value: _expiresDate != null
-                      ? _fmt(_expiresDate!)
-                      : 'Select',
-                  onTap: _pickExpiresDate,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _DateButton(
+                    label: 'Expires *',
+                    value: _expiresDate != null
+                        ? _fmt(_expiresDate!)
+                        : 'Select',
+                    onTap: _pickExpiresDate,
+                  ),
                 ),
-              ),
-            ]),
+              ],
+            ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _instructionsCtrl,
               decoration: const InputDecoration(
-                  labelText: 'Special Instructions'),
+                labelText: 'Special Instructions',
+              ),
               maxLines: 2,
             ),
           ],
@@ -411,7 +450,7 @@ class _LabOrderFormState extends State<LabOrderForm> {
 
   final _testNameCtrl = TextEditingController();
   final _testCodeCtrl = TextEditingController();
-  final _notesCtrl    = TextEditingController();
+  final _notesCtrl = TextEditingController();
 
   String _testType = 'blood';
   String _priority = 'routine';
@@ -465,14 +504,13 @@ class _LabOrderFormState extends State<LabOrderForm> {
     setState(() => _saving = true);
 
     final data = <String, dynamic>{
-      'test_name':    _testNameCtrl.text.trim(),
-      'test_type':    _testType,
-      'priority':     _priority,
+      'test_name': _testNameCtrl.text.trim(),
+      'test_type': _testType,
+      'priority': _priority,
       'ordered_date': _fmt(_orderedDate!),
       if (_testCodeCtrl.text.trim().isNotEmpty)
         'test_code': _testCodeCtrl.text.trim(),
-      if (_notesCtrl.text.trim().isNotEmpty)
-        'notes': _notesCtrl.text.trim(),
+      if (_notesCtrl.text.trim().isNotEmpty) 'notes': _notesCtrl.text.trim(),
     };
 
     final result = await context.read<ClinicalProvider>().createLabOrder(data);
@@ -482,7 +520,11 @@ class _LabOrderFormState extends State<LabOrderForm> {
     if (result != null) {
       Navigator.of(context).pop(true);
     } else {
-      showAdaptiveToast(context, context.read<ClinicalProvider>().error ?? 'Failed to create lab order', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        context.read<ClinicalProvider>().error ?? 'Failed to create lab order',
+        type: ToastType.error,
+      );
     }
   }
 
@@ -502,34 +544,44 @@ class _LabOrderFormState extends State<LabOrderForm> {
               validator: _req('Test name'),
             ),
             const SizedBox(height: 12),
-            Row(children: [
-              Expanded(
-                child: AdaptiveDropdown<String>(
-                  value: _testType,
-                  decoration: const InputDecoration(labelText: 'Test Type *'),
-                  items: _testTypes
-                      .map((t) => DropdownMenuItem(value: t.$1, child: Text(t.$2)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _testType = v!),
+            Row(
+              children: [
+                Expanded(
+                  child: AdaptiveDropdown<String>(
+                    value: _testType,
+                    decoration: const InputDecoration(labelText: 'Test Type *'),
+                    items: _testTypes
+                        .map(
+                          (t) =>
+                              DropdownMenuItem(value: t.$1, child: Text(t.$2)),
+                        )
+                        .toList(),
+                    onChanged: (v) => setState(() => _testType = v!),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: AdaptiveDropdown<String>(
-                  value: _priority,
-                  decoration: const InputDecoration(labelText: 'Priority'),
-                  items: _priorities
-                      .map((p) => DropdownMenuItem(value: p.$1, child: Text(p.$2)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _priority = v!),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AdaptiveDropdown<String>(
+                    value: _priority,
+                    decoration: const InputDecoration(labelText: 'Priority'),
+                    items: _priorities
+                        .map(
+                          (p) =>
+                              DropdownMenuItem(value: p.$1, child: Text(p.$2)),
+                        )
+                        .toList(),
+                    onChanged: (v) => setState(() => _priority = v!),
+                  ),
                 ),
-              ),
-            ]),
+              ],
+            ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _testCodeCtrl,
               decoration: const InputDecoration(
-                  labelText: 'Test Code', hintText: 'Optional'),
+                labelText: 'Test Code',
+                hintText: 'Optional',
+              ),
             ),
             const SizedBox(height: 12),
             _DateButton(
@@ -619,15 +671,13 @@ class _DocumentUploadFormState extends State<DocumentUploadForm> {
     setState(() => _saving = true);
 
     final result = await context.read<ClinicalProvider>().uploadDocument(
-          filePath: _pickedFile!.path!,
-          fileName: _pickedFile!.name,
-          title: _titleCtrl.text.trim(),
-          documentType: _documentType,
-          notes: _notesCtrl.text.trim().isNotEmpty
-              ? _notesCtrl.text.trim()
-              : null,
-          isConfidential: _isConfidential,
-        );
+      filePath: _pickedFile!.path!,
+      fileName: _pickedFile!.name,
+      title: _titleCtrl.text.trim(),
+      documentType: _documentType,
+      notes: _notesCtrl.text.trim().isNotEmpty ? _notesCtrl.text.trim() : null,
+      isConfidential: _isConfidential,
+    );
 
     if (!mounted) return;
     setState(() => _saving = false);
@@ -635,7 +685,11 @@ class _DocumentUploadFormState extends State<DocumentUploadForm> {
     if (result != null) {
       Navigator.of(context).pop(true);
     } else {
-      showAdaptiveToast(context, context.read<ClinicalProvider>().error ?? 'Upload failed', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        context.read<ClinicalProvider>().error ?? 'Upload failed',
+        type: ToastType.error,
+      );
     }
   }
 
@@ -655,12 +709,17 @@ class _DocumentUploadFormState extends State<DocumentUploadForm> {
               onTap: _saving ? null : _pickFile,
               borderRadius: BorderRadius.circular(8),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: _pickedFile != null
-                        ? AppTheme.primaryColor
-                        : AppTheme.gray600.withValues(alpha: 0.4),
+                        ? AppColors.of(context).accent
+                        : AppColors.of(
+                            context,
+                          ).textSecondary.withValues(alpha: 0.4),
                     width: 1.5,
                   ),
                   borderRadius: BorderRadius.circular(8),
@@ -672,8 +731,8 @@ class _DocumentUploadFormState extends State<DocumentUploadForm> {
                           ? Icons.insert_drive_file
                           : Icons.upload_file,
                       color: _pickedFile != null
-                          ? AppTheme.primaryColor
-                          : AppTheme.gray600,
+                          ? AppColors.of(context).accent
+                          : AppColors.of(context).textSecondary,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -682,7 +741,9 @@ class _DocumentUploadFormState extends State<DocumentUploadForm> {
                             ? _pickedFile!.name
                             : 'Select file  (PDF, image, ZIP, text)',
                         style: TextStyle(
-                          color: _pickedFile != null ? null : AppTheme.gray600,
+                          color: _pickedFile != null
+                              ? null
+                              : AppColors.of(context).textSecondary,
                           fontSize: 14,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -692,8 +753,10 @@ class _DocumentUploadFormState extends State<DocumentUploadForm> {
                       const SizedBox(width: 8),
                       Text(
                         _formatSize(_pickedFile!.size),
-                        style:
-                            TextStyle(fontSize: 12, color: AppTheme.gray600),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.of(context).textSecondary,
+                        ),
                       ),
                     ],
                   ],
@@ -711,8 +774,7 @@ class _DocumentUploadFormState extends State<DocumentUploadForm> {
               value: _documentType,
               decoration: const InputDecoration(labelText: 'Document Type *'),
               items: _types
-                  .map((t) =>
-                      DropdownMenuItem(value: t.$1, child: Text(t.$2)))
+                  .map((t) => DropdownMenuItem(value: t.$1, child: Text(t.$2)))
                   .toList(),
               onChanged: (v) => setState(() => _documentType = v!),
             ),
@@ -728,7 +790,10 @@ class _DocumentUploadFormState extends State<DocumentUploadForm> {
               title: const Text('Confidential', style: TextStyle(fontSize: 14)),
               subtitle: Text(
                 'Only visible to primary provider',
-                style: TextStyle(fontSize: 12, color: AppTheme.gray600),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.of(context).textSecondary,
+                ),
               ),
               value: _isConfidential,
               onChanged: (v) => setState(() => _isConfidential = v),
@@ -775,63 +840,70 @@ class _ModalSheet extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         clipBehavior: Clip.antiAlias,
         child: SingleChildScrollView(
-        controller: scrollController,
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppTheme.gray600.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
+          controller: scrollController,
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.of(
+                      context,
+                    ).textSecondary.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Header
-            Row(
-              children: [
-                Expanded(
-                  child: Text(title,
+              // Header
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
                       style: const TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold)),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            child,
-
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: AdaptiveFilledButton(
-                onPressed: saving ? null : onSave,
-                child: saving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation(Colors.white)))
-                    : Text(title),
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+
+              child,
+
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: AdaptiveFilledButton(
+                  onPressed: saving ? null : onSave,
+                  child: saving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        )
+                      : Text(title),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }
@@ -841,8 +913,11 @@ class _DateButton extends StatelessWidget {
   final String value;
   final VoidCallback onTap;
 
-  const _DateButton(
-      {required this.label, required this.value, required this.onTap});
+  const _DateButton({
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -854,11 +929,14 @@ class _DateButton extends StatelessWidget {
           labelText: label,
           suffixIcon: const Icon(Icons.calendar_today, size: 18),
         ),
-        child: Text(value,
-            style: TextStyle(
-                color: value.startsWith('Select')
-                    ? AppTheme.gray600
-                    : null)),
+        child: Text(
+          value,
+          style: TextStyle(
+            color: value.startsWith('Select')
+                ? AppColors.of(context).textSecondary
+                : null,
+          ),
+        ),
       ),
     );
   }
