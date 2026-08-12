@@ -46,3 +46,4 @@ app.*.map.json
 
 # Superpowers brainstorming companion (local scratch, not source)
 .superpowers/
+.worktrees/
