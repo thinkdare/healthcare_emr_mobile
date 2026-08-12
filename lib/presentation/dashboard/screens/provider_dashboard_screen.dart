@@ -1011,13 +1011,6 @@ class _AccessGrantsCard extends StatelessWidget {
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
-                  if (pending > 0) ...[
-                    AdaptiveBadge(
-                      label: '$pending',
-                      variant: BadgeVariant.warning,
-                    ),
-                    const SizedBox(width: 8),
-                  ],
                   Icon(
                     Icons.chevron_right,
                     color: AppColors.of(context).textSecondary,
@@ -1110,13 +1103,6 @@ class _EmergencyAccessCard extends StatelessWidget {
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
-                  if (unreviewed > 0) ...[
-                    AdaptiveBadge(
-                      label: '$unreviewed',
-                      variant: BadgeVariant.critical,
-                    ),
-                    const SizedBox(width: 8),
-                  ],
                   Icon(
                     Icons.chevron_right,
                     color: AppColors.of(context).textSecondary,
