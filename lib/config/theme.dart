@@ -1,130 +1,141 @@
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
+import 'app_color_tokens.dart';
+import 'app_spacing.dart';
 
 class AppTheme {
-  // Colour constants kept as forwards to AppColors for
-  // backward-compat with existing references like AppTheme.primaryColor.
-  static const Color primaryColor   = AppColors.primary;
-  static const Color secondaryColor = AppColors.secondary;
-  static const Color errorColor     = AppColors.error;
-  static const Color successColor   = AppColors.success;
-  static const Color warningColor   = AppColors.warning;
-  static const Color gray50         = AppColors.gray50;
-  static const Color gray100        = AppColors.gray100;
-  static const Color gray600        = AppColors.gray600;
-  static const Color gray900        = AppColors.gray900;
+  static ThemeData get lightTheme => _build(AppColorTokens.light);
+  static ThemeData get darkTheme => _build(AppColorTokens.dark);
 
-  // Light Theme (Android / Material)
-  static ThemeData get lightTheme {
+  static ThemeData _build(AppColorTokens tokens) {
     return ThemeData(
       useMaterial3: true,
+      brightness: tokens.brightness,
+      fontFamily: 'Plus Jakarta Sans',
+      scaffoldBackgroundColor: tokens.background,
+      // Explicitly set every ColorScheme role a stock Material widget is
+      // likely to pull from by default (outline, onSurface, secondary,
+      // surfaceContainerHighest, etc.) rather than letting ColorScheme.fromSeed's
+      // algorithmic tonal-palette derivation leak through for anything not
+      // hand-restyled in this plan's flagship screens — otherwise those
+      // roles silently diverge from the approved mockups/Task 31 contrast
+      // tests with no token anywhere to trace the value back to.
+      // Roles intentionally left seed-derived (rarely user-visible, not
+      // worth expanding the token set for): tertiary*, inverseSurface,
+      // inversePrimary, shadow, scrim, surfaceTint.
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
-        secondary: AppColors.secondary,
-        error: AppColors.error,
-        brightness: Brightness.light,
+        seedColor: tokens.accent,
+        brightness: tokens.brightness,
+        primary: tokens.accent,
+        onPrimary: Colors.white,
+        primaryContainer: tokens.accentTint,
+        onPrimaryContainer: tokens.accent,
+        secondary: tokens.accent,
+        onSecondary: Colors.white,
+        error: tokens.critical,
+        onError: Colors.white,
+        errorContainer: tokens.criticalTint,
+        onErrorContainer: tokens.critical,
+        surface: tokens.surface,
+        onSurface: tokens.textPrimary,
+        onSurfaceVariant: tokens.textSecondary,
+        surfaceContainerHighest: tokens.surfaceTint,
+        outline: tokens.surfaceBorder,
+        outlineVariant: tokens.surfaceBorder,
       ),
-
-      // AppBar Theme
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
-        backgroundColor: AppColors.primary,
+        backgroundColor: tokens.accent,
         foregroundColor: Colors.white,
-        titleTextStyle: TextStyle(
+        titleTextStyle: const TextStyle(
+          fontFamily: 'Plus Jakarta Sans',
           fontSize: 20,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: Colors.white,
         ),
       ),
-
-      // Elevated Button Theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: tokens.accent,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppRadius.control),
           ),
-          elevation: 2,
+          elevation: 0,
           textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+              fontFamily: 'Plus Jakarta Sans',
+              fontSize: 16,
+              fontWeight: FontWeight.w700),
         ),
       ),
-
-      // Text Button Theme
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary,
+          foregroundColor: tokens.accent,
           textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
+              fontFamily: 'Plus Jakarta Sans',
+              fontSize: 16,
+              fontWeight: FontWeight.w600),
         ),
       ),
-
-      // Outlined Button Theme
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary, width: 1.5),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          foregroundColor: tokens.accent,
+          side: BorderSide(color: tokens.accent, width: 1.5),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppRadius.control),
           ),
           textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+              fontFamily: 'Plus Jakarta Sans',
+              fontSize: 16,
+              fontWeight: FontWeight.w700),
         ),
       ),
-
-      // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.gray600),
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          borderSide: BorderSide(color: tokens.surfaceBorder),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(
-              color: AppColors.gray600.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          borderSide: BorderSide(color: tokens.surfaceBorder),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          borderSide: BorderSide(color: tokens.accent, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.error),
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          borderSide: BorderSide(color: tokens.critical),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.error, width: 2),
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          borderSide: BorderSide(color: tokens.critical, width: 2),
         ),
         filled: true,
-        fillColor: AppColors.gray50,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        labelStyle: const TextStyle(color: AppColors.gray600),
-        hintStyle: TextStyle(
-            color: AppColors.gray600.withValues(alpha: 0.6)),
+        fillColor: tokens.surface,
+        contentPadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg, vertical: AppSpacing.lg),
+        labelStyle: TextStyle(color: tokens.textSecondary),
+        hintStyle: TextStyle(color: tokens.textSecondary.withValues(alpha: 0.6)),
       ),
-
-      // Card Theme
-      cardTheme: const CardThemeData(
-        elevation: 2,
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: tokens.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          side: BorderSide(color: tokens.surfaceBorder),
         ),
-        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        margin: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
       ),
-
-      // Scaffold Background
-      scaffoldBackgroundColor: Colors.white,
+      textTheme: Typography.material2021(platform: TargetPlatform.android)
+          .black
+          .apply(fontFamily: 'Plus Jakarta Sans', bodyColor: tokens.textPrimary,
+              displayColor: tokens.textPrimary),
     );
   }
 }
