@@ -31,6 +31,7 @@ import 'data/providers/reporting_provider.dart';
 import 'data/providers/subscription_provider.dart';
 import 'data/providers/sync_provider.dart';
 import 'data/providers/referral_provider.dart';
+import 'data/providers/theme_mode_provider.dart';
 import 'presentation/shell/android_shell.dart';
 import 'presentation/shell/ios_shell.dart';
 
@@ -154,12 +155,22 @@ class _MyAppState extends State<MyApp> {
           create: (_) => DeviceIntegrityProvider()..check(),
         ),
         ChangeNotifierProvider(
+          create: (_) => ThemeModeProvider()..load(),
+        ),
+        ChangeNotifierProvider(
           create: (_) =>
               IntraTransferProvider(repository: intraTransferRepository),
         ),
       ],
       // Platform branch: CupertinoApp on iOS, MaterialApp on Android.
       // Both shells read from the same MultiProvider tree above.
+      //
+      // NOTE: kIsIOS is always false on web, so web falls through to
+      // AndroidShell (Material) as a side effect of this check, not as an
+      // intentional "web gets Material" decision. AndroidShell's
+      // MaterialApp.themeMode wiring (Task 8) therefore themes web too —
+      // that's desired, but don't "simplify" this check without checking
+      // what it does to web theming.
       child: kIsIOS ? const IOSShell() : const AndroidShell(),
     );
   }
