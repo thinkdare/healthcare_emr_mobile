@@ -27,7 +27,9 @@ import '../../subscription/screens/subscription_upgrade_screen.dart';
 import '../../subscription/widgets/trial_status_banner.dart';
 import '../../sync/widgets/sync_banner.dart';
 import '../../shell/widgets/device_integrity_banner.dart';
+import '../../shared/widgets/adaptive_badge.dart';
 import '../../shared/widgets/adaptive_card.dart';
+import '../../shared/widgets/adaptive_list_row.dart';
 import '../../shared/widgets/stat_tile.dart';
 import '../../../config/app_colors.dart';
 
@@ -796,128 +798,107 @@ class _RecentPatientsCard extends StatelessWidget {
       builder: (context, p, _) {
         final recent = p.patients.take(5).toList();
 
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.history,
-                      color: AppColors.of(context).accent,
-                    ),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Recent Patients',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+        return AdaptiveCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.history, color: AppColors.of(context).accent),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Recent Patients',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    AdaptiveTextButton(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const PatientListScreen(),
-                        ),
+                  ),
+                  AdaptiveTextButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const PatientListScreen(),
                       ),
-                      child: const Text('View All'),
                     ),
-                  ],
-                ),
-                const Divider(height: 16),
-                if (p.isLoading)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                else if (recent.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: Center(
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.people_outline,
-                            size: 48,
+                    child: const Text('View All'),
+                  ),
+                ],
+              ),
+              const Divider(height: 16),
+              if (p.isLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else if (recent.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.people_outline,
+                          size: 48,
+                          color: AppColors.of(context).textSecondary,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No patients yet',
+                          style: TextStyle(
                             color: AppColors.of(context).textSecondary,
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'No patients yet',
-                            style: TextStyle(
-                              color: AppColors.of(context).textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  )
-                else
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: recent.length,
-                    separatorBuilder: (context, index) =>
-                        const Divider(height: 1),
-                    itemBuilder: (context, i) {
-                      final patient = recent[i];
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(
-                          backgroundColor: AppColors.of(
-                            context,
-                          ).accent.withValues(alpha: 0.1),
-                          child: Text(
-                            '${patient.firstName[0]}${patient.lastName[0]}',
-                            style: TextStyle(
-                              color: AppColors.of(context).accent,
-                              fontWeight: FontWeight.bold,
-                            ),
+                  ),
+                )
+              else
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: recent.length,
+                  separatorBuilder: (context, index) =>
+                      const Divider(height: 1),
+                  itemBuilder: (context, i) {
+                    final patient = recent[i];
+                    return AdaptiveListRow(
+                      leading: CircleAvatar(
+                        backgroundColor: AppColors.of(context).accentTint,
+                        child: Text(
+                          '${patient.firstName[0]}${patient.lastName[0]}',
+                          style: TextStyle(
+                            color: AppColors.of(context).accent,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        title: Text(
-                          patient.fullName,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        subtitle: Text(
+                      ),
+                      title: patient.fullName,
+                      subtitle:
                           '${patient.gender} · ${patient.ageDisplay}'
                           '${patient.bloodType != null ? ' · ${patient.bloodType}' : ''}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.of(context).textSecondary,
+                      trailing: patient.hasCriticalAllergies
+                          ? const AdaptiveBadge(
+                              label: 'Allergy',
+                              variant: BadgeVariant.critical,
+                            )
+                          : null,
+                      onTap: () {
+                        context.read<PatientProvider>().setSelectedPatient(
+                          patient,
+                        );
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const PatientListScreen(),
                           ),
-                        ),
-                        trailing: patient.hasCriticalAllergies
-                            ? Tooltip(
-                                message: 'Critical allergies',
-                                child: Icon(
-                                  Icons.warning,
-                                  size: 18,
-                                  color: AppColors.of(context).critical,
-                                ),
-                              )
-                            : null,
-                        onTap: () {
-                          context.read<PatientProvider>().setSelectedPatient(
-                            patient,
-                          );
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const PatientListScreen(),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-              ],
-            ),
+                        );
+                      },
+                    );
+                  },
+                ),
+            ],
           ),
         );
       },
