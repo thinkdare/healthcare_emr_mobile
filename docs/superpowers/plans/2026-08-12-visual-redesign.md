@@ -56,20 +56,29 @@
 **Interfaces:**
 - Produces: font family name `'Plus Jakarta Sans'`, available at weights 400/500/600/700/800, consumed by Task 5 (`AppTheme`).
 
-- [ ] **Step 1: Download the font and license (verified reachable)**
+- [ ] **Step 1: Download the font and license from a pinned commit, not a mutable branch**
+
+`main` is a moving target — pin to the specific commit that last touched this font, and verify the download by checksum, not just by file type. (Values below were resolved and verified while writing this plan: commit `8cd7d0de182c88592d6852c245fe48f66eef55ee` is the latest commit touching `ofl/plusjakartasans/PlusJakartaSans[wght].ttf` in `google/fonts`, resolved via `curl https://api.github.com/repos/google/fonts/commits?path=ofl/plusjakartasans/PlusJakartaSans%5Bwght%5D.ttf&per_page=1`.)
 
 ```bash
 mkdir -p assets/fonts
+COMMIT=8cd7d0de182c88592d6852c245fe48f66eef55ee
 curl -fL -o assets/fonts/PlusJakartaSans-VariableFont_wght.ttf \
-  "https://raw.githubusercontent.com/google/fonts/main/ofl/plusjakartasans/PlusJakartaSans%5Bwght%5D.ttf"
+  "https://raw.githubusercontent.com/google/fonts/${COMMIT}/ofl/plusjakartasans/PlusJakartaSans%5Bwght%5D.ttf"
 curl -fL -o assets/fonts/OFL.txt \
-  "https://raw.githubusercontent.com/google/fonts/main/ofl/plusjakartasans/OFL.txt"
+  "https://raw.githubusercontent.com/google/fonts/${COMMIT}/ofl/plusjakartasans/OFL.txt"
 ```
 
-- [ ] **Step 2: Verify the downloaded file is a real font, not an error page**
+- [ ] **Step 2: Verify the downloaded files against known-good checksums**
 
-Run: `file assets/fonts/PlusJakartaSans-VariableFont_wght.ttf`
-Expected: output contains `TrueType Font data` (not `HTML`/`ASCII text`)
+```bash
+cat <<'EOF' | sha256sum -c -
+89b3fb38aa0d275d7a731d0d817a4f1622b316b4d7fbdedcf02ee9099ff68bc8  assets/fonts/PlusJakartaSans-VariableFont_wght.ttf
+995c7199cab65954f545996326755daee7b63cc6b42b06c13da1f9502ab08a99  assets/fonts/OFL.txt
+EOF
+```
+
+Expected: `assets/fonts/PlusJakartaSans-VariableFont_wght.ttf: OK` and `assets/fonts/OFL.txt: OK`. If either fails, do not proceed — re-fetch and re-verify rather than trusting a mismatched file; if the mismatch persists, the pinned commit's content has changed underneath you (shouldn't happen for an immutable commit SHA) and needs investigating before continuing.
 
 - [ ] **Step 3: Declare the font and asset in `pubspec.yaml`**
 
@@ -430,12 +439,35 @@ class AppTheme {
       brightness: tokens.brightness,
       fontFamily: 'Plus Jakarta Sans',
       scaffoldBackgroundColor: tokens.background,
+      // Explicitly set every ColorScheme role a stock Material widget is
+      // likely to pull from by default (outline, onSurface, secondary,
+      // surfaceContainerHighest, etc.) rather than letting ColorScheme.fromSeed's
+      // algorithmic tonal-palette derivation leak through for anything not
+      // hand-restyled in this plan's flagship screens — otherwise those
+      // roles silently diverge from the approved mockups/Task 31 contrast
+      // tests with no token anywhere to trace the value back to.
+      // Roles intentionally left seed-derived (rarely user-visible, not
+      // worth expanding the token set for): tertiary*, inverseSurface,
+      // inversePrimary, shadow, scrim, surfaceTint.
       colorScheme: ColorScheme.fromSeed(
         seedColor: tokens.accent,
         brightness: tokens.brightness,
         primary: tokens.accent,
+        onPrimary: Colors.white,
+        primaryContainer: tokens.accentTint,
+        onPrimaryContainer: tokens.accent,
+        secondary: tokens.accent,
+        onSecondary: Colors.white,
         error: tokens.critical,
+        onError: Colors.white,
+        errorContainer: tokens.criticalTint,
+        onErrorContainer: tokens.critical,
         surface: tokens.surface,
+        onSurface: tokens.textPrimary,
+        onSurfaceVariant: tokens.textSecondary,
+        surfaceContainerHighest: tokens.surfaceTint,
+        outline: tokens.surfaceBorder,
+        outlineVariant: tokens.surfaceBorder,
       ),
       appBarTheme: AppBarTheme(
         centerTitle: true,
@@ -1084,20 +1116,31 @@ for f in $FILES; do
 done
 ```
 
-- [ ] **Step 3: Add the `app_colors.dart` import to every touched file that's missing it**
+- [ ] **Step 3: Add the `app_colors.dart` import to every touched file that's missing it — deterministically**
+
+Dart import paths are fully determined by file location relative to `lib/`, so the correct relative prefix is computable, not a judgment call: for a file at `lib/a/b/c/file.dart`, the path to `lib/config/` is `../../../config/` (one `../` per path segment between `lib/` and the file, i.e. `dirname` minus the `lib/` prefix).
 
 ```bash
 for f in $FILES; do
-  grep -q "app_colors.dart" "$f" || \
-    grep -q "config/theme.dart" "$f" || continue
-  # files already importing config/theme.dart get app_colors.dart added
-  # alongside it if they don't already import it directly
-  grep -q "import '.*app_colors.dart'" "$f" || \
-    sed -i "/import '.*theme.dart'/a import '${f#lib/}';" "$f"
+  grep -q "import '.*app_colors\.dart'" "$f" && continue
+  rel_dir=$(dirname "$f" | sed 's|^lib/||')
+  if [ "$rel_dir" = "lib" ] || [ -z "$rel_dir" ]; then
+    depth=0
+  else
+    depth=$(echo "$rel_dir" | tr '/' '\n' | wc -l)
+  fi
+  prefix=$(printf '../%.0s' $(seq 1 "$depth" 2>/dev/null))
+  last_import_line=$(grep -n "^import " "$f" | tail -1 | cut -d: -f1)
+  sed -i "${last_import_line}a import '${prefix}config/app_colors.dart';" "$f"
 done
+dart format lib/
 ```
 
-Do not run the snippet above as-is — it's illustrative of intent, not a working relative-path generator. Instead, for each file in `$FILES`, open it and ensure it imports `app_colors.dart` using the correct relative path for that file's location (mirroring how it already imports `config/theme.dart`), for example in `lib/presentation/patients/widgets/patient_card.dart`: `import '../../../config/app_colors.dart';`. Remove the now-unused `import '../../../config/theme.dart';` only if nothing else in the file still references `AppTheme` (some files use `AppTheme.lightTheme` etc. — check before removing).
+Dry-run and spot-check before trusting this across all 36 files: run it on 2-3 known files first (e.g. `lib/presentation/patients/widgets/patient_card.dart`, which should get `import '../../../config/app_colors.dart';`, matching its existing `import '../../../config/theme.dart';`, and `lib/core/platform.dart`, which should get `import '../config/app_colors.dart';`, matching its existing `import '../config/app_colors.dart';` reference — that file already imports it, so it should be *skipped* by the `grep -q ... && continue` guard, confirming the skip-logic works before running the loop over the rest of `$FILES`).
+
+Separately, remove the now-unused `import '....config/theme.dart';` from any file where nothing else still references `AppTheme` (some files use `AppTheme.lightTheme` etc. and must keep it) — `flutter analyze`'s `unused_import` warning in Step 5 will flag exactly which files qualify; don't remove any import analyze doesn't flag.
+
+Run Step 3's loop to completion for every file in `$FILES` before starting Step 4 — Step 4 relies on `flutter analyze` output being about `const` contexts specifically, and running it before every file has its import will surface a flood of unrelated "undefined identifier `AppColors`" errors that make the `const` errors harder to isolate.
 
 - [ ] **Step 4: Fix `const` context errors surfaced by the compiler**
 
@@ -2301,10 +2344,13 @@ Run: `grep -n "class _StatTile" -A 60 lib/presentation/dashboard/screens/provide
 
 Delete from that `class _StatTile` line through its closing `}` (confirm the boundary by checking the next `class` declaration doesn't get caught in the deletion).
 
-- [ ] **Step 3: Verify it compiles**
+- [ ] **Step 3: Verify it compiles, and verify the deletion was complete — don't treat analyze as a formality**
 
 Run: `flutter analyze lib/presentation/dashboard/screens/provider_dashboard_screen.dart`
-Expected: no errors (if `_StatTile` is still referenced anywhere else in the file, analyze will report it — fix any remaining reference to use `StatTile`)
+Expected: no errors. Note that a bad deletion boundary can fail *silently* here: if you deleted too little (an orphaned, unreferenced fragment of `_StatTile` left behind), `analyze` typically reports only an `unused_element`-class warning, not a hard error, so don't treat a clean `analyze` run alone as proof the deletion was correct.
+
+Also run: `grep -n "_StatTile" lib/presentation/dashboard/screens/provider_dashboard_screen.dart`
+Expected: no output at all (zero hits) — confirms both that every call site was updated to `StatTile` and that the old private class and its declaration are fully gone, not partially deleted.
 
 - [ ] **Step 4: Manual check**
 
@@ -2690,6 +2736,12 @@ Restructure `_OverviewTab.build` (currently lines 519-744) so `CriticalAlertCard
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       child: Column(
+        // Keyed so the safety-invariant test (Task 30) can target this
+        // exact Column deterministically — do not remove this key, and do
+        // not rely on find.byType(Column).first in any test, since
+        // AdaptiveCard/AdaptiveListRow and ancestor widgets (AppBar,
+        // Scaffold, TabBarView, AppLockGate) also build Columns.
+        key: const Key('overview_tab_column'),
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Critical allergies — MUST stay first. See CriticalAlertCard's
@@ -2923,7 +2975,12 @@ void main() {
     ));
     await tester.pump();
 
-    final column = tester.widget<Column>(find.byType(Column).first);
+    // Target _OverviewTab's outer Column by its explicit key (Task 27), not
+    // by type — find.byType(Column).first would match whichever Column
+    // widget-tester encounters first in the whole tree (AppBar, Scaffold,
+    // AdaptiveCard/AdaptiveListRow internals, AppLockGate, etc. all build
+    // their own Columns), which can pass regardless of actual card order.
+    final column = tester.widget<Column>(find.byKey(const Key('overview_tab_column')));
     final firstDataChild =
         column.children.firstWhere((w) => w is CriticalAlertCard || w is AdaptiveCard);
     expect(firstDataChild, isA<CriticalAlertCard>(),
@@ -2933,7 +2990,7 @@ void main() {
 }
 ```
 
-Adjust the `MultiProvider` setup to match whatever providers `PatientDetailScreen`'s widget tree actually reads at build time (check the file's `Consumer`/`context.watch` calls if this fails with a `ProviderNotFoundException` — add the missing provider rather than removing the assertion).
+Adjust the `MultiProvider` setup to match whatever providers `PatientDetailScreen`'s widget tree actually reads at build time (check the file's `Consumer`/`context.watch` calls if this fails with a `ProviderNotFoundException` — add the missing provider rather than removing the assertion). If `find.byKey` finds nothing, that means Task 27's `Key('overview_tab_column')` wasn't actually applied — fix Task 27's implementation, don't fall back to a type-based selector.
 
 - [ ] **Step 2: Run test to verify it fails before Task 27, passes after**
 
@@ -3055,3 +3112,4 @@ git commit -m "test: enforce WCAG AA contrast for critical/success/warning token
 - **Spec coverage:** design tokens (Task 2/4), fonts as local assets not google_fonts (Task 1), AppColorScope mechanism for both shells (Tasks 3/8/9), ThemeMode system+override persisted via shared_preferences (Task 6/7/17), component library (Tasks 11-16), the AndroidShell-serves-web TODO comment (Task 7), the migration-as-its-own-commit sequencing (Task 10, positioned before Phase 4+), all five flagship screens (Tasks 18-29), CriticalAlertCard-first invariant test (Task 30), contrast tests for critical/success/warning (Task 31) — every spec section maps to at least one task.
 - **Placeholder scan:** no task contains TBD/"handle appropriately"-style gaps. The three tasks that don't hand-transcribe entire multi-hundred-line private-class bodies (Task 23, Task 26, Task 29) instead give an exact mapping rule, an exact enumerated target list, and an explicit "verify by compiling + manual check against the approved mockup" gate, rather than leaving the transformation open-ended.
 - **Type consistency:** `AdaptiveCard`, `StatTile`, `AdaptiveListRow`, `AdaptiveBadge`, `CriticalAlertCard` constructor signatures are defined once (Tasks 11-15) and referenced identically in every later task; `AppColors.of(context)` and `ThemeModeProvider.{mode, load, setMode, resolvedBrightness}` are likewise defined once and reused verbatim.
+- **Post-review fixes:** Task 1's font download is pinned to commit `8cd7d0de182c88592d6852c245fe48f66eef55ee` (not the mutable `main` branch) and verified by SHA-256, not just file type — closes the same supply-chain gap the spec's blocking issue #1 was about removing in the first place. Task 27's `_OverviewTab` Column now carries `Key('overview_tab_column')`, and Task 30's ordering test asserts against `find.byKey(...)` instead of `find.byType(Column).first`, which could previously match an unrelated ancestor/sibling Column and pass without checking real card order. Task 5's `ColorScheme.fromSeed` now explicitly sets every commonly-consumed role (`onSurface`, `onSurfaceVariant`, `outline`, `outlineVariant`, `secondary`, `surfaceContainerHighest`, the `on*Container` pairs) instead of leaving them algorithmically derived from the seed; only `tertiary*`, `inverseSurface`, `inversePrimary`, `shadow`, `scrim`, `surfaceTint` remain seed-derived, called out explicitly as a documented decision rather than an untracked gap. Task 10's Step 3 import-insertion is now a deterministic depth-computed script (spot-checked against two known files before running across all 36) instead of prose asking the worker to reason out relative paths by hand, and its ordering relative to Step 4's const-fixup pass is now explicit. Task 21's deletion-completeness check now includes a hard `grep` gate, not just `flutter analyze`, since an incomplete deletion can pass analyze with only a lint-level warning.
