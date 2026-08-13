@@ -6,7 +6,7 @@ import '../../../config/app_spacing.dart';
 /// information (e.g. critical allergies). Any screen surfacing this kind
 /// of data MUST use this component and MUST render it before any other
 /// content in the same scroll — see Task 27 (_OverviewTab) and the
-/// dedicated ordering test in test/patients/patient_detail_overview_test.dart.
+/// dedicated ordering test in test/patients/patient_detail_overview_order_test.dart.
 class CriticalAlertCard extends StatelessWidget {
   final String title;
   final List<String> items;

@@ -554,7 +554,7 @@ class _OverviewTab extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Critical allergies — MUST stay first. See CriticalAlertCard's
-          // doc comment and test/patients/patient_detail_overview_test.dart.
+          // doc comment and test/patients/patient_detail_overview_order_test.dart.
           if (p.hasCriticalAllergies)
             CriticalAlertCard(
               title: 'CRITICAL ALLERGY',
