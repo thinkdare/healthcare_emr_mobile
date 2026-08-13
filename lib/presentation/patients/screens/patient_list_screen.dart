@@ -112,11 +112,13 @@ class _PatientListScreenState extends State<PatientListScreen> {
                   ? TextField(
                       controller: _searchController,
                       autofocus: true,
-                      style: const TextStyle(color: Colors.white),
-                      cursorColor: Colors.white,
-                      decoration: const InputDecoration(
+                      style: TextStyle(
+                          color: AppColors.of(context).onAccent),
+                      cursorColor: AppColors.of(context).onAccent,
+                      decoration: InputDecoration(
                         hintText: 'Search by name, MRN, phone or email…',
-                        hintStyle: TextStyle(color: Colors.white70),
+                        hintStyle: TextStyle(
+                            color: AppColors.of(context).onAccent),
                         border: InputBorder.none,
                         filled: false,
                       ),

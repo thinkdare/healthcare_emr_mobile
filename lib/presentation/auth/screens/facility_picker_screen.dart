@@ -68,10 +68,11 @@ class _FacilityPickerScreenState extends State<FacilityPickerScreen> {
               automaticallyImplyLeading: false,
               actions: [
                 TextButton.icon(
-                  icon: const Icon(Icons.logout, color: Colors.white),
-                  label: const Text(
+                  icon: Icon(Icons.logout,
+                      color: AppColors.of(context).onAccent),
+                  label: Text(
                     'Logout',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppColors.of(context).onAccent),
                   ),
                   onPressed: () async {
                     await context.read<AuthProvider>().logout();
@@ -90,7 +91,10 @@ class _FacilityPickerScreenState extends State<FacilityPickerScreen> {
           final user = auth.currentUser;
 
           return Padding(
-            padding: const EdgeInsets.all(16),
+            // Horizontal inset comes from AdaptiveCard's own 16px margin —
+            // non-card siblings below re-add a matching 16 so everything in
+            // this column lines up.
+            padding: const EdgeInsets.symmetric(vertical: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -103,10 +107,10 @@ class _FacilityPickerScreenState extends State<FacilityPickerScreen> {
                         backgroundColor: AppColors.of(context).accent,
                         child: Text(
                           auth.initials,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: AppColors.of(context).onAccent,
                           ),
                         ),
                       ),
@@ -131,28 +135,32 @@ class _FacilityPickerScreenState extends State<FacilityPickerScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                Text(
-                  'Where are you working today?',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.of(context).textSecondary,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    'Where are you working today?',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.of(context).textSecondary,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
 
                 if (auth.error != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.of(
-                        context,
-                      ).critical.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      auth.error!,
-                      style: TextStyle(color: AppColors.of(context).critical),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.of(context).criticalTint,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        auth.error!,
+                        style: TextStyle(color: AppColors.of(context).critical),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),

@@ -2,11 +2,13 @@
 //
 // iOS root — CupertinoApp + CupertinoTabScaffold with four tabs.
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show Theme, ThemeData;
 import 'package:provider/provider.dart';
 
 import '../../config/app_colors.dart';
 import '../../config/app_color_scope.dart';
 import '../../config/app_color_tokens.dart';
+import '../../config/theme.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/theme_mode_provider.dart';
 import '../access_grants/screens/access_grants_screen.dart';
@@ -30,6 +32,22 @@ class IOSShell extends StatelessWidget {
             final brightness = themeModeProvider.resolvedBrightness(context);
             final tokens =
                 brightness == Brightness.dark ? AppColorTokens.dark : AppColorTokens.light;
+            // Most screens reachable from this shell (Patient List, Roster,
+            // Access Grants, Patient Detail, Staff Profile, …) are built from
+            // Material widgets — Scaffold, Card, ListTile, TextField — even
+            // though the outer chrome is Cupertino. CupertinoApp only bridges
+            // `brightness` and `primaryColor` into Material's Theme.of(context);
+            // everything else (scaffoldBackgroundColor, colorScheme.surface,
+            // cardColor, fontFamily) falls back to stock Material 3 defaults,
+            // so those screens rendered on a cool grey ground in Roboto rather
+            // than the warm palette in Plus Jakarta Sans. Injecting the real
+            // ThemeData below the CupertinoApp — via `builder`, so it wraps the
+            // routed navigator content — is what actually delivers the
+            // redesign to the iOS UI. Navigation and Cupertino chrome are
+            // untouched.
+            final ThemeData materialTheme = brightness == Brightness.dark
+                ? AppTheme.darkTheme
+                : AppTheme.lightTheme;
             return AppColorScope(
               tokens: tokens,
               child: CupertinoApp(
@@ -43,6 +61,8 @@ class IOSShell extends StatelessWidget {
                     textStyle: TextStyle(fontFamily: 'Plus Jakarta Sans'),
                   ),
                 ),
+                builder: (context, child) =>
+                    Theme(data: materialTheme, child: child ?? const SizedBox.shrink()),
                 home: const AppLockGate(child: _IOSAuthWrapper()),
               ),
             );

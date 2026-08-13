@@ -552,8 +552,8 @@ class _EditSheetState extends State<_EditSheet> {
                         backgroundColor: AppColors.of(context).accent,
                         child: Text(
                           widget.member.initials,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: AppColors.of(context).onAccent,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -693,18 +693,18 @@ class _EditSheetState extends State<_EditSheet> {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: _saving
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white,
+                                color: AppColors.of(context).onAccent,
                               ),
                             )
-                          : const Text(
+                          : Text(
                               'Save Changes',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.of(context).onAccent,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),

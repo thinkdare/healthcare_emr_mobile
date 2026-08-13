@@ -249,8 +249,8 @@ class _RankCard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: selected
-              ? AppColors.of(context).accent.withValues(alpha: 0.06)
-              : Colors.white,
+              ? AppColors.of(context).accentTint
+              : AppColors.of(context).surface,
           border: Border.all(
             color: selected
                 ? AppColors.of(context).accent

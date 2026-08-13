@@ -62,4 +62,77 @@ void main() {
       });
     }
   });
+
+  // The group above only ever checked the semantic colors in their
+  // *foreground-on-tint* direction. The app also uses accent/critical/warning/
+  // success as FILLS (app bar, filled buttons, FABs, badges, banners) with a
+  // foreground on top — a direction no test covered, which is how dark mode
+  // shipped with white-on-#FBBF24 at 1.67:1. These pairs lock in the fill
+  // direction; use tokens.onAccent/onCritical/onWarning/onSuccess at the call
+  // site, never a hard-coded Colors.white.
+  group('WCAG AA contrast (>= 4.5:1) for fill + on-color token pairs', () {
+    final pairs = {
+      'light onAccent on accent':
+          (AppColorTokens.light.onAccent, AppColorTokens.light.accent),
+      'light onCritical on critical':
+          (AppColorTokens.light.onCritical, AppColorTokens.light.critical),
+      'light onWarning on warning':
+          (AppColorTokens.light.onWarning, AppColorTokens.light.warning),
+      'light onSuccess on success':
+          (AppColorTokens.light.onSuccess, AppColorTokens.light.success),
+      'dark onAccent on accent':
+          (AppColorTokens.dark.onAccent, AppColorTokens.dark.accent),
+      'dark onCritical on critical':
+          (AppColorTokens.dark.onCritical, AppColorTokens.dark.critical),
+      'dark onWarning on warning':
+          (AppColorTokens.dark.onWarning, AppColorTokens.dark.warning),
+      'dark onSuccess on success':
+          (AppColorTokens.dark.onSuccess, AppColorTokens.dark.success),
+    };
+
+    for (final entry in pairs.entries) {
+      test(entry.key, () {
+        final ratio = contrastRatio(entry.value.$1, entry.value.$2);
+        expect(ratio, greaterThanOrEqualTo(4.5),
+            reason: '${entry.key} contrast ratio is ${ratio.toStringAsFixed(2)}:1, '
+                'below WCAG AA 4.5:1. Adjust the on<Color> token (or the fill) '
+                'in AppColorTokens and rerun — and re-check the '
+                'foreground-on-tint group above, which pulls the other way.');
+      });
+    }
+  });
+
+  // `textSecondary` carries ~140 call sites (list subtitles, stat labels,
+  // demographic lines). It shipped at 3.69:1 on `background`, a regression
+  // against the static gray600 it replaced.
+  group('WCAG AA contrast (>= 4.5:1) for secondary body text', () {
+    final pairs = {
+      'light textSecondary on background': (
+        AppColorTokens.light.textSecondary,
+        AppColorTokens.light.background
+      ),
+      'light textSecondary on surface': (
+        AppColorTokens.light.textSecondary,
+        AppColorTokens.light.surface
+      ),
+      'dark textSecondary on background': (
+        AppColorTokens.dark.textSecondary,
+        AppColorTokens.dark.background
+      ),
+      'dark textSecondary on surface': (
+        AppColorTokens.dark.textSecondary,
+        AppColorTokens.dark.surface
+      ),
+    };
+
+    for (final entry in pairs.entries) {
+      test(entry.key, () {
+        final ratio = contrastRatio(entry.value.$1, entry.value.$2);
+        expect(ratio, greaterThanOrEqualTo(4.5),
+            reason: '${entry.key} contrast ratio is ${ratio.toStringAsFixed(2)}:1, '
+                'below WCAG AA 4.5:1. Darken/lighten textSecondary (same hue) '
+                'in AppColorTokens and rerun.');
+      });
+    }
+  });
 }

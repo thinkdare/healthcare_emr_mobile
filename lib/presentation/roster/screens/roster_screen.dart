@@ -186,7 +186,8 @@ class _RosterScreenState extends State<RosterScreen> {
                   ),
                   Text(
                     dateStr,
-                    style: const TextStyle(fontSize: 12, color: Colors.white70),
+                    style: TextStyle(
+                        fontSize: 12, color: AppColors.of(context).onAccent),
                   ),
                 ],
               ),

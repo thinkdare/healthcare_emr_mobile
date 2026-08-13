@@ -14,7 +14,6 @@ import 'package:healthcare_emr_mobile/core/api/api_client.dart';
 import 'package:healthcare_emr_mobile/data/models/patient_models.dart';
 import 'package:healthcare_emr_mobile/data/models/clinical_models.dart';
 import 'package:healthcare_emr_mobile/data/models/clinical_record_models.dart';
-import 'package:healthcare_emr_mobile/data/models/auth_models.dart';
 import 'package:healthcare_emr_mobile/data/providers/auth_provider.dart';
 import 'package:healthcare_emr_mobile/data/providers/clinical_provider.dart';
 import 'package:healthcare_emr_mobile/data/repositories/auth_repository.dart';

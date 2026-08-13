@@ -234,10 +234,10 @@ class _PlanCard extends StatelessWidget {
                       color: AppColors.of(context).accent,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Current',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.of(context).onAccent,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),

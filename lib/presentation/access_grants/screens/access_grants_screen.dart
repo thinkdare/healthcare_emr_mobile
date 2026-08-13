@@ -78,8 +78,8 @@ class _AccessGrantsScreenState extends State<AccessGrantsScreen>
                               ),
                               child: Text(
                                 '${p.pendingCount}',
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: AppColors.of(context).onCritical,
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                 ),

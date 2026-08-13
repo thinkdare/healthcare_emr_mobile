@@ -112,41 +112,42 @@ class _TriggerEmergencyAccessScreenState
               backgroundColor: AppColors.of(
                 context,
               ).critical.withValues(alpha: 0.9),
-              middle: const Text(
+              middle: Text(
                 'Emergency Access',
-                style: TextStyle(color: CupertinoColors.white),
+                style: TextStyle(color: AppColors.of(context).onCritical),
               ),
               trailing: CupertinoButton(
                 padding: EdgeInsets.zero,
                 onPressed: _saving ? null : _submit,
                 child: _saving
                     ? const CupertinoActivityIndicator()
-                    : const Text(
+                    : Text(
                         'Submit',
-                        style: TextStyle(color: CupertinoColors.white),
+                        style: TextStyle(color: AppColors.of(context).onCritical),
                       ),
               ),
             )
           : AppBar(
               backgroundColor: AppColors.of(context).critical,
-              foregroundColor: Colors.white,
+              foregroundColor: AppColors.of(context).onCritical,
               title: const Text('Break-Glass Emergency Access'),
               actions: [
                 TextButton(
                   onPressed: _saving ? null : _submit,
                   child: _saving
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                            valueColor: AlwaysStoppedAnimation(
+                                AppColors.of(context).onCritical),
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'Submit',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.of(context).onCritical,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

@@ -347,8 +347,8 @@ class _StatsHeader extends StatelessWidget {
         children: [
           Text(
             org.name,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppColors.of(context).onAccent,
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -356,7 +356,8 @@ class _StatsHeader extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             org.type,
-            style: const TextStyle(color: Colors.white70, fontSize: 13),
+            style: TextStyle(
+                color: AppColors.of(context).onAccent, fontSize: 13),
           ),
           const SizedBox(height: 16),
           Row(
@@ -398,11 +399,14 @@ class _StatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // This tile sits inside the accent-filled org header, so its foreground
+    // is onAccent, not white (white is illegible on the light dark-mode accent).
+    final onAccent = AppColors.of(context).onAccent;
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.15),
+          color: onAccent.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -412,25 +416,25 @@ class _StatTile extends StatelessWidget {
               children: [
                 Text(
                   value,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: onAccent,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 if (warning) ...[
                   const SizedBox(width: 4),
-                  const Icon(
+                  Icon(
                     Icons.warning_amber,
                     size: 14,
-                    color: Colors.white70,
+                    color: onAccent,
                   ),
                 ],
               ],
             ),
             Text(
               label,
-              style: const TextStyle(color: Colors.white70, fontSize: 11),
+              style: TextStyle(color: onAccent, fontSize: 11),
             ),
           ],
         ),

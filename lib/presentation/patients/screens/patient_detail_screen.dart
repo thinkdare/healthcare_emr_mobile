@@ -437,7 +437,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       floatingActionButton: _currentTab >= 1 && _currentTab <= 4
           ? FloatingActionButton(
               backgroundColor: AppColors.of(context).accent,
-              foregroundColor: Colors.white,
+              foregroundColor: AppColors.of(context).onAccent,
               onPressed: _openClinicalForm,
               tooltip: switch (_currentTab) {
                 1 => 'Book Appointment',
@@ -486,9 +486,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         bottom: TabBar(
           controller: _tabs,
           isScrollable: true,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
+          indicatorColor: AppColors.of(context).onAccent,
+          labelColor: AppColors.of(context).onAccent,
+          // Full opacity, not a 0.7 alpha: an alpha blend toward the accent
+          // fill drops below AA (3.45:1 dark / 4.10:1 light). The indicator
+          // carries the selected-state affordance.
+          unselectedLabelColor: AppColors.of(context).onAccent,
           tabs: [
             for (final i in _visibleIndices)
               Tab(
@@ -543,7 +546,10 @@ class _OverviewTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = patient;
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      // Horizontal inset comes from AdaptiveCard/CriticalAlertCard's own
+      // 16px margin; the _SectionHeader siblings below carry a matching
+      // Padding(horizontal: 16) so headers and cards stay flush.
+      padding: const EdgeInsets.fromLTRB(0, 16, 0, 32),
       child: Column(
         // Keyed so the safety-invariant test (Task 30) can target this
         // exact Column deterministically — do not remove this key, and do
@@ -749,9 +755,7 @@ class _OverviewTab extends StatelessWidget {
                     .map(
                       (c) => Chip(
                         label: Text(c, style: const TextStyle(fontSize: 13)),
-                        backgroundColor: AppColors.of(
-                          context,
-                        ).accent.withValues(alpha: 0.08),
+                        backgroundColor: AppColors.of(context).accentTint,
                       ),
                     )
                     .toList(),
@@ -830,7 +834,7 @@ class _AppointmentsTab extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () => context.read<ClinicalProvider>().loadAppointments(),
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         itemCount: appointments.length,
         itemBuilder: (context, i) => _AppointmentCard(appt: appointments[i]),
       ),
@@ -924,7 +928,7 @@ class _PrescriptionsTab extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () => context.read<ClinicalProvider>().loadPrescriptions(),
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         itemCount: prescriptions.length,
         itemBuilder: (context, i) => _PrescriptionCard(rx: prescriptions[i]),
       ),
@@ -1092,12 +1096,13 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
               child: AdaptiveFilledButton(
                 onPressed: _filling ? null : _showFillDialog,
                 icon: _filling
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 14,
                         height: 14,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                          valueColor: AlwaysStoppedAnimation(
+                              AppColors.of(context).onAccent),
                         ),
                       )
                     : const Icon(Icons.local_pharmacy, size: 16),
@@ -1126,7 +1131,7 @@ class _LabResultsTab extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () => context.read<ClinicalProvider>().loadLabResults(),
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         itemCount: labs.length,
         itemBuilder: (context, i) => _LabResultCard(lab: labs[i]),
       ),
@@ -1343,13 +1348,9 @@ class _LabResultCardState extends State<_LabResultCard> {
                   .map(
                     (f) => Chip(
                       label: Text(f, style: const TextStyle(fontSize: 11)),
-                      backgroundColor: AppColors.of(
-                        context,
-                      ).critical.withValues(alpha: 0.1),
+                      backgroundColor: AppColors.of(context).criticalTint,
                       side: BorderSide(
-                        color: AppColors.of(
-                          context,
-                        ).critical.withValues(alpha: 0.3),
+                        color: AppColors.of(context).criticalBorder,
                       ),
                       padding: EdgeInsets.zero,
                     ),
@@ -1384,12 +1385,13 @@ class _LabResultCardState extends State<_LabResultCard> {
               child: AdaptiveFilledButton(
                 onPressed: _recording ? null : _showRecordDialog,
                 icon: _recording
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 14,
                         height: 14,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                          valueColor: AlwaysStoppedAnimation(
+                              AppColors.of(context).onAccent),
                         ),
                       )
                     : const Icon(Icons.science, size: 16),
@@ -1418,7 +1420,7 @@ class _DocumentsTab extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () => context.read<ClinicalProvider>().loadDocuments(),
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         itemCount: docs.length,
         itemBuilder: (context, i) => _DocumentCard(doc: docs[i]),
       ),
@@ -1487,7 +1489,7 @@ class _DocumentCardState extends State<_DocumentCard> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.of(context).accent.withValues(alpha: 0.1),
+            color: AppColors.of(context).accentTint,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: AppColors.of(context).accent),
@@ -1572,8 +1574,8 @@ class _SectionHeader extends StatelessWidget {
               ),
               child: Text(
                 badge!,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppColors.of(context).onCritical,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),

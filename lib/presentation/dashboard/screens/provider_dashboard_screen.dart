@@ -262,7 +262,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   onRefresh: _handleRefresh,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    // Horizontal inset is AdaptiveCard's own 16px margin —
+                    // every child of this column is an AdaptiveCard.
+                    padding: const EdgeInsets.fromLTRB(0, 16, 0, 32),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -313,6 +315,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   : 'Patients',
             ),
             backgroundColor: AppColors.of(context).accent,
+            foregroundColor: AppColors.of(context).onAccent,
           );
         },
       ),
@@ -347,7 +350,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 ),
                 accountEmail: Text(auth.currentUser?.email ?? ''),
                 currentAccountPicture: CircleAvatar(
-                  backgroundColor: Colors.white,
+                  backgroundColor: AppColors.of(context).onAccent,
                   child: Text(
                     auth.initials,
                     style: TextStyle(
@@ -610,17 +613,17 @@ class _WelcomeCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Welcome back,',
-              style: TextStyle(fontSize: 16, color: Colors.white70),
+              style: TextStyle(fontSize: 16, color: tokens.onAccent),
             ),
             const SizedBox(height: 4),
             Text(
               auth.displayName,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: tokens.onAccent,
               ),
             ),
             const SizedBox(height: 8),
@@ -629,21 +632,24 @@ class _WelcomeCard extends StatelessWidget {
                 auth.department.isNotEmpty
                     ? '${auth.staffTypeDisplay} · ${auth.department}'
                     : auth.staffTypeDisplay,
-                style: const TextStyle(fontSize: 16, color: Colors.white70),
+                style: TextStyle(fontSize: 16, color: tokens.onAccent),
               ),
             if (auth.facilityName.isNotEmpty) ...[
               const SizedBox(height: 4),
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.location_on,
                     size: 14,
-                    color: Colors.white54,
+                    // Decorative icon paired with the label beside it: 0.7
+                    // alpha still clears the 3:1 non-text minimum in both
+                    // themes (light 4.10, dark 3.45).
+                    color: tokens.onAccent.withValues(alpha: 0.7),
                   ),
                   const SizedBox(width: 4),
                   Text(
                     auth.facilityName,
-                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                    style: TextStyle(fontSize: 13, color: tokens.onAccent),
                   ),
                 ],
               ),
@@ -1025,9 +1031,7 @@ class _AccessGrantsCard extends StatelessWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.of(
-                      context,
-                    ).warning.withValues(alpha: 0.1),
+                    color: AppColors.of(context).warningTint,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(

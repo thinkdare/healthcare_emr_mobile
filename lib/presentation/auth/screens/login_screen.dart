@@ -200,7 +200,10 @@ class _LoginScreenState extends State<LoginScreen> {
           body: SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                // Horizontal inset is left entirely to AdaptiveCard's own 16px
+                // margin so cards sit at the same inset on every screen; the
+                // header below re-adds a matching 16 so it stays aligned.
+                padding: const EdgeInsets.symmetric(vertical: 24),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 400),
                   child: Column(
@@ -208,29 +211,41 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // ── Header ───────────────────────────────────────────
-                      Container(
-                        width: 56,
-                        height: 56,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: AppColors.of(context).accent,
-                          borderRadius: BorderRadius.circular(16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: AppColors.of(context).accent,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Icon(Icons.local_hospital,
+                                  size: 28,
+                                  color: AppColors.of(context).onAccent),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text('Healthcare EMR',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8),
+                            Text(
+                              show2FA
+                                  ? 'Two-Factor Authentication'
+                                  : 'Provider Login',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  color: AppColors.of(context).textSecondary),
+                            ),
+                          ],
                         ),
-                        child: const Icon(Icons.local_hospital,
-                            size: 28, color: Colors.white),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text('Healthcare EMR',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontSize: 28, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      Text(
-                        show2FA
-                            ? 'Two-Factor Authentication'
-                            : 'Provider Login',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 16, color: AppColors.of(context).textSecondary),
                       ),
                       const SizedBox(height: 32),
 
@@ -369,7 +384,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.of(context).accent.withValues(alpha: 0.08),
+            color: AppColors.of(context).accentTint,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -442,7 +457,7 @@ class _FacilitySelector extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: AppColors.of(context).accent.withValues(alpha: 0.06),
+          color: AppColors.of(context).accentTint,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: AppColors.of(context).accent.withValues(alpha: 0.2),
@@ -532,10 +547,10 @@ class _ErrorBox extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.of(context).critical.withValues(alpha: 0.1),
+        color: AppColors.of(context).criticalTint,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: AppColors.of(context).critical.withValues(alpha: 0.3),
+          color: AppColors.of(context).criticalBorder,
         ),
       ),
       child: Row(
@@ -564,12 +579,12 @@ class _ErrorBox extends StatelessWidget {
 class _LoadingSpinner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    return SizedBox(
       height: 20,
       width: 20,
       child: CircularProgressIndicator(
         strokeWidth: 2,
-        valueColor: AlwaysStoppedAnimation(Colors.white),
+        valueColor: AlwaysStoppedAnimation(AppColors.of(context).onAccent),
       ),
     );
   }

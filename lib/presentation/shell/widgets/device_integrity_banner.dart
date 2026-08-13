@@ -17,23 +17,24 @@ class DeviceIntegrityBanner extends StatelessWidget {
       builder: (context, integrity, _) {
         if (!integrity.shouldWarn) return const SizedBox.shrink();
 
+        final tokens = AppColors.of(context);
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          color: AppColors.of(context).warning,
+          color: tokens.warning,
           child: SafeArea(
             top: false,
             bottom: false,
             child: Row(
               children: [
-                const Icon(Icons.warning_amber, color: Colors.white, size: 18),
+                Icon(Icons.warning_amber, color: tokens.onWarning, size: 18),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Text(
                     'This device appears to be rooted or jailbroken. '
                     'Patient data protections may be weaker than intended.',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: tokens.onWarning,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -43,7 +44,7 @@ class DeviceIntegrityBanner extends StatelessWidget {
                   onTap: integrity.dismiss,
                   child: Icon(
                     kIsIOS ? CupertinoIcons.xmark : Icons.close,
-                    color: Colors.white,
+                    color: tokens.onWarning,
                     size: 18,
                   ),
                 ),

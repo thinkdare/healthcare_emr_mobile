@@ -158,7 +158,7 @@ class _EmergencyAccessScreenState extends State<EmergencyAccessScreen> {
       floatingActionButton: canTrigger
           ? FloatingActionButton.extended(
               backgroundColor: AppColors.of(context).critical,
-              foregroundColor: Colors.white,
+              foregroundColor: AppColors.of(context).onCritical,
               onPressed: () async {
                 final provider = context.read<EmergencyAccessProvider>();
                 final created = await Navigator.of(context).push<bool>(

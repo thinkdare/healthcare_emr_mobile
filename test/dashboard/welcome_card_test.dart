@@ -2,7 +2,6 @@
 // Targets the private _WelcomeCard indirectly by pumping the full
 // ProviderDashboardScreen and checking for solid-accent (not gradient)
 // styling, matching the approved mockup.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:healthcare_emr_mobile/config/app_color_tokens.dart';
 

@@ -20,6 +20,12 @@ class TrialStatusBanner extends StatelessWidget {
 
         final daysRemaining = subscription.trialDaysRemaining ?? 0;
         final isUrgent = daysRemaining <= 7;
+        // The banner is filled with warning->critical (urgent) or accent.
+        // Both on-colors resolve to the same value per theme, so one variable
+        // covers the whole banner.
+        final onFill = isUrgent
+            ? AppColors.of(context).onWarning
+            : AppColors.of(context).onAccent;
 
         return Container(
           width: double.infinity,
@@ -45,7 +51,7 @@ class TrialStatusBanner extends StatelessWidget {
               children: [
                 Icon(
                   isUrgent ? Icons.warning_amber : Icons.access_time,
-                  color: Colors.white,
+                  color: onFill,
                   size: 20,
                 ),
                 const SizedBox(width: 12),
@@ -60,8 +66,8 @@ class TrialStatusBanner extends StatelessWidget {
                             : daysRemaining == 1
                             ? 'Trial expires tomorrow'
                             : 'Trial expires in $daysRemaining days',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: onFill,
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
                         ),
@@ -70,7 +76,7 @@ class TrialStatusBanner extends StatelessWidget {
                       Text(
                         'Upgrade to continue using all features',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: onFill,
                           fontSize: 12,
                         ),
                       ),
@@ -83,10 +89,10 @@ class TrialStatusBanner extends StatelessWidget {
                         onPressed: () => Navigator.of(
                           context,
                         ).pushNamed('/subscription/upgrade'),
-                        child: const Text(
+                        child: Text(
                           'Upgrade',
                           style: TextStyle(
-                            color: CupertinoColors.white,
+                            color: onFill,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -96,7 +102,7 @@ class TrialStatusBanner extends StatelessWidget {
                           context,
                         ).pushNamed('/subscription/upgrade'),
                         style: TextButton.styleFrom(
-                          backgroundColor: Colors.white,
+                          backgroundColor: onFill,
                           foregroundColor: isUrgent
                               ? AppColors.of(context).warning
                               : AppColors.of(context).accent,

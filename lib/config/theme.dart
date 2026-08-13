@@ -26,15 +26,15 @@ class AppTheme {
         seedColor: tokens.accent,
         brightness: tokens.brightness,
         primary: tokens.accent,
-        onPrimary: Colors.white,
+        onPrimary: tokens.onAccent,
         primaryContainer: tokens.accentTint,
         onPrimaryContainer: tokens.accent,
         secondary: tokens.accent,
-        onSecondary: Colors.white,
+        onSecondary: tokens.onAccent,
         secondaryContainer: tokens.accentTint,
         onSecondaryContainer: tokens.accent,
         error: tokens.critical,
-        onError: Colors.white,
+        onError: tokens.onCritical,
         errorContainer: tokens.criticalTint,
         onErrorContainer: tokens.critical,
         surface: tokens.surface,
@@ -48,18 +48,18 @@ class AppTheme {
         centerTitle: true,
         elevation: 0,
         backgroundColor: tokens.accent,
-        foregroundColor: Colors.white,
-        titleTextStyle: const TextStyle(
+        foregroundColor: tokens.onAccent,
+        titleTextStyle: TextStyle(
           fontFamily: 'Plus Jakarta Sans',
           fontSize: 20,
           fontWeight: FontWeight.w700,
-          color: Colors.white,
+          color: tokens.onAccent,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: tokens.accent,
-          foregroundColor: Colors.white,
+          foregroundColor: tokens.onAccent,
           padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
           shape: RoundedRectangleBorder(
@@ -71,6 +71,13 @@ class AppTheme {
               fontSize: 16,
               fontWeight: FontWeight.w700),
         ),
+      ),
+      // Without this, Material 3's FAB defaults pull `onPrimaryContainer` for
+      // its foreground — which this ColorScheme maps to `accent`, the same
+      // color most FABs in the app set as their background. Pin both ends.
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: tokens.accent,
+        foregroundColor: tokens.onAccent,
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(

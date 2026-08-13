@@ -214,9 +214,9 @@ class _VitalSignTile extends StatelessWidget {
           color: AppColors.of(context).critical,
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 20),
-          child: const Icon(
+          child: Icon(
             CupertinoIcons.delete,
-            color: CupertinoColors.white,
+            color: AppColors.of(context).onCritical,
           ),
         ),
         child: CupertinoListTile(
@@ -311,9 +311,9 @@ class _DiagnosisTile extends StatelessWidget {
           color: AppColors.of(context).critical,
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 20),
-          child: const Icon(
+          child: Icon(
             CupertinoIcons.delete,
-            color: CupertinoColors.white,
+            color: AppColors.of(context).onCritical,
           ),
         ),
         child: CupertinoListTile(
@@ -389,9 +389,9 @@ class _ProblemTile extends StatelessWidget {
           color: AppColors.of(context).critical,
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 20),
-          child: const Icon(
+          child: Icon(
             CupertinoIcons.delete,
-            color: CupertinoColors.white,
+            color: AppColors.of(context).onCritical,
           ),
         ),
         child: CupertinoListTile(
@@ -467,9 +467,9 @@ class _ProcedureTile extends StatelessWidget {
           color: AppColors.of(context).critical,
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 20),
-          child: const Icon(
+          child: Icon(
             CupertinoIcons.delete,
-            color: CupertinoColors.white,
+            color: AppColors.of(context).onCritical,
           ),
         ),
         child: CupertinoListTile(
@@ -547,9 +547,9 @@ class _ImmunizationTile extends StatelessWidget {
           color: AppColors.of(context).critical,
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 20),
-          child: const Icon(
+          child: Icon(
             CupertinoIcons.delete,
-            color: CupertinoColors.white,
+            color: AppColors.of(context).onCritical,
           ),
         ),
         child: CupertinoListTile(

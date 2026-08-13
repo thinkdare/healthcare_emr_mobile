@@ -21,6 +21,25 @@ class AppColorTokens {
   final Color successTint;
   final Color warning;
   final Color warningTint;
+
+  // ── "On" colors ────────────────────────────────────────────────────────────
+  // Foreground (text/icon) color to use *on top of* the matching semantic color
+  // when that color is used as a FILL (app bar, filled button, badge, banner,
+  // FAB) rather than as foreground text.
+  //
+  // These are NOT interchangeable with Colors.white. In dark mode `accent`,
+  // `critical`, `warning` and `success` are deliberately *light* colors — they
+  // are tuned to read as foreground text on the dark surfaces (see
+  // test/config/token_contrast_test.dart). White text on those light fills
+  // measures as low as 1.67:1, far below WCAG AA's 4.5:1, which is why the
+  // dark variants below are a near-black instead.
+  //
+  // Every fill+foreground pair is locked in by test/config/token_contrast_test.dart.
+  final Color onAccent;
+  final Color onCritical;
+  final Color onWarning;
+  final Color onSuccess;
+
   final Brightness brightness;
 
   const AppColorTokens({
@@ -40,6 +59,10 @@ class AppColorTokens {
     required this.successTint,
     required this.warning,
     required this.warningTint,
+    required this.onAccent,
+    required this.onCritical,
+    required this.onWarning,
+    required this.onSuccess,
     required this.brightness,
   });
 
@@ -49,7 +72,12 @@ class AppColorTokens {
     surfaceBorder: Color(0xFFF0EBE0),
     surfaceTint: Color(0xFFEFEAE0),
     textPrimary: Color(0xFF292420),
-    textSecondary: Color(0xFF8A8071),
+    // Same hue (36°) / saturation (10%) as the original #8A8071, darkened from
+    // L 49% -> 42% so it clears WCAG AA on both `background` (4.84:1) and
+    // `surface` (5.09:1). The original measured 3.69:1 / 3.88:1 — a regression
+    // against the static gray600 it replaced. Locked in by
+    // test/config/token_contrast_test.dart; do not lighten without rerunning it.
+    textSecondary: Color(0xFF766D60),
     textSecondaryAlt: Color(0xFF6B6355),
     accent: Color(0xFF1D4ED8),
     accentTint: Color(0xFFDBE7FE),
@@ -63,6 +91,13 @@ class AppColorTokens {
     successTint: Color(0xFFDCFCE7),
     warning: Color(0xFFB45309),
     warningTint: Color(0xFFFEF3C7),
+    // Light-mode semantic colors are dark enough that plain white clears AA as
+    // a foreground on all four fills (accent 6.70, critical 6.06, warning 5.02,
+    // success 5.02).
+    onAccent: Color(0xFFFFFFFF),
+    onCritical: Color(0xFFFFFFFF),
+    onWarning: Color(0xFFFFFFFF),
+    onSuccess: Color(0xFFFFFFFF),
     brightness: Brightness.light,
   );
 
@@ -83,6 +118,17 @@ class AppColorTokens {
     successTint: Color(0xFF14301F),
     warning: Color(0xFFFBBF24),
     warningTint: Color(0xFF3A2A0C),
+    // Deliberately near-black, not white. These four semantic colors are LIGHT
+    // in dark mode because their primary job is foreground text on the dark
+    // `surface`/`*Tint` backgrounds (dark accent-on-surface is only 4.56:1 as
+    // it is — darkening them to make white legible would push all four below
+    // AA in that, their original, direction). So the fill+foreground pair is
+    // fixed from the foreground side instead: near-black on the light fill
+    // measures accent 5.39, critical 9.05, warning 10.77, success 10.32.
+    onAccent: Color(0xFF1A1613),
+    onCritical: Color(0xFF1A1613),
+    onWarning: Color(0xFF1A1613),
+    onSuccess: Color(0xFF1A1613),
     brightness: Brightness.dark,
   );
 }

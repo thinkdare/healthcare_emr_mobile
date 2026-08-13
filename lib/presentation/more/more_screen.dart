@@ -178,8 +178,8 @@ class MoreScreen extends StatelessWidget {
                               ),
                               child: Text(
                                 '${sync.pendingConflicts}',
-                                style: const TextStyle(
-                                  color: CupertinoColors.white,
+                                style: TextStyle(
+                                  color: AppColors.of(context).onCritical,
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -214,8 +214,8 @@ class MoreScreen extends StatelessWidget {
                                 ),
                                 child: Text(
                                   '${referrals.pendingActionCount}',
-                                  style: const TextStyle(
-                                    color: CupertinoColors.white,
+                                  style: TextStyle(
+                                    color: AppColors.of(context).onCritical,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                   ),

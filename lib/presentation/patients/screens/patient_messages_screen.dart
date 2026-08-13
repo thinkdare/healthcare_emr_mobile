@@ -232,7 +232,9 @@ class _MessageBubble extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
-                color: isMe ? Colors.white70 : Colors.grey.shade600,
+                color: isMe
+                    ? AppColors.of(context).onAccent
+                    : Colors.grey.shade600,
               ),
             ),
             const SizedBox(height: 2),
@@ -240,7 +242,9 @@ class _MessageBubble extends StatelessWidget {
               message.body,
               style: TextStyle(
                 fontSize: 13,
-                color: isMe ? Colors.white : Colors.grey.shade900,
+                color: isMe
+                    ? AppColors.of(context).onAccent
+                    : Colors.grey.shade900,
               ),
             ),
             const SizedBox(height: 2),
@@ -248,7 +252,9 @@ class _MessageBubble extends StatelessWidget {
               _formatTime(message.createdAt),
               style: TextStyle(
                 fontSize: 9,
-                color: isMe ? Colors.white60 : Colors.grey.shade500,
+                color: isMe
+                    ? AppColors.of(context).onAccent
+                    : Colors.grey.shade500,
               ),
             ),
           ],
