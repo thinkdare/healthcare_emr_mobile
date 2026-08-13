@@ -435,6 +435,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     return Scaffold(
       floatingActionButton: _currentTab >= 1 && _currentTab <= 4
           ? FloatingActionButton(
+              backgroundColor: AppColors.of(context).accent,
+              foregroundColor: Colors.white,
               onPressed: _openClinicalForm,
               tooltip: switch (_currentTab) {
                 1 => 'Book Appointment',
@@ -483,6 +485,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         bottom: TabBar(
           controller: _tabs,
           isScrollable: true,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
           tabs: [
             for (final i in _visibleIndices)
               Tab(
