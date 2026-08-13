@@ -18,6 +18,8 @@ import 'patient_audit_log_screen.dart';
 import 'patient_form_screen.dart';
 import 'patient_messages_screen.dart';
 import '../../../config/app_colors.dart';
+import '../../shared/widgets/critical_alert_card.dart';
+import '../../shared/widgets/adaptive_card.dart';
 
 class PatientDetailScreen extends StatefulWidget {
   final PatientModel patient;
@@ -537,69 +539,90 @@ class _OverviewTab extends StatelessWidget {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       child: Column(
+        // Keyed so the safety-invariant test (Task 30) can target this
+        // exact Column deterministically — do not remove this key, and do
+        // not rely on find.byType(Column).first in any test, since
+        // AdaptiveCard/AdaptiveListRow and ancestor widgets (AppBar,
+        // Scaffold, TabBarView, AppLockGate) also build Columns.
+        key: const Key('overview_tab_column'),
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Critical allergies — MUST stay first. See CriticalAlertCard's
+          // doc comment and test/patients/patient_detail_overview_test.dart.
+          if (p.hasCriticalAllergies)
+            CriticalAlertCard(
+              title: 'CRITICAL ALLERGY',
+              items: p.allergies
+                  .where((a) => a.isLifeThreatening || a.isSevere)
+                  .map((a) => '${a.name} — ${a.severity.replaceAll('_', ' ')}')
+                  .toList(),
+            ),
+
           // Patient summary card
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 32,
-                        backgroundColor: AppColors.of(
-                          context,
-                        ).accent.withValues(alpha: 0.15),
-                        child: Text(
-                          p.firstName[0] + p.lastName[0],
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.of(context).accent,
+          AdaptiveCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 32,
+                      backgroundColor: AppColors.of(context).accentTint,
+                      child: Text(
+                        p.firstName[0] + p.lastName[0],
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.of(context).accent,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            p.fullName,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              p.fullName,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${p.ageDisplay} · ${p.gender} · ${p.bloodType ?? 'Blood type unknown'}',
+                            style: TextStyle(
+                              color: AppColors.of(context).textSecondary,
+                              fontSize: 14,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${p.ageDisplay} · ${p.gender} · ${p.bloodType ?? 'Blood type unknown'}',
-                              style: TextStyle(
-                                color: AppColors.of(context).textSecondary,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  const Divider(height: 24),
-                  if (p.mrn != null) _InfoRow('MRN', p.mrn!),
-                  _InfoRow('Date of Birth', p.dateOfBirth),
-                  if (p.phone != null) _InfoRow('Phone', p.phone!),
-                  if (p.email != null) _InfoRow('Email', p.email!),
-                  if (p.address != null) _InfoRow('Address', p.address!),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
+                if (p.mrn != null) _InfoRow('MRN', p.mrn!),
+                _InfoRow('Date of Birth', p.dateOfBirth),
+                if (p.phone != null) _InfoRow('Phone', p.phone!),
+                if (p.email != null) _InfoRow('Email', p.email!),
+                if (p.address != null) _InfoRow('Address', p.address!),
+              ],
             ),
           ),
           const SizedBox(height: 16),
 
-          Card(
+          AdaptiveCard(
+            padding: EdgeInsets.zero,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => PatientMessagesScreen(
+                  patientId: p.id,
+                  patientName: p.fullName,
+                ),
+              ),
+            ),
             child: ListTile(
               leading: Icon(
                 Icons.chat_bubble_outline,
@@ -608,14 +631,6 @@ class _OverviewTab extends StatelessWidget {
               title: const Text('Messages'),
               subtitle: const Text('Conversation with this patient'),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => PatientMessagesScreen(
-                    patientId: p.id,
-                    patientName: p.fullName,
-                  ),
-                ),
-              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -624,7 +639,16 @@ class _OverviewTab extends StatelessWidget {
           // won't be logging into this provider-facing app) can view this.
           if (context.watch<AuthProvider>().currentUserId ==
               p.primaryProviderId) ...[
-            Card(
+            AdaptiveCard(
+              padding: EdgeInsets.zero,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => PatientAuditLogScreen(
+                    patientId: p.id,
+                    patientName: p.fullName,
+                  ),
+                ),
+              ),
               child: ListTile(
                 leading: Icon(
                   Icons.history,
@@ -633,14 +657,6 @@ class _OverviewTab extends StatelessWidget {
                 title: const Text('Audit Log'),
                 subtitle: const Text('Who accessed this patient\'s record'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => PatientAuditLogScreen(
-                      patientId: p.id,
-                      patientName: p.fullName,
-                    ),
-                  ),
-                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -653,31 +669,28 @@ class _OverviewTab extends StatelessWidget {
               badge: p.hasCriticalAllergies ? 'CRITICAL' : null,
               badgeColor: AppColors.of(context).critical,
             ),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: p.allergies.map((a) {
-                    final isSerious = a.isLifeThreatening || a.isSevere;
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        Icons.warning_rounded,
-                        color: isSerious
-                            ? AppColors.of(context).critical
-                            : AppColors.of(context).warning,
-                      ),
-                      title: Text(
-                        a.name,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      subtitle: Text(
-                        a.severity.replaceAll('_', ' ').toUpperCase(),
-                      ),
-                      dense: true,
-                    );
-                  }).toList(),
-                ),
+            AdaptiveCard(
+              child: Column(
+                children: p.allergies.map((a) {
+                  final isSerious = a.isLifeThreatening || a.isSevere;
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      Icons.warning_rounded,
+                      color: isSerious
+                          ? AppColors.of(context).critical
+                          : AppColors.of(context).warning,
+                    ),
+                    title: Text(
+                      a.name,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(
+                      a.severity.replaceAll('_', ' ').toUpperCase(),
+                    ),
+                    dense: true,
+                  );
+                }).toList(),
               ),
             ),
             const SizedBox(height: 16),
@@ -686,28 +699,25 @@ class _OverviewTab extends StatelessWidget {
           // Current medications
           if (p.currentMedications.isNotEmpty) ...[
             const _SectionHeader('Current Medications'),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: p.currentMedications
-                      .map(
-                        (m) => ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: Icon(
-                            Icons.medication,
-                            color: AppColors.of(context).accent,
-                          ),
-                          title: Text(
-                            m.name,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          subtitle: Text(m.displayDose),
-                          dense: true,
+            AdaptiveCard(
+              child: Column(
+                children: p.currentMedications
+                    .map(
+                      (m) => ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(
+                          Icons.medication,
+                          color: AppColors.of(context).accent,
                         ),
-                      )
-                      .toList(),
-                ),
+                        title: Text(
+                          m.name,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text(m.displayDose),
+                        dense: true,
+                      ),
+                    )
+                    .toList(),
               ),
             ),
             const SizedBox(height: 16),
@@ -716,23 +726,20 @@ class _OverviewTab extends StatelessWidget {
           // Chronic conditions
           if (p.chronicConditions.isNotEmpty) ...[
             const _SectionHeader('Chronic Conditions'),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: p.chronicConditions
-                      .map(
-                        (c) => Chip(
-                          label: Text(c, style: const TextStyle(fontSize: 13)),
-                          backgroundColor: AppColors.of(
-                            context,
-                          ).accent.withValues(alpha: 0.08),
-                        ),
-                      )
-                      .toList(),
-                ),
+            AdaptiveCard(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: p.chronicConditions
+                    .map(
+                      (c) => Chip(
+                        label: Text(c, style: const TextStyle(fontSize: 13)),
+                        backgroundColor: AppColors.of(
+                          context,
+                        ).accent.withValues(alpha: 0.08),
+                      ),
+                    )
+                    .toList(),
               ),
             ),
             const SizedBox(height: 16),
@@ -741,13 +748,10 @@ class _OverviewTab extends StatelessWidget {
           // Medical history (free-text narrative)
           if (p.medicalHistory != null && p.medicalHistory!.isNotEmpty) ...[
             const _SectionHeader('Medical History'),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  p.medicalHistory!,
-                  style: const TextStyle(fontSize: 13, height: 1.5),
-                ),
+            AdaptiveCard(
+              child: Text(
+                p.medicalHistory!,
+                style: const TextStyle(fontSize: 13, height: 1.5),
               ),
             ),
             const SizedBox(height: 16),
@@ -755,15 +759,12 @@ class _OverviewTab extends StatelessWidget {
 
           // Emergency contact
           _SectionHeader('Emergency Contact', icon: Icons.emergency),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _InfoRow('Name', p.emergencyContactName),
-                  _InfoRow('Phone', p.emergencyContactPhone),
-                ],
-              ),
+          AdaptiveCard(
+            child: Column(
+              children: [
+                _InfoRow('Name', p.emergencyContactName),
+                _InfoRow('Phone', p.emergencyContactPhone),
+              ],
             ),
           ),
           const SizedBox(height: 16),
@@ -771,16 +772,13 @@ class _OverviewTab extends StatelessWidget {
           // Insurance
           if (p.insuranceProvider != null) ...[
             const _SectionHeader('Insurance'),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    _InfoRow('Provider', p.insuranceProvider!),
-                    if (p.insuranceNumber != null)
-                      _InfoRow('Number', p.insuranceNumber!),
-                  ],
-                ),
+            AdaptiveCard(
+              child: Column(
+                children: [
+                  _InfoRow('Provider', p.insuranceProvider!),
+                  if (p.insuranceNumber != null)
+                    _InfoRow('Number', p.insuranceNumber!),
+                ],
               ),
             ),
           ],
