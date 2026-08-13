@@ -7,6 +7,7 @@ import '../../../data/providers/patient_provider.dart';
 import '../widgets/patient_card.dart';
 import 'patient_form_screen.dart';
 import '../../../config/app_colors.dart';
+import '../../shared/widgets/adaptive_card.dart';
 
 class PatientListScreen extends StatefulWidget {
   const PatientListScreen({super.key});
@@ -71,6 +72,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.of(context).accent,
         onPressed: () async {
           final result = await Navigator.of(context).push(
             kIsIOS
@@ -244,8 +246,8 @@ class _CacheBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.of(context).warning.withValues(alpha: 0.12),
+    return AdaptiveCard(
+      backgroundColor: AppColors.of(context).warningTint,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
@@ -286,8 +288,9 @@ class _ErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.of(context).critical.withValues(alpha: 0.08),
+    return AdaptiveCard(
+      backgroundColor: AppColors.of(context).criticalTint,
+      borderColor: AppColors.of(context).criticalBorder,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
