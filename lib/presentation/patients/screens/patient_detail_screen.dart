@@ -20,6 +20,7 @@ import 'patient_messages_screen.dart';
 import '../../../config/app_colors.dart';
 import '../../shared/widgets/critical_alert_card.dart';
 import '../../shared/widgets/adaptive_card.dart';
+import '../../shared/widgets/adaptive_badge.dart';
 
 class PatientDetailScreen extends StatefulWidget {
   final PatientModel patient;
@@ -843,90 +844,66 @@ class _AppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color statusColor;
+    BadgeVariant statusVariant;
     switch (appt.status) {
       case 'completed':
-        statusColor = AppColors.of(context).success;
+        statusVariant = BadgeVariant.success;
         break;
       case 'cancelled':
       case 'no_show':
-        statusColor = AppColors.of(context).textSecondary;
+        statusVariant = BadgeVariant.critical;
         break;
       case 'checked_in':
-        statusColor = AppColors.of(context).accent;
+        statusVariant = BadgeVariant.accent;
         break;
       default:
-        statusColor = AppColors.of(context).warning;
+        statusVariant = BadgeVariant.warning;
     }
 
     final dt = appt.appointmentDate;
     final dateStr =
         '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 4,
-              height: 56,
-              decoration: BoxDecoration(
-                color: statusColor,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    appt.appointmentType.replaceAll('_', ' ').toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
+    return AdaptiveCard(
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  appt.appointmentType.replaceAll('_', ' ').toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  dateStr,
+                  style: TextStyle(
+                    color: AppColors.of(context).textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+                if (appt.reason != null) ...[
                   const SizedBox(height: 2),
                   Text(
-                    dateStr,
+                    appt.reason!,
                     style: TextStyle(
+                      fontSize: 12,
                       color: AppColors.of(context).textSecondary,
-                      fontSize: 13,
                     ),
                   ),
-                  if (appt.reason != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      appt.reason!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.of(context).textSecondary,
-                      ),
-                    ),
-                  ],
                 ],
-              ),
+              ],
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                appt.status.replaceAll('_', ' ').toUpperCase(),
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: statusColor,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+          AdaptiveBadge(
+            label: appt.status.replaceAll('_', ' ').toUpperCase(),
+            variant: statusVariant,
+          ),
+        ],
       ),
     );
   }
@@ -1048,105 +1025,87 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
     final canFill =
         isPharmacist &&
         (rx.status == 'pending' || rx.status == 'partially_filled');
-    final color = rx.isActive
-        ? AppColors.of(context).success
-        : AppColors.of(context).textSecondary;
+    final statusVariant = rx.isActive
+        ? BadgeVariant.success
+        : BadgeVariant.neutral;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.medication,
-                  color: AppColors.of(context).accent,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    rx.medicationName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+    return AdaptiveCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.medication,
+                color: AppColors.of(context).accent,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  rx.medicationName,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    rx.status.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: color,
-                    ),
-                  ),
-                ),
-              ],
+              ),
+              AdaptiveBadge(
+                label: rx.status.toUpperCase(),
+                variant: statusVariant,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            rx.doseDisplay,
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.of(context).textSecondary,
             ),
-            const SizedBox(height: 8),
+          ),
+          if (rx.refillsRemaining > 0) ...[
+            const SizedBox(height: 4),
             Text(
-              rx.doseDisplay,
+              '${rx.refillsRemaining} refill(s) remaining',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 color: AppColors.of(context).textSecondary,
               ),
             ),
-            if (rx.refillsRemaining > 0) ...[
-              const SizedBox(height: 4),
-              Text(
-                '${rx.refillsRemaining} refill(s) remaining',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.of(context).textSecondary,
-                ),
-              ),
-            ],
-            if (rx.specialInstructions != null) ...[
-              const SizedBox(height: 6),
-              Text(
-                rx.specialInstructions!,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.of(context).warning,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
-            if (canFill) ...[
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: AdaptiveFilledButton(
-                  onPressed: _filling ? null : _showFillDialog,
-                  icon: _filling
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(Colors.white),
-                          ),
-                        )
-                      : const Icon(Icons.local_pharmacy, size: 16),
-                  child: Text(_filling ? 'Dispensing…' : 'Dispense / Fill'),
-                ),
-              ),
-            ],
           ],
-        ),
+          if (rx.specialInstructions != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              rx.specialInstructions!,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.of(context).warning,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+          if (canFill) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: AdaptiveFilledButton(
+                onPressed: _filling ? null : _showFillDialog,
+                icon: _filling
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                        ),
+                      )
+                    : const Icon(Icons.local_pharmacy, size: 16),
+                child: Text(_filling ? 'Dispensing…' : 'Dispense / Fill'),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -1311,165 +1270,134 @@ class _LabResultCardState extends State<_LabResultCard> {
         context.read<AuthProvider>().staffType == 'lab_tech';
     final canRecord = isLabTech && lab.isPending;
 
-    Color statusColor;
+    BadgeVariant statusVariant;
     switch (lab.status) {
       case 'completed':
-        statusColor = lab.hasAbnormalResults
-            ? AppColors.of(context).critical
-            : AppColors.of(context).success;
+        statusVariant = lab.hasAbnormalResults
+            ? BadgeVariant.critical
+            : BadgeVariant.success;
         break;
       case 'cancelled':
-        statusColor = AppColors.of(context).textSecondary;
+        statusVariant = BadgeVariant.critical;
         break;
       default:
-        statusColor = AppColors.of(context).warning;
+        statusVariant = BadgeVariant.warning;
     }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    return AdaptiveCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.science,
+                color: AppColors.of(context).accent,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  lab.testName,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (lab.isUrgent) ...[
+                AdaptiveBadge(
+                  label: lab.priority.toUpperCase(),
+                  variant: BadgeVariant.critical,
+                ),
+                const SizedBox(width: 6),
+              ],
+              AdaptiveBadge(
+                label: lab.status.replaceAll('_', ' ').toUpperCase(),
+                variant: statusVariant,
+              ),
+            ],
+          ),
+          if (lab.testType != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              lab.testType!,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.of(context).textSecondary,
+              ),
+            ),
+          ],
+          if (lab.results != null && lab.results!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Results: ${lab.results!}',
+              style: const TextStyle(fontSize: 13),
+            ),
+          ],
+          if (lab.abnormalFlags.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              children: lab.abnormalFlags
+                  .map(
+                    (f) => Chip(
+                      label: Text(f, style: const TextStyle(fontSize: 11)),
+                      backgroundColor: AppColors.of(
+                        context,
+                      ).critical.withValues(alpha: 0.1),
+                      side: BorderSide(
+                        color: AppColors.of(
+                          context,
+                        ).critical.withValues(alpha: 0.3),
+                      ),
+                      padding: EdgeInsets.zero,
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+          if (lab.requiresFollowup) ...[
+            const SizedBox(height: 6),
             Row(
               children: [
                 Icon(
-                  Icons.science,
-                  color: AppColors.of(context).accent,
-                  size: 20,
+                  Icons.flag,
+                  size: 14,
+                  color: AppColors.of(context).warning,
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    lab.testName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                if (lab.isUrgent)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    margin: const EdgeInsets.only(right: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.of(context).critical,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      lab.priority.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    lab.status.replaceAll('_', ' ').toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: statusColor,
-                    ),
+                const SizedBox(width: 4),
+                Text(
+                  'Follow-up required',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.of(context).warning,
                   ),
                 ),
               ],
             ),
-            if (lab.testType != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                lab.testType!,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.of(context).textSecondary,
-                ),
-              ),
-            ],
-            if (lab.results != null && lab.results!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Results: ${lab.results!}',
-                style: const TextStyle(fontSize: 13),
-              ),
-            ],
-            if (lab.abnormalFlags.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 6,
-                children: lab.abnormalFlags
-                    .map(
-                      (f) => Chip(
-                        label: Text(f, style: const TextStyle(fontSize: 11)),
-                        backgroundColor: AppColors.of(
-                          context,
-                        ).critical.withValues(alpha: 0.1),
-                        side: BorderSide(
-                          color: AppColors.of(
-                            context,
-                          ).critical.withValues(alpha: 0.3),
-                        ),
-                        padding: EdgeInsets.zero,
-                      ),
-                    )
-                    .toList(),
-              ),
-            ],
-            if (lab.requiresFollowup) ...[
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Icon(
-                    Icons.flag,
-                    size: 14,
-                    color: AppColors.of(context).warning,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Follow-up required',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.of(context).warning,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            if (canRecord) ...[
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: AdaptiveFilledButton(
-                  onPressed: _recording ? null : _showRecordDialog,
-                  icon: _recording
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(Colors.white),
-                          ),
-                        )
-                      : const Icon(Icons.science, size: 16),
-                  child: Text(_recording ? 'Saving…' : 'Record Results'),
-                ),
-              ),
-            ],
           ],
-        ),
+          if (canRecord) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: AdaptiveFilledButton(
+                onPressed: _recording ? null : _showRecordDialog,
+                icon: _recording
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                        ),
+                      )
+                    : const Icon(Icons.science, size: 16),
+                child: Text(_recording ? 'Saving…' : 'Record Results'),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -1553,9 +1481,9 @@ class _DocumentCardState extends State<_DocumentCard> {
       icon = Icons.insert_drive_file;
     }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
+    return AdaptiveCard(
       child: ListTile(
+        contentPadding: EdgeInsets.zero,
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -1572,7 +1500,6 @@ class _DocumentCardState extends State<_DocumentCard> {
           [
             doc.documentType.replaceAll('_', ' '),
             if (doc.fileSizeDisplay.isNotEmpty) doc.fileSizeDisplay,
-            if (doc.isConfidential) 'Confidential',
           ].join(' · '),
           style: TextStyle(
             fontSize: 12,
@@ -1583,12 +1510,11 @@ class _DocumentCardState extends State<_DocumentCard> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (doc.isConfidential)
-              Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: Icon(
-                  Icons.lock,
-                  size: 16,
-                  color: AppColors.of(context).warning,
+              const Padding(
+                padding: EdgeInsets.only(right: 6),
+                child: AdaptiveBadge(
+                  label: 'Confidential',
+                  variant: BadgeVariant.critical,
                 ),
               ),
             _downloading
