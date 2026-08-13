@@ -664,10 +664,13 @@ class _OverviewTab extends StatelessWidget {
 
           // Allergies
           if (p.hasAllergies) ...[
-            _SectionHeader(
-              'Allergies',
-              badge: p.hasCriticalAllergies ? 'CRITICAL' : null,
-              badgeColor: AppColors.of(context).critical,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _SectionHeader(
+                'Allergies',
+                badge: p.hasCriticalAllergies ? 'CRITICAL' : null,
+                badgeColor: AppColors.of(context).critical,
+              ),
             ),
             AdaptiveCard(
               child: Column(
@@ -698,7 +701,10 @@ class _OverviewTab extends StatelessWidget {
 
           // Current medications
           if (p.currentMedications.isNotEmpty) ...[
-            const _SectionHeader('Current Medications'),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: _SectionHeader('Current Medications'),
+            ),
             AdaptiveCard(
               child: Column(
                 children: p.currentMedications
@@ -725,7 +731,10 @@ class _OverviewTab extends StatelessWidget {
 
           // Chronic conditions
           if (p.chronicConditions.isNotEmpty) ...[
-            const _SectionHeader('Chronic Conditions'),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: _SectionHeader('Chronic Conditions'),
+            ),
             AdaptiveCard(
               child: Wrap(
                 spacing: 8,
@@ -747,7 +756,10 @@ class _OverviewTab extends StatelessWidget {
 
           // Medical history (free-text narrative)
           if (p.medicalHistory != null && p.medicalHistory!.isNotEmpty) ...[
-            const _SectionHeader('Medical History'),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: _SectionHeader('Medical History'),
+            ),
             AdaptiveCard(
               child: Text(
                 p.medicalHistory!,
@@ -758,7 +770,10 @@ class _OverviewTab extends StatelessWidget {
           ],
 
           // Emergency contact
-          _SectionHeader('Emergency Contact', icon: Icons.emergency),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: _SectionHeader('Emergency Contact', icon: Icons.emergency),
+          ),
           AdaptiveCard(
             child: Column(
               children: [
@@ -771,7 +786,10 @@ class _OverviewTab extends StatelessWidget {
 
           // Insurance
           if (p.insuranceProvider != null) ...[
-            const _SectionHeader('Insurance'),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: _SectionHeader('Insurance'),
+            ),
             AdaptiveCard(
               child: Column(
                 children: [
