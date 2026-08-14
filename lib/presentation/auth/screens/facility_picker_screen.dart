@@ -5,9 +5,9 @@ import 'package:provider/provider.dart';
 import '../../../core/platform.dart';
 import '../../../data/models/auth_models.dart';
 import '../../../data/providers/auth_provider.dart';
-import '../../../config/theme.dart';
 import '../../dashboard/screens/provider_dashboard_screen.dart';
 import '../../shell/ios_shell.dart';
+import '../../../config/app_colors.dart';
 
 /// Shown after a successful login when the user belongs to more than one
 /// facility, or when the app restores a session that has no stored tenant.
@@ -35,7 +35,8 @@ class _FacilityPickerScreenState extends State<FacilityPickerScreen> {
         kIsIOS
             ? CupertinoPageRoute(builder: (_) => const IOSShell())
             : MaterialPageRoute(
-                builder: (_) => const ProviderDashboardScreen()),
+                builder: (_) => const ProviderDashboardScreen(),
+              ),
       );
     }
   }
@@ -52,8 +53,9 @@ class _FacilityPickerScreenState extends State<FacilityPickerScreen> {
                 onPressed: () async {
                   await context.read<AuthProvider>().logout();
                   if (!context.mounted) return;
-                  Navigator.of(context)
-                      .pushNamedAndRemoveUntil('/', (_) => false);
+                  Navigator.of(
+                    context,
+                  ).pushNamedAndRemoveUntil('/', (_) => false);
                 },
                 child: const Text('Logout'),
               ),
@@ -64,13 +66,16 @@ class _FacilityPickerScreenState extends State<FacilityPickerScreen> {
               actions: [
                 TextButton.icon(
                   icon: const Icon(Icons.logout, color: Colors.white),
-                  label: const Text('Logout',
-                      style: TextStyle(color: Colors.white)),
+                  label: const Text(
+                    'Logout',
+                    style: TextStyle(color: Colors.white),
+                  ),
                   onPressed: () async {
                     await context.read<AuthProvider>().logout();
                     if (!context.mounted) return;
-                    Navigator.of(context)
-                        .pushNamedAndRemoveUntil('/', (_) => false);
+                    Navigator.of(
+                      context,
+                    ).pushNamedAndRemoveUntil('/', (_) => false);
                   },
                 ),
               ],
@@ -93,45 +98,61 @@ class _FacilityPickerScreenState extends State<FacilityPickerScreen> {
                       children: [
                         CircleAvatar(
                           radius: 32,
-                          backgroundColor: AppTheme.primaryColor,
+                          backgroundColor: AppColors.of(context).accent,
                           child: Text(
                             auth.initials,
                             style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white),
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Text(auth.displayName,
-                            style: const TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.bold)),
+                        Text(
+                          auth.displayName,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 4),
-                        Text(user?.email ?? '',
-                            style:
-                                TextStyle(fontSize: 14, color: AppTheme.gray600)),
+                        Text(
+                          user?.email ?? '',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.of(context).textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 24),
 
-                Text('Where are you working today?',
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.gray600)),
+                Text(
+                  'Where are you working today?',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.of(context).textSecondary,
+                  ),
+                ),
                 const SizedBox(height: 12),
 
                 if (auth.error != null) ...[
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.errorColor.withValues(alpha: 0.1),
+                      color: AppColors.of(
+                        context,
+                      ).critical.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(auth.error!,
-                        style: TextStyle(color: AppTheme.errorColor)),
+                    child: Text(
+                      auth.error!,
+                      style: TextStyle(color: AppColors.of(context).critical),
+                    ),
                   ),
                   const SizedBox(height: 12),
                 ],
@@ -141,8 +162,7 @@ class _FacilityPickerScreenState extends State<FacilityPickerScreen> {
                   child: ListView.separated(
                     itemCount: facilities.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (_, i) =>
-                        _FacilityTile(
+                    itemBuilder: (_, i) => _FacilityTile(
                       facility: facilities[i],
                       isLoading: _selectingId == facilities[i].id,
                       onTap: _selectingId == null
@@ -179,38 +199,51 @@ class _FacilityTile extends StatelessWidget {
 
     return Card(
       child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            color: AppColors.of(context).accent.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(Icons.local_hospital, color: AppTheme.primaryColor),
+          child: Icon(
+            Icons.local_hospital,
+            color: AppColors.of(context).accent,
+          ),
         ),
-        title: Text(facility.name,
-            style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(
+          facility.name,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (facility.organization != null)
-              Text(facility.organization!.name,
-                  style: TextStyle(fontSize: 12, color: AppTheme.gray600)),
+              Text(
+                facility.organization!.name,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.of(context).textSecondary,
+                ),
+              ),
             if (membership != null)
-              Text(membership.displayType,
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.primaryColor,
-                      fontWeight: FontWeight.w500)),
+              Text(
+                membership.displayType,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.of(context).accent,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
           ],
         ),
         trailing: isLoading
             ? const SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2))
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
             : const Icon(Icons.chevron_right),
         onTap: onTap,
       ),

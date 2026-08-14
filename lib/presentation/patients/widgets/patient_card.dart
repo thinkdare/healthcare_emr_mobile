@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../config/theme.dart';
 import '../../../data/models/patient_models.dart';
 import '../screens/patient_detail_screen.dart';
+import '../../../config/app_colors.dart';
 
 /// PatientCard
 ///
@@ -11,11 +11,7 @@ class PatientCard extends StatelessWidget {
   final PatientModel patient;
   final VoidCallback? onTap;
 
-  const PatientCard({
-    super.key,
-    required this.patient,
-    this.onTap,
-  });
+  const PatientCard({super.key, required this.patient, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -51,8 +47,7 @@ class PatientCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (patient.hasCriticalAllergies)
-                          _AllergyBadge(),
+                        if (patient.hasCriticalAllergies) _AllergyBadge(),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -61,7 +56,9 @@ class PatientCard extends StatelessWidget {
                     Text(
                       _demographicLine,
                       style: TextStyle(
-                          fontSize: 12, color: AppTheme.gray600),
+                        fontSize: 12,
+                        color: AppColors.of(context).textSecondary,
+                      ),
                     ),
 
                     // Chronic conditions (first one only)
@@ -71,7 +68,7 @@ class PatientCard extends StatelessWidget {
                         patient.chronicConditions.first,
                         style: TextStyle(
                           fontSize: 11,
-                          color: AppTheme.secondaryColor,
+                          color: AppColors.of(context).accent,
                           fontStyle: FontStyle.italic,
                         ),
                         maxLines: 1,
@@ -83,8 +80,11 @@ class PatientCard extends StatelessWidget {
               ),
 
               const SizedBox(width: 8),
-              Icon(Icons.chevron_right,
-                  color: AppTheme.gray600, size: 20),
+              Icon(
+                Icons.chevron_right,
+                color: AppColors.of(context).textSecondary,
+                size: 20,
+              ),
             ],
           ),
         ),
@@ -104,9 +104,7 @@ class PatientCard extends StatelessWidget {
 
   void _onDefaultTap(BuildContext context) {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => PatientDetailScreen(patient: patient),
-      ),
+      MaterialPageRoute(builder: (_) => PatientDetailScreen(patient: patient)),
     );
   }
 }
@@ -117,32 +115,32 @@ class _PatientAvatar extends StatelessWidget {
   final PatientModel patient;
   const _PatientAvatar({required this.patient});
 
-  Color get _avatarColor {
+  Color _avatarColor(BuildContext context) {
     if (patient.hasCriticalAllergies) {
-      return AppTheme.errorColor.withValues(alpha: 0.15);
+      return AppColors.of(context).critical.withValues(alpha: 0.15);
     }
     return patient.gender == 'female'
-        ? AppTheme.secondaryColor.withValues(alpha: 0.15)
-        : AppTheme.primaryColor.withValues(alpha: 0.15);
+        ? AppColors.of(context).accent.withValues(alpha: 0.15)
+        : AppColors.of(context).accent.withValues(alpha: 0.15);
   }
 
-  Color get _textColor {
-    if (patient.hasCriticalAllergies) return AppTheme.errorColor;
+  Color _textColor(BuildContext context) {
+    if (patient.hasCriticalAllergies) return AppColors.of(context).critical;
     return patient.gender == 'female'
-        ? AppTheme.secondaryColor
-        : AppTheme.primaryColor;
+        ? AppColors.of(context).accent
+        : AppColors.of(context).accent;
   }
 
   @override
   Widget build(BuildContext context) {
     return CircleAvatar(
       radius: 24,
-      backgroundColor: _avatarColor,
+      backgroundColor: _avatarColor(context),
       child: Text(
         '${patient.firstName[0]}${patient.lastName[0]}',
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          color: _textColor,
+          color: _textColor(context),
           fontSize: 15,
         ),
       ),
@@ -161,19 +159,23 @@ class _AllergyBadge extends StatelessWidget {
         margin: const EdgeInsets.only(left: 6),
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: AppTheme.errorColor.withValues(alpha: 0.12),
+          color: AppColors.of(context).critical.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.warning, size: 10, color: AppTheme.errorColor),
+            Icon(
+              Icons.warning,
+              size: 10,
+              color: AppColors.of(context).critical,
+            ),
             const SizedBox(width: 3),
             Text(
               'Allergy',
               style: TextStyle(
                 fontSize: 10,
-                color: AppTheme.errorColor,
+                color: AppColors.of(context).critical,
                 fontWeight: FontWeight.w600,
               ),
             ),

@@ -9,7 +9,6 @@ import '../../../data/providers/emergency_access_provider.dart';
 import '../../../data/providers/patient_provider.dart';
 import '../../../data/providers/subscription_provider.dart';
 import '../../../config/app_config.dart';
-import '../../../config/theme.dart';
 import '../../access_grants/screens/access_grants_screen.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../emergency_access/screens/emergency_access_screen.dart';
@@ -28,6 +27,7 @@ import '../../subscription/screens/subscription_details_screen.dart';
 import '../../subscription/screens/subscription_upgrade_screen.dart';
 import '../../subscription/widgets/trial_status_banner.dart';
 import '../../sync/widgets/sync_banner.dart';
+import '../../../config/app_colors.dart';
 
 class ProviderDashboardScreen extends StatefulWidget {
   const ProviderDashboardScreen({super.key});
@@ -76,9 +76,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         context.read<SubscriptionProvider>().loadSubscription(orgId),
       if (!auth.isOrgAdmin && userId != null)
         context.read<PatientProvider>().loadPatients(
-              providerId: userId,
-              forceRefresh: true,
-            ),
+          providerId: userId,
+          forceRefresh: true,
+        ),
     ]);
 
     if (!auth.isOrgAdmin && userId != null && mounted) {
@@ -94,16 +94,20 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           CupertinoActionSheetAction(
             onPressed: () {
               Navigator.of(context).pop();
-              Navigator.of(context).push(CupertinoPageRoute(
-                  builder: (_) => const StaffProfileScreen()));
+              Navigator.of(context).push(
+                CupertinoPageRoute(builder: (_) => const StaffProfileScreen()),
+              );
             },
             child: const Text('Profile'),
           ),
           CupertinoActionSheetAction(
             onPressed: () {
               Navigator.of(context).pop();
-              Navigator.of(context).push(CupertinoPageRoute(
-                  builder: (_) => const StaffProfileScreen(initialTab: 1)));
+              Navigator.of(context).push(
+                CupertinoPageRoute(
+                  builder: (_) => const StaffProfileScreen(initialTab: 1),
+                ),
+              );
             },
             child: const Text('Settings'),
           ),
@@ -172,12 +176,18 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   onSelected: (value) {
                     switch (value) {
                       case 'profile':
-                        Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => const StaffProfileScreen()));
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const StaffProfileScreen(),
+                          ),
+                        );
                       case 'settings':
-                        Navigator.of(context).push(MaterialPageRoute(
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
                             builder: (_) =>
-                                const StaffProfileScreen(initialTab: 1)));
+                                const StaffProfileScreen(initialTab: 1),
+                          ),
+                        );
                       case 'logout':
                         _handleLogout(context);
                     }
@@ -199,12 +209,19 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         contentPadding: EdgeInsets.zero,
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'logout',
                       child: ListTile(
-                        leading: Icon(Icons.logout, color: AppTheme.errorColor),
-                        title: Text('Logout',
-                            style: TextStyle(color: AppTheme.errorColor)),
+                        leading: Icon(
+                          Icons.logout,
+                          color: AppColors.of(context).critical,
+                        ),
+                        title: Text(
+                          'Logout',
+                          style: TextStyle(
+                            color: AppColors.of(context).critical,
+                          ),
+                        ),
                         contentPadding: EdgeInsets.zero,
                       ),
                     ),
@@ -227,8 +244,12 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
                 final isOrgAdmin = auth.isOrgAdmin;
                 final isDoctor = auth.staffType == 'doctor';
-                final showGrants = isOrgAdmin || isDoctor ||
-                    (auth.activeMembership?.clinicalRank
+                final showGrants =
+                    isOrgAdmin ||
+                    isDoctor ||
+                    (auth
+                            .activeMembership
+                            ?.clinicalRank
                             ?.canApproveAccessGrants ??
                         false);
                 final showEmergency = auth.canEmergencyAccess;
@@ -272,22 +293,25 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
       floatingActionButton: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           if (auth.isOrgAdmin) return const SizedBox.shrink();
-          final useRoster = auth.staffType == 'doctor' ||
-              auth.staffType == 'nurse';
+          final useRoster =
+              auth.staffType == 'doctor' || auth.staffType == 'nurse';
           return FloatingActionButton.extended(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) =>
-                    useRoster ? const RosterScreen() : const PatientListScreen(),
+                builder: (_) => useRoster
+                    ? const RosterScreen()
+                    : const PatientListScreen(),
               ),
             ),
             icon: Icon(useRoster ? Icons.event_note : Icons.people),
-            label: Text(auth.staffType == 'doctor'
-                ? 'Today\'s Patients'
-                : auth.staffType == 'nurse'
-                    ? 'Daily Roster'
-                    : 'Patients'),
-            backgroundColor: AppTheme.primaryColor,
+            label: Text(
+              auth.staffType == 'doctor'
+                  ? 'Today\'s Patients'
+                  : auth.staffType == 'nurse'
+                  ? 'Daily Roster'
+                  : 'Patients',
+            ),
+            backgroundColor: AppColors.of(context).accent,
           );
         },
       ),
@@ -300,7 +324,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         builder: (context, auth, _) {
           final isOrgAdmin = auth.isOrgAdmin;
           final isDoctor = auth.staffType == 'doctor';
-          final showGrants = isOrgAdmin || isDoctor ||
+          final showGrants =
+              isOrgAdmin ||
+              isDoctor ||
               (auth.activeMembership?.clinicalRank?.canApproveAccessGrants ??
                   false);
           final showEmergency = auth.canEmergencyAccess;
@@ -308,22 +334,24 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           return Column(
             children: [
               UserAccountsDrawerHeader(
-                decoration:
-                    const BoxDecoration(color: AppTheme.primaryColor),
+                decoration: BoxDecoration(color: AppColors.of(context).accent),
                 accountName: Text(
                   auth.displayName,
                   style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 accountEmail: Text(auth.currentUser?.email ?? ''),
                 currentAccountPicture: CircleAvatar(
                   backgroundColor: Colors.white,
                   child: Text(
                     auth.initials,
-                    style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor),
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.of(context).accent,
+                    ),
                   ),
                 ),
               ),
@@ -335,13 +363,16 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               if (auth.staffType == 'doctor' || auth.staffType == 'nurse')
                 ListTile(
                   leading: const Icon(Icons.event_note),
-                  title: Text(auth.staffType == 'doctor'
-                      ? 'Today\'s Patients'
-                      : 'Daily Roster'),
+                  title: Text(
+                    auth.staffType == 'doctor'
+                        ? 'Today\'s Patients'
+                        : 'Daily Roster',
+                  ),
                   onTap: () {
                     Navigator.of(context).pop();
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const RosterScreen()));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const RosterScreen()),
+                    );
                   },
                 ),
               if (!isOrgAdmin)
@@ -352,7 +383,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     Navigator.of(context).pop();
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                          builder: (_) => const PatientListScreen()),
+                        builder: (_) => const PatientListScreen(),
+                      ),
                     );
                   },
                 ),
@@ -367,20 +399,28 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     title: const Text('Access Grants'),
                     onTap: () {
                       Navigator.of(context).pop();
-                      Navigator.of(context).push(MaterialPageRoute(
-                          builder: (_) => const AccessGrantsScreen()));
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const AccessGrantsScreen(),
+                        ),
+                      );
                     },
                   ),
                 ),
               if (showEmergency)
                 ListTile(
-                  leading: const Icon(Icons.warning_amber_rounded,
-                      color: AppTheme.errorColor),
+                  leading: Icon(
+                    Icons.warning_amber_rounded,
+                    color: AppColors.of(context).critical,
+                  ),
                   title: const Text('Emergency Access'),
                   onTap: () {
                     Navigator.of(context).pop();
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const EmergencyAccessScreen()));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const EmergencyAccessScreen(),
+                      ),
+                    );
                   },
                 ),
               // ── Admin section (org admins only) ──────────────────────
@@ -388,58 +428,79 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 const Divider(height: 1),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                  child: Text('ADMIN',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
-                          color: Colors.orange.shade700)),
+                  child: Text(
+                    'ADMIN',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                      color: Colors.orange.shade700,
+                    ),
+                  ),
                 ),
                 ListTile(
                   leading: Icon(Icons.business, color: Colors.orange.shade700),
                   title: const Text('Organization'),
                   onTap: () {
                     Navigator.of(context).pop();
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => OrganizationProfileScreen(
-                        repository: OrganizationRepository(
-                            apiClient: context.read<ApiClient>()),
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => OrganizationProfileScreen(
+                          repository: OrganizationRepository(
+                            apiClient: context.read<ApiClient>(),
+                          ),
+                        ),
                       ),
-                    ));
+                    );
                   },
                 ),
                 ListTile(
-                  leading: Icon(Icons.local_hospital_outlined,
-                      color: Colors.orange.shade700),
+                  leading: Icon(
+                    Icons.local_hospital_outlined,
+                    color: Colors.orange.shade700,
+                  ),
                   title: const Text('Facilities'),
                   onTap: () {
                     Navigator.of(context).pop();
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const FacilitiesListScreen()));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const FacilitiesListScreen(),
+                      ),
+                    );
                   },
                 ),
                 ListTile(
-                  leading:
-                      Icon(Icons.group_outlined, color: Colors.orange.shade700),
+                  leading: Icon(
+                    Icons.group_outlined,
+                    color: Colors.orange.shade700,
+                  ),
                   title: const Text('Staff'),
                   onTap: () {
                     Navigator.of(context).pop();
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => StaffManagementScreen(
-                        repository: StaffRepository(
-                            apiClient: context.read<ApiClient>()),
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => StaffManagementScreen(
+                          repository: StaffRepository(
+                            apiClient: context.read<ApiClient>(),
+                          ),
+                        ),
                       ),
-                    ));
+                    );
                   },
                 ),
                 ListTile(
-                  leading:
-                      Icon(Icons.mail_outline, color: Colors.orange.shade700),
+                  leading: Icon(
+                    Icons.mail_outline,
+                    color: Colors.orange.shade700,
+                  ),
                   title: const Text('Invite Staff'),
                   onTap: () {
                     Navigator.of(context).pop();
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const ProviderInvitationScreen()));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ProviderInvitationScreen(),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -447,20 +508,26 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               const Divider(height: 1),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: Text('ACCOUNT',
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.8,
-                        color: Colors.grey.shade600)),
+                child: Text(
+                  'ACCOUNT',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
               ),
               ListTile(
                 leading: const Icon(Icons.subscriptions),
                 title: const Text('Subscription'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const SubscriptionDetailsScreen()));
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const SubscriptionDetailsScreen(),
+                    ),
+                  );
                 },
               ),
               if (isOrgAdmin)
@@ -469,8 +536,11 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   title: const Text('Reports & Compliance'),
                   onTap: () {
                     Navigator.of(context).pop();
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const ReportingScreen()));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ReportingScreen(),
+                      ),
+                    );
                   },
                 ),
               ListTile(
@@ -478,15 +548,23 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 title: const Text('My Profile'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const StaffProfileScreen()));
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const StaffProfileScreen(),
+                    ),
+                  );
                 },
               ),
               const Divider(),
               ListTile(
-                leading: const Icon(Icons.logout, color: AppTheme.errorColor),
-                title: const Text('Logout',
-                    style: TextStyle(color: AppTheme.errorColor)),
+                leading: Icon(
+                  Icons.logout,
+                  color: AppColors.of(context).critical,
+                ),
+                title: Text(
+                  'Logout',
+                  style: TextStyle(color: AppColors.of(context).critical),
+                ),
                 onTap: () {
                   Navigator.of(context).pop();
                   _handleLogout(context);
@@ -495,8 +573,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               const Spacer(),
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('${AppConfig.appName} v1.0.0',
-                    style: TextStyle(fontSize: 12, color: AppTheme.gray600)),
+                child: Text(
+                  '${AppConfig.appName} v1.0.0',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.of(context).textSecondary,
+                  ),
+                ),
               ),
             ],
           );
@@ -521,8 +604,11 @@ class _WelcomeCard extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+          gradient: LinearGradient(
+            colors: [
+              AppColors.of(context).accent,
+              AppColors.of(context).accent,
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -531,18 +617,25 @@ class _WelcomeCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Welcome back,',
-                style: TextStyle(fontSize: 16, color: Colors.white70)),
+            const Text(
+              'Welcome back,',
+              style: TextStyle(fontSize: 16, color: Colors.white70),
+            ),
             const SizedBox(height: 4),
-            Text(auth.displayName,
-                style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white)),
+            Text(
+              auth.displayName,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
             const SizedBox(height: 8),
             if (auth.isOrgAdmin)
-              const Text('Organization Administrator',
-                  style: TextStyle(fontSize: 16, color: Colors.white70))
+              const Text(
+                'Organization Administrator',
+                style: TextStyle(fontSize: 16, color: Colors.white70),
+              )
             else if (auth.staffTypeDisplay.isNotEmpty)
               Text(
                 auth.department.isNotEmpty
@@ -553,23 +646,32 @@ class _WelcomeCard extends StatelessWidget {
             if (auth.isOrgAdmin &&
                 auth.currentUser?.primaryOrganizationName != null) ...[
               const SizedBox(height: 4),
-              Row(children: [
-                const Icon(Icons.business, size: 14, color: Colors.white54),
-                const SizedBox(width: 4),
-                Text(auth.currentUser!.primaryOrganizationName!,
-                    style:
-                        const TextStyle(fontSize: 13, color: Colors.white70)),
-              ]),
+              Row(
+                children: [
+                  const Icon(Icons.business, size: 14, color: Colors.white54),
+                  const SizedBox(width: 4),
+                  Text(
+                    auth.currentUser!.primaryOrganizationName!,
+                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                  ),
+                ],
+              ),
             ] else if (!auth.isOrgAdmin && auth.facilityName.isNotEmpty) ...[
               const SizedBox(height: 4),
-              Row(children: [
-                const Icon(Icons.location_on,
-                    size: 14, color: Colors.white54),
-                const SizedBox(width: 4),
-                Text(auth.facilityName,
-                    style:
-                        const TextStyle(fontSize: 13, color: Colors.white70)),
-              ]),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.location_on,
+                    size: 14,
+                    color: Colors.white54,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    auth.facilityName,
+                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                  ),
+                ],
+              ),
             ],
           ],
         ),
@@ -589,14 +691,19 @@ class _OrgAdminQuickActionsCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
-              const Icon(Icons.admin_panel_settings,
-                  color: AppTheme.primaryColor),
-              const SizedBox(width: 8),
-              const Text('Administration',
-                  style:
-                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ]),
+            Row(
+              children: [
+                Icon(
+                  Icons.admin_panel_settings,
+                  color: AppColors.of(context).accent,
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Administration',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
             const Divider(height: 24),
             GridView.count(
               crossAxisCount: 2,
@@ -611,12 +718,15 @@ class _OrgAdminQuickActionsCard extends StatelessWidget {
                   label: 'Organization',
                   color: Colors.orange.shade700,
                   onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => OrganizationProfileScreen(
-                        repository: OrganizationRepository(
-                            apiClient: context.read<ApiClient>()),
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => OrganizationProfileScreen(
+                          repository: OrganizationRepository(
+                            apiClient: context.read<ApiClient>(),
+                          ),
+                        ),
                       ),
-                    ));
+                    );
                   },
                 ),
                 _AdminTile(
@@ -624,8 +734,11 @@ class _OrgAdminQuickActionsCard extends StatelessWidget {
                   label: 'Facilities',
                   color: Colors.blue.shade700,
                   onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const FacilitiesListScreen()));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const FacilitiesListScreen(),
+                      ),
+                    );
                   },
                 ),
                 _AdminTile(
@@ -633,12 +746,15 @@ class _OrgAdminQuickActionsCard extends StatelessWidget {
                   label: 'Staff',
                   color: Colors.green.shade700,
                   onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => StaffManagementScreen(
-                        repository: StaffRepository(
-                            apiClient: context.read<ApiClient>()),
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => StaffManagementScreen(
+                          repository: StaffRepository(
+                            apiClient: context.read<ApiClient>(),
+                          ),
+                        ),
                       ),
-                    ));
+                    );
                   },
                 ),
                 _AdminTile(
@@ -646,8 +762,11 @@ class _OrgAdminQuickActionsCard extends StatelessWidget {
                   label: 'Invite Staff',
                   color: Colors.purple.shade700,
                   onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const ProviderInvitationScreen()));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ProviderInvitationScreen(),
+                      ),
+                    );
                   },
                 ),
                 _AdminTile(
@@ -655,8 +774,11 @@ class _OrgAdminQuickActionsCard extends StatelessWidget {
                   label: 'Reports',
                   color: Colors.teal.shade700,
                   onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const ReportingScreen()));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ReportingScreen(),
+                      ),
+                    );
                   },
                 ),
                 _AdminTile(
@@ -664,8 +786,11 @@ class _OrgAdminQuickActionsCard extends StatelessWidget {
                   label: 'Access Grants',
                   color: Colors.indigo.shade700,
                   onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const AccessGrantsScreen()));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const AccessGrantsScreen(),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -707,11 +832,14 @@ class _AdminTile extends StatelessWidget {
             Icon(icon, color: color, size: 20),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(label,
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: color)),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
             ),
           ],
         ),
@@ -737,79 +865,101 @@ class _PatientStatsCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: [
-                  const Icon(Icons.analytics, color: AppTheme.primaryColor),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text('Patient Overview',
+                Row(
+                  children: [
+                    Icon(Icons.analytics, color: AppColors.of(context).accent),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Patient Overview',
                         style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
-                  ),
-                  if (p.patientsFromCache)
-                    Tooltip(
-                      message: 'Showing cached data',
-                      child: Icon(Icons.offline_bolt,
-                          size: 16, color: AppTheme.warningColor),
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  if (p.isLoadingStats)
-                    const SizedBox(
+                    if (p.patientsFromCache)
+                      Tooltip(
+                        message: 'Showing cached data',
+                        child: Icon(
+                          Icons.offline_bolt,
+                          size: 16,
+                          color: AppColors.of(context).warning,
+                        ),
+                      ),
+                    if (p.isLoadingStats)
+                      const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2)),
-                ]),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                  ],
+                ),
                 const Divider(height: 24),
-                Row(children: [
-                  Expanded(
-                    child: _StatTile(
-                      icon: Icons.people,
-                      label: 'Total Patients',
-                      value:
-                          p.isLoadingStats ? '…' : '${stats.totalPatients}',
-                      color: AppTheme.primaryColor,
-                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                          builder: (_) => const PatientListScreen())),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _StatTile(
+                        icon: Icons.people,
+                        label: 'Total Patients',
+                        value: p.isLoadingStats
+                            ? '…'
+                            : '${stats.totalPatients}',
+                        color: AppColors.of(context).accent,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const PatientListScreen(),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _StatTile(
-                      icon: Icons.person_add,
-                      label: 'New (7 days)',
-                      value:
-                          p.isLoadingStats ? '…' : '${stats.recentPatients}',
-                      color: AppTheme.successColor,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _StatTile(
+                        icon: Icons.person_add,
+                        label: 'New (7 days)',
+                        value: p.isLoadingStats
+                            ? '…'
+                            : '${stats.recentPatients}',
+                        color: AppColors.of(context).success,
+                      ),
                     ),
-                  ),
-                ]),
+                  ],
+                ),
                 const SizedBox(height: 12),
-                Row(children: [
-                  Expanded(
-                    child: _StatTile(
-                      icon: Icons.event,
-                      label: 'Appointments',
-                      value: p.isLoadingStats
-                          ? '…'
-                          : '${stats.pendingAppointments}',
-                      color: AppTheme.secondaryColor,
+                Row(
+                  children: [
+                    Expanded(
+                      child: _StatTile(
+                        icon: Icons.event,
+                        label: 'Appointments',
+                        value: p.isLoadingStats
+                            ? '…'
+                            : '${stats.pendingAppointments}',
+                        color: AppColors.of(context).accent,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _StatTile(
-                      icon: Icons.medication,
-                      label: 'Prescriptions',
-                      value: p.isLoadingStats
-                          ? '…'
-                          : '${stats.activePrescriptions}',
-                      color: AppTheme.warningColor,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _StatTile(
+                        icon: Icons.medication,
+                        label: 'Prescriptions',
+                        value: p.isLoadingStats
+                            ? '…'
+                            : '${stats.activePrescriptions}',
+                        color: AppColors.of(context).warning,
+                      ),
                     ),
-                  ),
-                ]),
+                  ],
+                ),
                 if (stats.lastRefreshed != null) ...[
                   const SizedBox(height: 12),
                   Text(
                     'Last refreshed: ${_timeAgo(stats.lastRefreshed!)}',
-                    style: TextStyle(fontSize: 11, color: AppTheme.gray600),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.of(context).textSecondary,
+                    ),
                   ),
                 ],
               ],
@@ -847,39 +997,55 @@ class _RecentPatientsCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: [
-                  const Icon(Icons.history, color: AppTheme.primaryColor),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text('Recent Patients',
+                Row(
+                  children: [
+                    Icon(Icons.history, color: AppColors.of(context).accent),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Recent Patients',
                         style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
-                  ),
-                  AdaptiveTextButton(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                          builder: (_) => const PatientListScreen()),
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                    child: const Text('View All'),
-                  ),
-                ]),
+                    AdaptiveTextButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const PatientListScreen(),
+                        ),
+                      ),
+                      child: const Text('View All'),
+                    ),
+                  ],
+                ),
                 const Divider(height: 16),
                 if (p.isLoading)
                   const Center(
-                      child: Padding(
-                          padding: EdgeInsets.all(24),
-                          child: CircularProgressIndicator()))
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
                 else if (recent.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),
                     child: Center(
                       child: Column(
                         children: [
-                          Icon(Icons.people_outline,
-                              size: 48, color: AppTheme.gray600),
+                          Icon(
+                            Icons.people_outline,
+                            size: 48,
+                            color: AppColors.of(context).textSecondary,
+                          ),
                           const SizedBox(height: 12),
-                          Text('No patients yet',
-                              style: TextStyle(color: AppTheme.gray600)),
+                          Text(
+                            'No patients yet',
+                            style: TextStyle(
+                              color: AppColors.of(context).textSecondary,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -889,44 +1055,55 @@ class _RecentPatientsCard extends StatelessWidget {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: recent.length,
-                    separatorBuilder: (context, index) => const Divider(height: 1),
+                    separatorBuilder: (context, index) =>
+                        const Divider(height: 1),
                     itemBuilder: (context, i) {
                       final patient = recent[i];
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: CircleAvatar(
-                          backgroundColor:
-                              AppTheme.primaryColor.withValues(alpha: 0.1),
+                          backgroundColor: AppColors.of(
+                            context,
+                          ).accent.withValues(alpha: 0.1),
                           child: Text(
                             '${patient.firstName[0]}${patient.lastName[0]}',
-                            style: const TextStyle(
-                                color: AppTheme.primaryColor,
-                                fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: AppColors.of(context).accent,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        title: Text(patient.fullName,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w600)),
+                        title: Text(
+                          patient.fullName,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
                         subtitle: Text(
                           '${patient.gender} · ${patient.ageDisplay}'
                           '${patient.bloodType != null ? ' · ${patient.bloodType}' : ''}',
                           style: TextStyle(
-                              fontSize: 12, color: AppTheme.gray600),
+                            fontSize: 12,
+                            color: AppColors.of(context).textSecondary,
+                          ),
                         ),
                         trailing: patient.hasCriticalAllergies
                             ? Tooltip(
                                 message: 'Critical allergies',
-                                child: Icon(Icons.warning,
-                                    size: 18,
-                                    color: AppTheme.errorColor),
+                                child: Icon(
+                                  Icons.warning,
+                                  size: 18,
+                                  color: AppColors.of(context).critical,
+                                ),
                               )
                             : null,
                         onTap: () {
-                          context
-                              .read<PatientProvider>()
-                              .setSelectedPatient(patient);
-                          Navigator.of(context).push(MaterialPageRoute(
-                              builder: (_) => const PatientListScreen()));
+                          context.read<PatientProvider>().setSelectedPatient(
+                            patient,
+                          );
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const PatientListScreen(),
+                            ),
+                          );
                         },
                       );
                     },
@@ -952,8 +1129,9 @@ class _SubscriptionCard extends StatelessWidget {
 
         final onTrial = subscription.isTrial;
         final daysRemaining = subscription.trialDaysRemaining ?? 0;
-        final statusColor =
-            onTrial ? AppTheme.warningColor : AppTheme.successColor;
+        final statusColor = onTrial
+            ? AppColors.of(context).warning
+            : AppColors.of(context).success;
 
         return Card(
           child: Container(
@@ -970,33 +1148,46 @@ class _SubscriptionCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: [
-                  Icon(
-                    onTrial ? Icons.schedule : Icons.check_circle,
-                    color: statusColor,
-                  ),
-                  const SizedBox(width: 8),
-                  const Text('Subscription',
+                Row(
+                  children: [
+                    Icon(
+                      onTrial ? Icons.schedule : Icons.check_circle,
+                      color: statusColor,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Subscription',
                       style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold)),
-                ]),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
                 const Divider(height: 16),
-                _InfoRow('Status', onTrial ? 'Free Trial' : 'Active',
-                    valueColor: statusColor),
+                _InfoRow(
+                  'Status',
+                  onTrial ? 'Free Trial' : 'Active',
+                  valueColor: statusColor,
+                ),
                 if (onTrial) ...[
                   const SizedBox(height: 8),
-                  _InfoRow('Days Remaining', '$daysRemaining',
-                      valueColor: daysRemaining <= 7
-                          ? AppTheme.errorColor
-                          : AppTheme.warningColor),
+                  _InfoRow(
+                    'Days Remaining',
+                    '$daysRemaining',
+                    valueColor: daysRemaining <= 7
+                        ? AppColors.of(context).critical
+                        : AppColors.of(context).warning,
+                  ),
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: AdaptiveFilledButton(
                       onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (_) =>
-                                  const SubscriptionUpgradeScreen())),
+                        MaterialPageRoute(
+                          builder: (_) => const SubscriptionUpgradeScreen(),
+                        ),
+                      ),
                       child: const Text('Upgrade Plan'),
                     ),
                   ),
@@ -1018,8 +1209,7 @@ class _AccessGrantsCard extends StatelessWidget {
     return Consumer<AccessGrantProvider>(
       builder: (context, grants, _) {
         final pending = grants.pendingCount;
-        final hasActivity =
-            pending > 0 || grants.myRequests.isNotEmpty;
+        final hasActivity = pending > 0 || grants.myRequests.isNotEmpty;
 
         if (!hasActivity && !grants.isLoading) return const SizedBox.shrink();
 
@@ -1027,58 +1217,79 @@ class _AccessGrantsCard extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
             onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                    builder: (_) => const AccessGrantsScreen())),
+              MaterialPageRoute(builder: (_) => const AccessGrantsScreen()),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: [
-                    Icon(
-                      pending > 0
-                          ? Icons.shield_outlined
-                          : Icons.lock_open_outlined,
-                      color: pending > 0
-                          ? AppTheme.warningColor
-                          : AppTheme.primaryColor,
-                    ),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text('Access Grants',
+                  Row(
+                    children: [
+                      Icon(
+                        pending > 0
+                            ? Icons.shield_outlined
+                            : Icons.lock_open_outlined,
+                        color: pending > 0
+                            ? AppColors.of(context).warning
+                            : AppColors.of(context).accent,
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Access Grants',
                           style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
-                    ),
-                    const Icon(Icons.chevron_right, color: AppTheme.gray600),
-                  ]),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        color: AppColors.of(context).textSecondary,
+                      ),
+                    ],
+                  ),
                   if (pending > 0) ...[
                     const Divider(height: 16),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
-                        color: AppTheme.warningColor.withValues(alpha: 0.1),
+                        color: AppColors.of(
+                          context,
+                        ).warning.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Row(children: [
-                        Icon(Icons.pending_actions,
-                            color: AppTheme.warningColor, size: 18),
-                        const SizedBox(width: 8),
-                        Text(
-                          '$pending request${pending == 1 ? '' : 's'} awaiting your approval',
-                          style: TextStyle(
-                              color: AppTheme.warningColor,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.pending_actions,
+                            color: AppColors.of(context).warning,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '$pending request${pending == 1 ? '' : 's'} awaiting your approval',
+                            style: TextStyle(
+                              color: AppColors.of(context).warning,
                               fontWeight: FontWeight.w600,
-                              fontSize: 13),
-                        ),
-                      ]),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ] else if (grants.myRequests.isNotEmpty) ...[
                     const Divider(height: 16),
                     Text(
                       '${grants.myRequests.length} request${grants.myRequests.length == 1 ? '' : 's'} sent',
                       style: TextStyle(
-                          fontSize: 13, color: AppTheme.gray600),
+                        fontSize: 13,
+                        color: AppColors.of(context).textSecondary,
+                      ),
                     ),
                   ],
                 ],
@@ -1106,56 +1317,78 @@ class _EmergencyAccessCard extends StatelessWidget {
         return Card(
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const EmergencyAccessScreen())),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const EmergencyAccessScreen()),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: [
-                    Icon(
-                      Icons.warning_amber_rounded,
-                      color: unreviewed > 0
-                          ? AppTheme.errorColor
-                          : AppTheme.gray600,
-                    ),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text('Emergency Access',
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: unreviewed > 0
+                            ? AppColors.of(context).critical
+                            : AppColors.of(context).textSecondary,
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Emergency Access',
                           style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
-                    ),
-                    const Icon(Icons.chevron_right, color: AppTheme.gray600),
-                  ]),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        color: AppColors.of(context).textSecondary,
+                      ),
+                    ],
+                  ),
                   if (unreviewed > 0) ...[
                     const Divider(height: 16),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
-                        color: AppTheme.errorColor.withValues(alpha: 0.1),
+                        color: AppColors.of(
+                          context,
+                        ).critical.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Row(children: [
-                        const Icon(Icons.rate_review_outlined,
-                            color: AppTheme.errorColor, size: 18),
-                        const SizedBox(width: 8),
-                        Text(
-                          '$unreviewed event${unreviewed == 1 ? '' : 's'} awaiting your review',
-                          style: const TextStyle(
-                              color: AppTheme.errorColor,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.rate_review_outlined,
+                            color: AppColors.of(context).critical,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '$unreviewed event${unreviewed == 1 ? '' : 's'} awaiting your review',
+                            style: TextStyle(
+                              color: AppColors.of(context).critical,
                               fontWeight: FontWeight.w600,
-                              fontSize: 13),
-                        ),
-                      ]),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ] else if (em.logs.isNotEmpty) ...[
                     const Divider(height: 16),
                     Text(
                       '${em.logs.length} event${em.logs.length == 1 ? '' : 's'} logged',
-                      style: const TextStyle(
-                          fontSize: 13, color: AppTheme.gray600),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.of(context).textSecondary,
+                      ),
                     ),
                   ],
                 ],
@@ -1203,13 +1436,23 @@ class _StatTile extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 26),
             const SizedBox(height: 8),
-            Text(value,
-                style: TextStyle(
-                    fontSize: 24, fontWeight: FontWeight.bold, color: color)),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(label,
-                style: TextStyle(fontSize: 11, color: AppTheme.gray600),
-                textAlign: TextAlign.center),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: AppColors.of(context).textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -1231,14 +1474,19 @@ class _InfoRow extends StatelessWidget {
       children: [
         SizedBox(
           width: 120,
-          child: Text('$label:',
-              style: TextStyle(
-                  color: AppTheme.gray600, fontWeight: FontWeight.w500)),
+          child: Text(
+            '$label:',
+            style: TextStyle(
+              color: AppColors.of(context).textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
         Expanded(
-          child: Text(value,
-              style: TextStyle(
-                  fontWeight: FontWeight.w600, color: valueColor)),
+          child: Text(
+            value,
+            style: TextStyle(fontWeight: FontWeight.w600, color: valueColor),
+          ),
         ),
       ],
     );

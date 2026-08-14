@@ -2,8 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
-import '../../../config/theme.dart';
 import '../../../data/providers/emergency_access_provider.dart';
+import '../../../config/app_colors.dart';
 
 /// TriggerEmergencyAccessScreen
 ///
@@ -37,17 +37,16 @@ class _TriggerEmergencyAccessScreenState
   bool _saving = false;
 
   static const _types = [
-    ('life_threatening',  'Life Threatening'),
-    ('unconscious',       'Unconscious Patient'),
+    ('life_threatening', 'Life Threatening'),
+    ('unconscious', 'Unconscious Patient'),
     ('unable_to_consent', 'Unable to Consent'),
-    ('critical_care',     'Critical Care'),
+    ('critical_care', 'Critical Care'),
   ];
 
   @override
   void initState() {
     super.initState();
-    _patientIdCtrl =
-        TextEditingController(text: widget.prefillPatientId ?? '');
+    _patientIdCtrl = TextEditingController(text: widget.prefillPatientId ?? '');
   }
 
   @override
@@ -65,7 +64,8 @@ class _TriggerEmergencyAccessScreenState
     await showAdaptiveActionSheet(
       context: context,
       title: 'Trigger Emergency Access?',
-      message: 'This will immediately grant you access to the patient\'s record '
+      message:
+          'This will immediately grant you access to the patient\'s record '
           'and create a permanent, immutable audit log entry.\n\n'
           'The patient\'s primary provider will be notified.',
       destructiveLabel: 'Confirm — Trigger Access',
@@ -78,7 +78,7 @@ class _TriggerEmergencyAccessScreenState
 
     final data = <String, dynamic>{
       'master_patient_id': _patientIdCtrl.text.trim(),
-      'emergency_type':    _emergencyType,
+      'emergency_type': _emergencyType,
       'emergency_details': _detailsCtrl.text.trim(),
     };
 
@@ -89,33 +89,46 @@ class _TriggerEmergencyAccessScreenState
     setState(() => _saving = false);
 
     if (result != null) {
-      showAdaptiveToast(context, 'Emergency access granted. Primary provider notified.');
+      showAdaptiveToast(
+        context,
+        'Emergency access granted. Primary provider notified.',
+      );
       Navigator.of(context).pop(true);
     } else {
-      showAdaptiveToast(context, provider.error ?? 'Request failed', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        provider.error ?? 'Request failed',
+        type: ToastType.error,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.errorColor.withValues(alpha: 0.04),
+      backgroundColor: AppColors.of(context).critical.withValues(alpha: 0.04),
       appBar: kIsIOS
           ? CupertinoNavigationBar(
-              backgroundColor: AppTheme.errorColor.withValues(alpha: 0.9),
-              middle: const Text('Emergency Access',
-                  style: TextStyle(color: CupertinoColors.white)),
+              backgroundColor: AppColors.of(
+                context,
+              ).critical.withValues(alpha: 0.9),
+              middle: const Text(
+                'Emergency Access',
+                style: TextStyle(color: CupertinoColors.white),
+              ),
               trailing: CupertinoButton(
                 padding: EdgeInsets.zero,
                 onPressed: _saving ? null : _submit,
                 child: _saving
                     ? const CupertinoActivityIndicator()
-                    : const Text('Submit',
-                        style: TextStyle(color: CupertinoColors.white)),
+                    : const Text(
+                        'Submit',
+                        style: TextStyle(color: CupertinoColors.white),
+                      ),
               ),
             )
           : AppBar(
-              backgroundColor: AppTheme.errorColor,
+              backgroundColor: AppColors.of(context).critical,
               foregroundColor: Colors.white,
               title: const Text('Break-Glass Emergency Access'),
               actions: [
@@ -126,13 +139,17 @@ class _TriggerEmergencyAccessScreenState
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation(Colors.white)))
-                      : const Text('Submit',
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Submit',
                           style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ],
             ),
@@ -148,16 +165,22 @@ class _TriggerEmergencyAccessScreenState
                 padding: const EdgeInsets.all(14),
                 margin: const EdgeInsets.only(bottom: 24),
                 decoration: BoxDecoration(
-                  color: AppTheme.errorColor.withValues(alpha: 0.1),
+                  color: AppColors.of(context).critical.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                      color: AppTheme.errorColor.withValues(alpha: 0.4)),
+                    color: AppColors.of(
+                      context,
+                    ).critical.withValues(alpha: 0.4),
+                  ),
                 ),
-                child: const Row(
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.warning_amber_rounded,
-                        color: AppTheme.errorColor, size: 22),
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: AppColors.of(context).critical,
+                      size: 22,
+                    ),
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -166,9 +189,10 @@ class _TriggerEmergencyAccessScreenState
                         'permanently logged and will be reviewed by '
                         'the primary provider.',
                         style: TextStyle(
-                            color: AppTheme.errorColor,
-                            fontWeight: FontWeight.w600,
-                            height: 1.5),
+                          color: AppColors.of(context).critical,
+                          fontWeight: FontWeight.w600,
+                          height: 1.5,
+                        ),
                       ),
                     ),
                   ],
@@ -177,9 +201,7 @@ class _TriggerEmergencyAccessScreenState
 
               _sectionHeader('Patient'),
               if (widget.prefillPatientName != null) ...[
-                _InfoRow(
-                    label: 'Patient',
-                    value: widget.prefillPatientName!),
+                _InfoRow(label: 'Patient', value: widget.prefillPatientName!),
                 const SizedBox(height: 12),
               ],
               TextFormField(
@@ -195,8 +217,9 @@ class _TriggerEmergencyAccessScreenState
                     return 'Patient UUID is required';
                   }
                   final uuidRe = RegExp(
-                      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-                      caseSensitive: false);
+                    r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+                    caseSensitive: false,
+                  );
                   if (!uuidRe.hasMatch(v.trim())) {
                     return 'Enter a valid patient UUID';
                   }
@@ -207,11 +230,13 @@ class _TriggerEmergencyAccessScreenState
               _sectionHeader('Emergency Type'),
               AdaptiveDropdown<String>(
                 value: _emergencyType,
-                decoration:
-                    const InputDecoration(labelText: 'Emergency Type *'),
+                decoration: const InputDecoration(
+                  labelText: 'Emergency Type *',
+                ),
                 items: _types
-                    .map((t) => DropdownMenuItem(
-                        value: t.$1, child: Text(t.$2)))
+                    .map(
+                      (t) => DropdownMenuItem(value: t.$1, child: Text(t.$2)),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _emergencyType = v!),
               ),
@@ -244,19 +269,22 @@ class _TriggerEmergencyAccessScreenState
   }
 
   Widget _sectionHeader(String title) => Padding(
-        padding: const EdgeInsets.only(top: 24, bottom: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title,
-                style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.errorColor)),
-            const Divider(height: 8),
-          ],
+    padding: const EdgeInsets.only(top: 24, bottom: 12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: AppColors.of(context).critical,
+          ),
         ),
-      );
+        const Divider(height: 8),
+      ],
+    ),
+  );
 }
 
 class _InfoRow extends StatelessWidget {
@@ -270,12 +298,11 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Text('$label: ',
-              style: const TextStyle(
-                  fontWeight: FontWeight.w600, fontSize: 14)),
-          Expanded(
-              child: Text(value,
-                  style: const TextStyle(fontSize: 14))),
+          Text(
+            '$label: ',
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          ),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
         ],
       ),
     );

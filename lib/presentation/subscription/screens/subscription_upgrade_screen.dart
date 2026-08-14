@@ -6,8 +6,8 @@ import '../../../core/platform.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/subscription_provider.dart';
 import '../../../data/models/subscription_models.dart';
-import '../../../config/theme.dart';
 import '../widgets/gateway_picker_sheet.dart';
+import '../../../config/app_colors.dart';
 
 class SubscriptionUpgradeScreen extends StatefulWidget {
   const SubscriptionUpgradeScreen({super.key});
@@ -17,8 +17,7 @@ class SubscriptionUpgradeScreen extends StatefulWidget {
       _SubscriptionUpgradeScreenState();
 }
 
-class _SubscriptionUpgradeScreenState
-    extends State<SubscriptionUpgradeScreen> {
+class _SubscriptionUpgradeScreenState extends State<SubscriptionUpgradeScreen> {
   String? _selectedPlanId;
 
   @override
@@ -31,13 +30,17 @@ class _SubscriptionUpgradeScreenState
 
   Future<void> _handleSelectPlan(SubscriptionPlanModel plan) async {
     final auth = context.read<AuthProvider>();
-    final sp   = context.read<SubscriptionProvider>();
+    final sp = context.read<SubscriptionProvider>();
 
     final orgId = auth.organizationId;
-    final sub   = sp.subscription;
+    final sub = sp.subscription;
 
     if (orgId == null) {
-      showAdaptiveToast(context, 'No organization found. Contact your administrator.', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        'No organization found. Contact your administrator.',
+        type: ToastType.error,
+      );
       return;
     }
 
@@ -48,10 +51,18 @@ class _SubscriptionUpgradeScreenState
       setState(() => _selectedPlanId = null);
       if (mounted) {
         if (ok) {
-          showAdaptiveToast(context, '14-day free trial started!', type: ToastType.success);
+          showAdaptiveToast(
+            context,
+            '14-day free trial started!',
+            type: ToastType.success,
+          );
           Navigator.of(context).pop();
         } else {
-          showAdaptiveToast(context, sp.error ?? 'Failed to start trial', type: ToastType.error);
+          showAdaptiveToast(
+            context,
+            sp.error ?? 'Failed to start trial',
+            type: ToastType.error,
+          );
         }
       }
       return;
@@ -64,20 +75,31 @@ class _SubscriptionUpgradeScreenState
 
     setState(() => _selectedPlanId = plan.id);
 
-    final session = await sp.createCheckoutSession(orgId,
-        planId: plan.id, gateway: gateway.id);
+    final session = await sp.createCheckoutSession(
+      orgId,
+      planId: plan.id,
+      gateway: gateway.id,
+    );
 
     setState(() => _selectedPlanId = null);
 
     if (!mounted) return;
     if (session == null) {
-      showAdaptiveToast(context, sp.error ?? 'Failed to initiate payment', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        sp.error ?? 'Failed to initiate payment',
+        type: ToastType.error,
+      );
       return;
     }
 
     final url = Uri.tryParse(session['checkout_url'] as String? ?? '');
     if (url == null) {
-      showAdaptiveToast(context, 'Invalid checkout URL from gateway', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        'Invalid checkout URL from gateway',
+        type: ToastType.error,
+      );
       return;
     }
 
@@ -85,7 +107,11 @@ class _SubscriptionUpgradeScreenState
 
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       if (mounted) {
-        showAdaptiveToast(context, 'Could not open payment page', type: ToastType.error);
+        showAdaptiveToast(
+          context,
+          'Could not open payment page',
+          type: ToastType.error,
+        );
       }
     }
     // After the user pays, the gateway redirects to voya://payment/return
@@ -109,14 +135,22 @@ class _SubscriptionUpgradeScreenState
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.info_outline, size: 48, color: AppTheme.gray600),
+                  Icon(
+                    Icons.info_outline,
+                    size: 48,
+                    color: AppColors.of(context).textSecondary,
+                  ),
                   const SizedBox(height: 12),
                   const Text('No plans available at this time.'),
                   if (sp.error != null) ...[
                     const SizedBox(height: 8),
-                    Text(sp.error!,
-                        style: TextStyle(color: AppTheme.errorColor,
-                            fontSize: 13)),
+                    Text(
+                      sp.error!,
+                      style: TextStyle(
+                        color: AppColors.of(context).critical,
+                        fontSize: 13,
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -135,35 +169,48 @@ class _SubscriptionUpgradeScreenState
                     padding: const EdgeInsets.all(14),
                     margin: const EdgeInsets.only(bottom: 20),
                     decoration: BoxDecoration(
-                      color: AppTheme.warningColor.withValues(alpha: 0.1),
+                      color: AppColors.of(
+                        context,
+                      ).warning.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                          color: AppTheme.warningColor.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(children: [
-                      Icon(Icons.schedule, color: AppTheme.warningColor),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          '${sp.subscription!.trialDaysRemaining ?? 0} days '
-                          'remaining in your trial',
-                          style: TextStyle(
-                              color: AppTheme.warningColor,
-                              fontWeight: FontWeight.w600),
-                        ),
+                        color: AppColors.of(
+                          context,
+                        ).warning.withValues(alpha: 0.3),
                       ),
-                    ]),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.schedule,
+                          color: AppColors.of(context).warning,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '${sp.subscription!.trialDaysRemaining ?? 0} days '
+                            'remaining in your trial',
+                            style: TextStyle(
+                              color: AppColors.of(context).warning,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
 
-                ...sp.plans.map((plan) => _PlanCard(
-                      plan: plan,
-                      isCurrent: plan.id == currentPlanId,
-                      isProcessing: _selectedPlanId == plan.id,
-                      onSelect: _selectedPlanId == null
-                          ? () => _handleSelectPlan(plan)
-                          : null,
-                    )),
+                ...sp.plans.map(
+                  (plan) => _PlanCard(
+                    plan: plan,
+                    isCurrent: plan.id == currentPlanId,
+                    isProcessing: _selectedPlanId == plan.id,
+                    onSelect: _selectedPlanId == null
+                        ? () => _handleSelectPlan(plan)
+                        : null,
+                  ),
+                ),
               ],
             ),
           );
@@ -201,8 +248,8 @@ class _PlanCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
           color: isCurrent
-              ? AppTheme.primaryColor
-              : AppTheme.gray600.withValues(alpha: 0.2),
+              ? AppColors.of(context).accent
+              : AppColors.of(context).textSecondary.withValues(alpha: 0.2),
           width: isCurrent ? 2 : 1,
         ),
       ),
@@ -214,37 +261,54 @@ class _PlanCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(plan.name,
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    plan.name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 if (isCurrent)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor,
+                      color: AppColors.of(context).accent,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text('Current',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Current',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
               ],
             ),
             if (plan.description != null) ...[
               const SizedBox(height: 6),
-              Text(plan.description!,
-                  style: TextStyle(color: AppTheme.gray600, fontSize: 13)),
+              Text(
+                plan.description!,
+                style: TextStyle(
+                  color: AppColors.of(context).textSecondary,
+                  fontSize: 13,
+                ),
+              ),
             ],
             const SizedBox(height: 12),
-            Text(displayPrice,
-                style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor)),
+            Text(
+              displayPrice,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.of(context).accent,
+              ),
+            ),
             if (plan.limits.isNotEmpty) ...[
               const SizedBox(height: 10),
               Wrap(
@@ -262,17 +326,29 @@ class _PlanCard extends StatelessWidget {
             ],
             if (plan.features.isNotEmpty) ...[
               const SizedBox(height: 12),
-              ...plan.features.take(4).map((f) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Row(children: [
-                      Icon(Icons.check,
-                          size: 16, color: AppTheme.successColor),
-                      const SizedBox(width: 6),
-                      Expanded(
-                          child: Text(f,
-                              style: const TextStyle(fontSize: 13))),
-                    ]),
-                  )),
+              ...plan.features
+                  .take(4)
+                  .map(
+                    (f) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.check,
+                            size: 16,
+                            color: AppColors.of(context).success,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              f,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
             ],
             const SizedBox(height: 16),
             SizedBox(
@@ -289,9 +365,11 @@ class _PlanCard extends StatelessWidget {
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation(
-                                      Colors.white)),
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation(
+                                  Colors.white,
+                                ),
+                              ),
                             )
                           : const Text('Select Plan'),
                     ),
@@ -312,11 +390,13 @@ class _Chip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withValues(alpha: 0.08),
+        color: AppColors.of(context).accent.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(label,
-          style: TextStyle(fontSize: 11, color: AppTheme.primaryColor)),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 11, color: AppColors.of(context).accent),
+      ),
     );
   }
 }

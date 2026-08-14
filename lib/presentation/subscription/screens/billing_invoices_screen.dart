@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/subscription_provider.dart';
 import '../../../data/models/subscription_models.dart';
-import '../../../config/theme.dart';
+import '../../../config/app_colors.dart';
 
 class BillingInvoicesScreen extends StatefulWidget {
   const BillingInvoicesScreen({super.key});
@@ -44,9 +44,7 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                 padding: EdgeInsets.zero,
                 onPressed: () {
                   if (_orgId != null) {
-                    context
-                        .read<SubscriptionProvider>()
-                        .loadInvoices(_orgId!);
+                    context.read<SubscriptionProvider>().loadInvoices(_orgId!);
                   }
                 },
                 child: const Icon(CupertinoIcons.refresh),
@@ -59,15 +57,15 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                   icon: const Icon(Icons.refresh),
                   onPressed: () {
                     if (_orgId != null) {
-                      context
-                          .read<SubscriptionProvider>()
-                          .loadInvoices(_orgId!);
+                      context.read<SubscriptionProvider>().loadInvoices(
+                        _orgId!,
+                      );
                     }
                   },
                   tooltip: 'Refresh',
                 ),
               ],
-      ),
+            ),
       body: Consumer<SubscriptionProvider>(
         builder: (context, subscriptionProvider, child) {
           if (subscriptionProvider.isLoading) {
@@ -84,7 +82,9 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                   Icon(
                     Icons.receipt_long,
                     size: 80,
-                    color: AppTheme.gray600.withValues(alpha: 0.5),
+                    color: AppColors.of(
+                      context,
+                    ).textSecondary.withValues(alpha: 0.5),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -92,13 +92,15 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.gray900,
+                      color: AppColors.of(context).textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Your billing history will appear here',
-                    style: TextStyle(color: AppTheme.gray600),
+                    style: TextStyle(
+                      color: AppColors.of(context).textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -107,14 +109,20 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
 
           return RefreshIndicator(
             onRefresh: () => _orgId != null
-              ? subscriptionProvider.loadInvoices(_orgId!)
-              : Future.value(),
+                ? subscriptionProvider.loadInvoices(_orgId!)
+                : Future.value(),
             child: SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
-                  isWeb ? 32 : 16, isWeb ? 32 : 16, isWeb ? 32 : 16, isWeb ? 40 : 32),
+                isWeb ? 32 : 16,
+                isWeb ? 32 : 16,
+                isWeb ? 32 : 16,
+                isWeb ? 40 : 32,
+              ),
               child: Center(
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: isWeb ? 900 : double.infinity),
+                  constraints: BoxConstraints(
+                    maxWidth: isWeb ? 900 : double.infinity,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -146,10 +154,16 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
     final totalPaid = invoices
         .where((i) => i.status == 'paid')
         .fold(0, (sum, i) => sum + i.totalAmount);
-    
+
     final paidCount = invoices.where((i) => i.status == 'paid').length;
-    final pendingCount = invoices.where((i) =>
-        i.status == 'sent' || i.status == 'viewed' || i.status == 'partially_paid').length;
+    final pendingCount = invoices
+        .where(
+          (i) =>
+              i.status == 'sent' ||
+              i.status == 'viewed' ||
+              i.status == 'partially_paid',
+        )
+        .length;
 
     return Row(
       children: [
@@ -158,7 +172,7 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
             'Total Paid',
             '₦${(totalPaid / 100).toStringAsFixed(2)}',
             Icons.payment,
-            AppTheme.successColor,
+            AppColors.of(context).success,
           ),
         ),
         const SizedBox(width: 16),
@@ -167,7 +181,7 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
             'Paid Invoices',
             paidCount.toString(),
             Icons.check_circle,
-            AppTheme.primaryColor,
+            AppColors.of(context).accent,
           ),
         ),
         const SizedBox(width: 16),
@@ -176,14 +190,19 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
             'Pending',
             pendingCount.toString(),
             Icons.pending,
-            AppTheme.warningColor,
+            AppColors.of(context).warning,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -206,17 +225,14 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
             const SizedBox(height: 16),
             Text(
               value,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
                 fontSize: 14,
-                color: AppTheme.gray600,
+                color: AppColors.of(context).textSecondary,
               ),
             ),
           ],
@@ -226,35 +242,35 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
   }
 
   Widget _buildInvoiceCard(InvoiceModel invoice) {
-    Color statusColor = AppTheme.gray600;
+    Color statusColor = AppColors.of(context).textSecondary;
     IconData statusIcon = Icons.help_outline;
-    
+
     switch (invoice.status) {
       case 'paid':
-        statusColor = AppTheme.successColor;
+        statusColor = AppColors.of(context).success;
         statusIcon = Icons.check_circle;
         break;
       case 'sent':
       case 'viewed':
-        statusColor = AppTheme.warningColor;
+        statusColor = AppColors.of(context).warning;
         statusIcon = Icons.mail_outline;
         break;
       case 'partially_paid':
-        statusColor = AppTheme.warningColor;
+        statusColor = AppColors.of(context).warning;
         statusIcon = Icons.pending;
         break;
       case 'overdue':
-        statusColor = AppTheme.errorColor;
+        statusColor = AppColors.of(context).critical;
         statusIcon = Icons.error;
         break;
       case 'cancelled':
       case 'refunded':
-        statusColor = AppTheme.gray600;
+        statusColor = AppColors.of(context).textSecondary;
         statusIcon = Icons.cancel;
         break;
       case 'draft':
       default:
-        statusColor = AppTheme.gray600;
+        statusColor = AppColors.of(context).textSecondary;
         statusIcon = Icons.description_outlined;
         break;
     }
@@ -283,7 +299,7 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                     child: Icon(Icons.receipt, color: statusColor),
                   ),
                   const SizedBox(width: 16),
-                  
+
                   // Invoice Info
                   Expanded(
                     child: Column(
@@ -298,16 +314,20 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          _formatDate(invoice.invoiceDate ?? invoice.dueDate ?? DateTime.now()),
+                          _formatDate(
+                            invoice.invoiceDate ??
+                                invoice.dueDate ??
+                                DateTime.now(),
+                          ),
                           style: TextStyle(
                             fontSize: 14,
-                            color: AppTheme.gray600,
+                            color: AppColors.of(context).textSecondary,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  
+
                   // Amount & Status
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -349,17 +369,19 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                   ),
                 ],
               ),
-              
+
               // Due Date (if applicable)
-              if (invoice.status == 'sent' || invoice.status == 'viewed' ||
-                  invoice.status == 'partially_paid' || invoice.status == 'overdue') ...[
+              if (invoice.status == 'sent' ||
+                  invoice.status == 'viewed' ||
+                  invoice.status == 'partially_paid' ||
+                  invoice.status == 'overdue') ...[
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: invoice.isOverdue
-                        ? AppTheme.errorColor.withValues(alpha: 0.1)
-                        : AppTheme.gray50,
+                        ? AppColors.of(context).critical.withValues(alpha: 0.1)
+                        : AppColors.of(context).surfaceTint,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Row(
@@ -368,8 +390,8 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                         Icons.schedule,
                         size: 16,
                         color: invoice.isOverdue
-                            ? AppTheme.errorColor
-                            : AppTheme.gray600,
+                            ? AppColors.of(context).critical
+                            : AppColors.of(context).textSecondary,
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -377,8 +399,8 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                         style: TextStyle(
                           fontSize: 12,
                           color: invoice.isOverdue
-                              ? AppTheme.errorColor
-                              : AppTheme.gray600,
+                              ? AppColors.of(context).critical
+                              : AppColors.of(context).textSecondary,
                         ),
                       ),
                     ],
@@ -416,7 +438,9 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppTheme.gray600.withValues(alpha: 0.3),
+                    color: AppColors.of(
+                      context,
+                    ).textSecondary.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -442,7 +466,7 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                           invoice.invoiceNumber,
                           style: TextStyle(
                             fontSize: 16,
-                            color: AppTheme.gray600,
+                            color: AppColors.of(context).textSecondary,
                           ),
                         ),
                       ],
@@ -461,15 +485,24 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
               _buildDetailRow('Amount', invoice.formattedTotal),
               _buildDetailRow('Currency', invoice.currency),
               _buildDetailRow('Status', invoice.status.toUpperCase()),
-              _buildDetailRow('Invoice Date', invoice.invoiceDate != null ? _formatDate(invoice.invoiceDate!) : '—'),
-              _buildDetailRow('Due Date', invoice.dueDate != null ? _formatDate(invoice.dueDate!) : '—'),
+              _buildDetailRow(
+                'Invoice Date',
+                invoice.invoiceDate != null
+                    ? _formatDate(invoice.invoiceDate!)
+                    : '—',
+              ),
+              _buildDetailRow(
+                'Due Date',
+                invoice.dueDate != null ? _formatDate(invoice.dueDate!) : '—',
+              ),
               if (invoice.paidAt != null)
                 _buildDetailRow('Paid On', _formatDate(invoice.paidAt!)),
 
               const SizedBox(height: 24),
 
               // Actions
-              if (invoice.status == 'sent' || invoice.status == 'overdue' ||
+              if (invoice.status == 'sent' ||
+                  invoice.status == 'overdue' ||
                   invoice.status == 'partially_paid') ...[
                 SizedBox(
                   width: double.infinity,
@@ -494,7 +527,9 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
                     onPressed: _downloadingInvoiceId == invoice.id
                         ? null
                         : () async {
-                            setSheetState(() => _downloadingInvoiceId = invoice.id);
+                            setSheetState(
+                              () => _downloadingInvoiceId = invoice.id,
+                            );
                             await _downloadAndOpenInvoicePdf(invoice);
                             setSheetState(() => _downloadingInvoiceId = null);
                           },
@@ -549,7 +584,8 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
   Future<void> _showRecordPaymentDialog(InvoiceModel invoice) async {
     if (_orgId == null) return;
     final amountCtrl = TextEditingController(
-        text: (invoice.balanceDue / 100).toStringAsFixed(2));
+      text: (invoice.balanceDue / 100).toStringAsFixed(2),
+    );
     final referenceCtrl = TextEditingController();
     String method = 'bank_transfer';
 
@@ -562,28 +598,47 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Invoice ${invoice.invoiceNumber}',
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                'Invoice ${invoice.invoiceNumber}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 4),
-              Text('Balance due: ${invoice.formattedTotal}',
-                  style: TextStyle(color: AppTheme.gray600, fontSize: 13)),
+              Text(
+                'Balance due: ${invoice.formattedTotal}',
+                style: TextStyle(
+                  color: AppColors.of(context).textSecondary,
+                  fontSize: 13,
+                ),
+              ),
               const SizedBox(height: 16),
               TextField(
                 controller: amountCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: InputDecoration(
-                    labelText: 'Amount (${invoice.currency})'),
+                  labelText: 'Amount (${invoice.currency})',
+                ),
               ),
               const SizedBox(height: 12),
               AdaptiveDropdown<String>(
                 value: method,
                 decoration: const InputDecoration(labelText: 'Payment method'),
                 items: const [
-                  DropdownMenuItem(value: 'bank_transfer', child: Text('Bank Transfer')),
+                  DropdownMenuItem(
+                    value: 'bank_transfer',
+                    child: Text('Bank Transfer'),
+                  ),
                   DropdownMenuItem(value: 'card', child: Text('Card')),
                   DropdownMenuItem(value: 'ussd', child: Text('USSD')),
-                  DropdownMenuItem(value: 'mobile_money', child: Text('Mobile Money')),
-                  DropdownMenuItem(value: 'paypal_wallet', child: Text('PayPal Wallet')),
+                  DropdownMenuItem(
+                    value: 'mobile_money',
+                    child: Text('Mobile Money'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'paypal_wallet',
+                    child: Text('PayPal Wallet'),
+                  ),
                   DropdownMenuItem(value: 'other', child: Text('Other')),
                 ],
                 onChanged: (v) => setLocal(() => method = v!),
@@ -592,15 +647,17 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
               TextField(
                 controller: referenceCtrl,
                 decoration: const InputDecoration(
-                    labelText: 'Reference (optional)',
-                    hintText: 'Transaction ref / receipt number'),
+                  labelText: 'Reference (optional)',
+                  hintText: 'Transaction ref / receipt number',
+                ),
               ),
             ],
           ),
           actions: [
             AdaptiveTextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancel')),
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
             AdaptiveFilledButton(
               onPressed: () => Navigator.of(ctx).pop(true),
               child: const Text('Record'),
@@ -619,19 +676,22 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
     }
 
     final result = await context.read<SubscriptionProvider>().recordPayment(
-          _orgId!,
-          invoice.id,
-          amount: (majorAmount * 100).round(),
-          method: method,
-          reference: referenceCtrl.text.trim().isEmpty ? null : referenceCtrl.text.trim(),
-        );
+      _orgId!,
+      invoice.id,
+      amount: (majorAmount * 100).round(),
+      method: method,
+      reference: referenceCtrl.text.trim().isEmpty
+          ? null
+          : referenceCtrl.text.trim(),
+    );
     if (!mounted) return;
 
     showAdaptiveToast(
       context,
       result != null
           ? 'Payment recorded successfully'
-          : context.read<SubscriptionProvider>().error ?? 'Failed to record payment',
+          : context.read<SubscriptionProvider>().error ??
+                'Failed to record payment',
       type: result != null ? ToastType.success : ToastType.error,
     );
   }
@@ -647,7 +707,7 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
             child: Text(
               '$label:',
               style: TextStyle(
-                color: AppTheme.gray600,
+                color: AppColors.of(context).textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -655,9 +715,7 @@ class _BillingInvoicesScreenState extends State<BillingInvoicesScreen> {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
         ],

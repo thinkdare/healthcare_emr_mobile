@@ -6,9 +6,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/app_color_scope.dart';
+import '../../config/app_color_tokens.dart';
 import '../../config/theme.dart';
 import '../../core/biometric/biometric_provider.dart';
 import '../../data/providers/auth_provider.dart';
+import '../../data/providers/theme_mode_provider.dart';
 import '../auth/screens/biometric_lock_screen.dart';
 import '../auth/screens/login_screen.dart';
 import '../dashboard/screens/provider_dashboard_screen.dart';
@@ -19,11 +22,23 @@ class AndroidShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Healthcare EMR',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: const _AuthWrapper(),
+    return Consumer<ThemeModeProvider>(
+      builder: (context, themeMode, _) {
+        return MaterialApp(
+          title: 'Healthcare EMR',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeMode.mode,
+          builder: (context, child) {
+            final tokens = Theme.of(context).brightness == Brightness.dark
+                ? AppColorTokens.dark
+                : AppColorTokens.light;
+            return AppColorScope(tokens: tokens, child: child!);
+          },
+          home: const _AuthWrapper(),
+        );
+      },
     );
   }
 }

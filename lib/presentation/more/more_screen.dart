@@ -35,15 +35,13 @@ class MoreScreen extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     final sync = context.watch<SyncProvider>();
     final sub = context.watch<SubscriptionProvider>();
-    final showEmergency = auth.canEmergencyAccess && sub.isProfessionalOrHigher == true;
+    final showEmergency =
+        auth.canEmergencyAccess && sub.isProfessionalOrHigher == true;
     final isOrgAdmin = auth.isOrgAdmin;
-    final showUpgradeNudge =
-        !isOrgAdmin && sub.isProfessionalOrHigher == false;
+    final showUpgradeNudge = !isOrgAdmin && sub.isProfessionalOrHigher == false;
 
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('More'),
-      ),
+      navigationBar: const CupertinoNavigationBar(middle: Text('More')),
       child: SafeArea(
         child: ListView(
           children: [
@@ -58,9 +56,9 @@ class MoreScreen extends StatelessWidget {
                 header: const Text('Clinical'),
                 children: [
                   CupertinoListTile(
-                    leading: const Icon(
+                    leading: Icon(
                       CupertinoIcons.chart_bar_alt_fill,
-                      color: AppColors.primary,
+                      color: AppColors.of(context).accent,
                     ),
                     title: const Text('Dashboard'),
                     trailing: const CupertinoListTileChevron(),
@@ -69,9 +67,9 @@ class MoreScreen extends StatelessWidget {
                   ),
                   if (showEmergency)
                     CupertinoListTile(
-                      leading: const Icon(
+                      leading: Icon(
                         CupertinoIcons.exclamationmark_circle,
-                        color: AppColors.error,
+                        color: AppColors.of(context).critical,
                       ),
                       title: const Text('Emergency Access'),
                       trailing: const CupertinoListTileChevron(),
@@ -82,47 +80,59 @@ class MoreScreen extends StatelessWidget {
               ),
             if (isOrgAdmin)
               CupertinoListSection.insetGrouped(
-                header: Text('Admin',
-                    style: TextStyle(
-                        color: CupertinoColors.systemOrange
-                            .resolveFrom(context))),
+                header: Text(
+                  'Admin',
+                  style: TextStyle(
+                    color: CupertinoColors.systemOrange.resolveFrom(context),
+                  ),
+                ),
                 children: [
                   CupertinoListTile(
-                    leading: const Icon(CupertinoIcons.building_2_fill,
-                        color: CupertinoColors.systemOrange),
+                    leading: const Icon(
+                      CupertinoIcons.building_2_fill,
+                      color: CupertinoColors.systemOrange,
+                    ),
                     title: const Text('Organization'),
                     trailing: const CupertinoListTileChevron(),
                     onTap: () => _push(
                       context,
                       OrganizationProfileScreen(
                         repository: OrganizationRepository(
-                            apiClient: context.read<ApiClient>()),
+                          apiClient: context.read<ApiClient>(),
+                        ),
                       ),
                     ),
                   ),
                   CupertinoListTile(
-                    leading: const Icon(CupertinoIcons.house_fill,
-                        color: CupertinoColors.systemOrange),
+                    leading: const Icon(
+                      CupertinoIcons.house_fill,
+                      color: CupertinoColors.systemOrange,
+                    ),
                     title: const Text('Facilities'),
                     trailing: const CupertinoListTileChevron(),
                     onTap: () => _push(context, const FacilitiesListScreen()),
                   ),
                   CupertinoListTile(
-                    leading: const Icon(CupertinoIcons.group,
-                        color: CupertinoColors.systemOrange),
+                    leading: const Icon(
+                      CupertinoIcons.group,
+                      color: CupertinoColors.systemOrange,
+                    ),
                     title: const Text('Staff'),
                     trailing: const CupertinoListTileChevron(),
                     onTap: () => _push(
                       context,
                       StaffManagementScreen(
                         repository: StaffRepository(
-                            apiClient: context.read<ApiClient>()),
+                          apiClient: context.read<ApiClient>(),
+                        ),
                       ),
                     ),
                   ),
                   CupertinoListTile(
-                    leading: const Icon(CupertinoIcons.mail,
-                        color: CupertinoColors.systemOrange),
+                    leading: const Icon(
+                      CupertinoIcons.mail,
+                      color: CupertinoColors.systemOrange,
+                    ),
                     title: const Text('Invite Staff'),
                     trailing: const CupertinoListTileChevron(),
                     onTap: () =>
@@ -134,9 +144,9 @@ class MoreScreen extends StatelessWidget {
               header: const Text('Account'),
               children: [
                 CupertinoListTile(
-                  leading: const Icon(
+                  leading: Icon(
                     CupertinoIcons.person_crop_square,
-                    color: AppColors.primary,
+                    color: AppColors.of(context).accent,
                   ),
                   title: const Text('Staff Profile'),
                   trailing: const CupertinoListTileChevron(),
@@ -144,18 +154,18 @@ class MoreScreen extends StatelessWidget {
                 ),
                 if (isOrgAdmin)
                   CupertinoListTile(
-                    leading: const Icon(
+                    leading: Icon(
                       CupertinoIcons.chart_bar_square,
-                      color: AppColors.primary,
+                      color: AppColors.of(context).accent,
                     ),
                     title: const Text('Reporting & Compliance'),
                     trailing: const CupertinoListTileChevron(),
                     onTap: () => _push(context, const ReportingScreen()),
                   ),
                 CupertinoListTile(
-                  leading: const Icon(
+                  leading: Icon(
                     CupertinoIcons.creditcard,
-                    color: AppColors.primary,
+                    color: AppColors.of(context).accent,
                   ),
                   title: const Text('Subscription & Billing'),
                   trailing: const CupertinoListTileChevron(),
@@ -163,9 +173,9 @@ class MoreScreen extends StatelessWidget {
                       _push(context, const SubscriptionDetailsScreen()),
                 ),
                 CupertinoListTile(
-                  leading: const Icon(
+                  leading: Icon(
                     CupertinoIcons.arrow_2_circlepath,
-                    color: AppColors.primary,
+                    color: AppColors.of(context).accent,
                   ),
                   title: const Text('Sync Status'),
                   trailing: sync.hasPendingConflicts
@@ -174,17 +184,20 @@ class MoreScreen extends StatelessWidget {
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: AppColors.error,
+                                color: AppColors.of(context).critical,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 '${sync.pendingConflicts}',
                                 style: const TextStyle(
-                                    color: CupertinoColors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600),
+                                  color: CupertinoColors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 6),
@@ -197,9 +210,9 @@ class MoreScreen extends StatelessWidget {
                 if (sub.isProfessionalOrHigher == true)
                   Consumer<ReferralProvider>(
                     builder: (context, referrals, _) => CupertinoListTile(
-                      leading: const Icon(
+                      leading: Icon(
                         CupertinoIcons.arrow_right_arrow_left_circle,
-                        color: AppColors.primary,
+                        color: AppColors.of(context).accent,
                       ),
                       title: const Text('Referrals'),
                       trailing: referrals.pendingActionCount > 0
@@ -208,17 +221,20 @@ class MoreScreen extends StatelessWidget {
                               children: [
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 2),
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.error,
+                                    color: AppColors.of(context).critical,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
                                     '${referrals.pendingActionCount}',
                                     style: const TextStyle(
-                                        color: CupertinoColors.white,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600),
+                                      color: CupertinoColors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 6),
@@ -234,13 +250,13 @@ class MoreScreen extends StatelessWidget {
             CupertinoListSection.insetGrouped(
               children: [
                 CupertinoListTile(
-                  leading: const Icon(
+                  leading: Icon(
                     CupertinoIcons.square_arrow_left,
-                    color: AppColors.error,
+                    color: AppColors.of(context).critical,
                   ),
-                  title: const Text(
+                  title: Text(
                     'Sign Out',
-                    style: TextStyle(color: AppColors.error),
+                    style: TextStyle(color: AppColors.of(context).critical),
                   ),
                   onTap: () => _confirmSignOut(context),
                 ),
@@ -253,8 +269,7 @@ class MoreScreen extends StatelessWidget {
   }
 
   void _push(BuildContext context, Widget screen) {
-    Navigator.of(context)
-        .push(CupertinoPageRoute(builder: (_) => screen));
+    Navigator.of(context).push(CupertinoPageRoute(builder: (_) => screen));
   }
 
   Future<void> _confirmSignOut(BuildContext context) async {
@@ -312,8 +327,7 @@ class _UpgradeNudgeTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: const Row(
             children: [
-              Icon(CupertinoIcons.star_fill,
-                  color: Colors.white, size: 20),
+              Icon(CupertinoIcons.star_fill, color: Colors.white, size: 20),
               SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -322,21 +336,24 @@ class _UpgradeNudgeTile extends StatelessWidget {
                     Text(
                       'Upgrade to Professional',
                       style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                     SizedBox(height: 2),
                     Text(
                       'Unlock Emergency Access, Referrals & more',
-                      style: TextStyle(
-                          color: Colors.white70, fontSize: 12),
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
                     ),
                   ],
                 ),
               ),
-              Icon(CupertinoIcons.chevron_right,
-                  color: Colors.white70, size: 16),
+              Icon(
+                CupertinoIcons.chevron_right,
+                color: Colors.white70,
+                size: 16,
+              ),
             ],
           ),
         ),

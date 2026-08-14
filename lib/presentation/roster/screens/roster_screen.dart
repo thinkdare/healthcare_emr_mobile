@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../config/theme.dart';
 import '../../../core/platform.dart';
 import '../../../data/models/clinical_record_models.dart';
 import '../../../data/models/patient_models.dart';
@@ -10,6 +9,7 @@ import '../../../data/providers/clinical_provider.dart';
 import '../../../data/providers/patient_provider.dart';
 import '../../patients/screens/patient_form_screen.dart';
 import 'patient_complaint_screen.dart';
+import '../../../config/app_colors.dart';
 
 /// Daily roster screen.
 ///
@@ -49,12 +49,14 @@ class _RosterScreenState extends State<RosterScreen> {
     });
 
     try {
-      final auth         = context.read<AuthProvider>();
-      final patientProv  = context.read<PatientProvider>();
-      final repo         = context.read<ClinicalProvider>().repository;
+      final auth = context.read<AuthProvider>();
+      final patientProv = context.read<PatientProvider>();
+      final repo = context.read<ClinicalProvider>().repository;
 
       await patientProv.loadPatients(
-          providerId: auth.currentUserId, forceRefresh: true);
+        providerId: auth.currentUserId,
+        forceRefresh: true,
+      );
 
       // Surface any patient-load error immediately
       if (patientProv.error != null) {
@@ -73,24 +75,25 @@ class _RosterScreenState extends State<RosterScreen> {
       final Map<String, List<RosterEntryModel>> rosterMap = {};
       String? firstRosterError;
 
-      await Future.wait(patients.map((p) async {
-        try {
-          final entries = await repo.getRosterEntries(p.id, date: todayStr);
-          if (entries.isNotEmpty) rosterMap[p.id] = entries;
-        } catch (e) {
-          firstRosterError ??= 'Roster fetch failed for ${p.id}: $e';
-        }
-      }));
+      await Future.wait(
+        patients.map((p) async {
+          try {
+            final entries = await repo.getRosterEntries(p.id, date: todayStr);
+            if (entries.isNotEmpty) rosterMap[p.id] = entries;
+          } catch (e) {
+            firstRosterError ??= 'Roster fetch failed for ${p.id}: $e';
+          }
+        }),
+      );
 
-      final rostered = patients
-          .where((p) => rosterMap.containsKey(p.id))
-          .toList()
-        ..sort((a, b) {
-          int best(String id) => rosterMap[id]!
-              .map((e) => e.triagePriority)
-              .reduce((m, x) => x < m ? x : m);
-          return best(a.id).compareTo(best(b.id));
-        });
+      final rostered =
+          patients.where((p) => rosterMap.containsKey(p.id)).toList()
+            ..sort((a, b) {
+              int best(String id) => rosterMap[id]!
+                  .map((e) => e.triagePriority)
+                  .reduce((m, x) => x < m ? x : m);
+              return best(a.id).compareTo(best(b.id));
+            });
 
       if (mounted) {
         setState(() {
@@ -128,27 +131,40 @@ class _RosterScreenState extends State<RosterScreen> {
       });
       await _load();
       if (mounted) {
-        showAdaptiveToast(context, '${patient.fullName} added to today\'s roster', type: ToastType.success);
+        showAdaptiveToast(
+          context,
+          '${patient.fullName} added to today\'s roster',
+          type: ToastType.success,
+        );
       }
     } catch (e) {
       if (mounted) {
-        showAdaptiveToast(context, 'Failed to add patient to roster', type: ToastType.error);
+        showAdaptiveToast(
+          context,
+          'Failed to add patient to roster',
+          type: ToastType.error,
+        );
       }
     }
   }
 
   Future<void> _startConsultation(
-      PatientModel patient, RosterEntryModel entry) async {
+    PatientModel patient,
+    RosterEntryModel entry,
+  ) async {
     final repo = context.read<ClinicalProvider>().repository;
     try {
-      await repo.updateRosterEntry(
-        patient.id,
-        entry.id,
-        {'status': 'in_consultation', 'version': entry.version},
-      );
+      await repo.updateRosterEntry(patient.id, entry.id, {
+        'status': 'in_consultation',
+        'version': entry.version,
+      });
     } catch (_) {
       if (mounted) {
-        showAdaptiveToast(context, 'Failed to start consultation', type: ToastType.error);
+        showAdaptiveToast(
+          context,
+          'Failed to start consultation',
+          type: ToastType.error,
+        );
       }
       return;
     }
@@ -157,20 +173,22 @@ class _RosterScreenState extends State<RosterScreen> {
     await Navigator.of(context).push(
       kIsIOS
           ? CupertinoPageRoute(
-              builder: (_) => PatientComplaintScreen(
-                  patient: patient, entry: entry))
+              builder: (_) =>
+                  PatientComplaintScreen(patient: patient, entry: entry),
+            )
           : MaterialPageRoute(
-              builder: (_) => PatientComplaintScreen(
-                  patient: patient, entry: entry)),
+              builder: (_) =>
+                  PatientComplaintScreen(patient: patient, entry: entry),
+            ),
     );
     if (mounted) _load();
   }
 
   @override
   Widget build(BuildContext context) {
-    final auth   = context.watch<AuthProvider>();
+    final auth = context.watch<AuthProvider>();
     final isNurse = auth.staffType == 'nurse';
-    final today  = DateTime.now();
+    final today = DateTime.now();
     final dateStr = '${today.day}/${today.month}/${today.year}';
 
     return Scaffold(
@@ -187,11 +205,14 @@ class _RosterScreenState extends State<RosterScreen> {
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(isNurse ? 'Daily Roster' : 'Today\'s Patients',
-                      style: const TextStyle(fontSize: 18)),
-                  Text(dateStr,
-                      style: const TextStyle(
-                          fontSize: 12, color: Colors.white70)),
+                  Text(
+                    isNurse ? 'Daily Roster' : 'Today\'s Patients',
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  Text(
+                    dateStr,
+                    style: const TextStyle(fontSize: 12, color: Colors.white70),
+                  ),
                 ],
               ),
               actions: [
@@ -209,20 +230,22 @@ class _RosterScreenState extends State<RosterScreen> {
                 FloatingActionButton.small(
                   heroTag: 'new_patient',
                   onPressed: () async {
-                    final result =
-                        await Navigator.of(context).push<PatientModel>(
-                      kIsIOS
-                          ? CupertinoPageRoute(
-                              builder: (_) => const PatientFormScreen())
-                          : MaterialPageRoute(
-                              builder: (_) => const PatientFormScreen()),
-                    );
+                    final result = await Navigator.of(context)
+                        .push<PatientModel>(
+                          kIsIOS
+                              ? CupertinoPageRoute(
+                                  builder: (_) => const PatientFormScreen(),
+                                )
+                              : MaterialPageRoute(
+                                  builder: (_) => const PatientFormScreen(),
+                                ),
+                        );
                     if (result != null && mounted) {
                       await _addToRoster(result);
                     }
                   },
                   tooltip: 'Register new patient',
-                  backgroundColor: AppTheme.secondaryColor,
+                  backgroundColor: AppColors.of(context).accent,
                   child: const Icon(Icons.person_add),
                 ),
                 const SizedBox(height: 8),
@@ -231,7 +254,7 @@ class _RosterScreenState extends State<RosterScreen> {
                   onPressed: () => _showAddPatientSheet(context),
                   icon: const Icon(Icons.playlist_add),
                   label: const Text('Add to Roster'),
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: AppColors.of(context).accent,
                 ),
               ],
             )
@@ -239,50 +262,59 @@ class _RosterScreenState extends State<RosterScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _ErrorView(message: _error!, onRetry: _load)
-              : _rosterPatients.isEmpty
-                  ? _EmptyRoster(isNurse: isNurse)
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.only(top: 8, bottom: 32),
-                        itemCount: _rosterPatients.length,
-                        itemBuilder: (_, i) {
-                          final patient = _rosterPatients[i];
-                          final entries = _rosterMap[patient.id] ?? [];
-                          final entry = entries.first;
-                          return _RosterCard(
-                            patient: patient,
-                            entry: entry,
-                            isNurse: isNurse,
-                            currentUserId: auth.currentUserId,
-                            onTap: () async {
-                              if (entry.isWaiting) {
-                                // Mark in_consultation then open complaint screen
-                                await _startConsultation(patient, entry);
-                              } else {
-                                await Navigator.of(context).push(kIsIOS
-                                    ? CupertinoPageRoute(
-                                        builder: (_) => PatientComplaintScreen(
-                                            patient: patient, entry: entry))
-                                    : MaterialPageRoute(
-                                        builder: (_) => PatientComplaintScreen(
-                                            patient: patient, entry: entry)));
-                                if (mounted) _load();
-                              }
-                            },
-                          );
-                        },
-                      ),
-                    ),
+          ? _ErrorView(message: _error!, onRetry: _load)
+          : _rosterPatients.isEmpty
+          ? _EmptyRoster(isNurse: isNurse)
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 8, bottom: 32),
+                itemCount: _rosterPatients.length,
+                itemBuilder: (_, i) {
+                  final patient = _rosterPatients[i];
+                  final entries = _rosterMap[patient.id] ?? [];
+                  final entry = entries.first;
+                  return _RosterCard(
+                    patient: patient,
+                    entry: entry,
+                    isNurse: isNurse,
+                    currentUserId: auth.currentUserId,
+                    onTap: () async {
+                      if (entry.isWaiting) {
+                        // Mark in_consultation then open complaint screen
+                        await _startConsultation(patient, entry);
+                      } else {
+                        await Navigator.of(context).push(
+                          kIsIOS
+                              ? CupertinoPageRoute(
+                                  builder: (_) => PatientComplaintScreen(
+                                    patient: patient,
+                                    entry: entry,
+                                  ),
+                                )
+                              : MaterialPageRoute(
+                                  builder: (_) => PatientComplaintScreen(
+                                    patient: patient,
+                                    entry: entry,
+                                  ),
+                                ),
+                        );
+                        if (mounted) _load();
+                      }
+                    },
+                  );
+                },
+              ),
+            ),
     );
   }
 
   Future<void> _showAddPatientSheet(BuildContext context) async {
-    final patients     = context.read<PatientProvider>().patients;
-    final rosteredIds  = _rosterPatients.map((p) => p.id).toSet();
-    final available =
-        patients.where((p) => !rosteredIds.contains(p.id)).toList();
+    final patients = context.read<PatientProvider>().patients;
+    final rosteredIds = _rosterPatients.map((p) => p.id).toSet();
+    final available = patients
+        .where((p) => !rosteredIds.contains(p.id))
+        .toList();
 
     if (available.isEmpty) {
       showAdaptiveToast(context, 'All patients are already on today\'s roster');
@@ -301,17 +333,23 @@ class _RosterScreenState extends State<RosterScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Row(children: [
-                const Expanded(
-                  child: Text('Select Patient',
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Select Patient',
                       style: TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold)),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(ctx).pop(),
-                ),
-              ]),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  ),
+                ],
+              ),
             ),
             const Divider(height: 1),
             Expanded(
@@ -323,18 +361,21 @@ class _RosterScreenState extends State<RosterScreen> {
                   final p = available[i];
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundColor:
-                          AppTheme.primaryColor.withValues(alpha: 0.1),
+                      backgroundColor: AppColors.of(
+                        context,
+                      ).accent.withValues(alpha: 0.1),
                       child: Text(
                         '${p.firstName[0]}${p.lastName[0]}',
-                        style: const TextStyle(
-                            color: AppTheme.primaryColor,
-                            fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: AppColors.of(context).accent,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                    title: Text(p.fullName,
-                        style:
-                            const TextStyle(fontWeight: FontWeight.w600)),
+                    title: Text(
+                      p.fullName,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     subtitle: Text(
                       [
                         if (p.mrn != null) p.mrn!,
@@ -342,7 +383,9 @@ class _RosterScreenState extends State<RosterScreen> {
                         p.ageDisplay,
                       ].join(' · '),
                       style: TextStyle(
-                          fontSize: 12, color: AppTheme.gray600),
+                        fontSize: 12,
+                        color: AppColors.of(context).textSecondary,
+                      ),
                     ),
                     onTap: () {
                       Navigator.of(ctx).pop();
@@ -383,145 +426,180 @@ class _RosterCard extends StatelessWidget {
       entry.seenById != null &&
       entry.seenById != currentUserId;
 
-  Color get _triageColor => switch (entry.triageSeverity) {
-        'critical' => AppTheme.errorColor,
-        'urgent'   => AppTheme.warningColor,
-        'moderate' => Colors.blue,
-        'low'      => AppTheme.successColor,
-        _          => AppTheme.gray600,
-      };
+  Color _triageColor(BuildContext context) => switch (entry.triageSeverity) {
+    'critical' => AppColors.of(context).critical,
+    'urgent' => AppColors.of(context).warning,
+    'moderate' => Colors.blue,
+    'low' => AppColors.of(context).success,
+    _ => AppColors.of(context).textSecondary,
+  };
 
   @override
   Widget build(BuildContext context) {
     return Opacity(
       opacity: _isLockedByOther ? 0.5 : 1.0,
       child: Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      clipBehavior: Clip.hardEdge,
-      child: InkWell(
-        // no-op when locked — subtitle already shows "Consulting with Dr. X"
-        onTap: _isLockedByOther ? null : onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              // Triage severity stripe
-              Container(
-                width: 4,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: _triageColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: 12),
-
-              // Avatar
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: patient.hasCriticalAllergies
-                    ? AppTheme.errorColor.withValues(alpha: 0.15)
-                    : AppTheme.primaryColor.withValues(alpha: 0.1),
-                child: Text(
-                  '${patient.firstName[0]}${patient.lastName[0]}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: patient.hasCriticalAllergies
-                        ? AppTheme.errorColor
-                        : AppTheme.primaryColor,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        clipBehavior: Clip.hardEdge,
+        child: InkWell(
+          // no-op when locked — subtitle already shows "Consulting with Dr. X"
+          onTap: _isLockedByOther ? null : onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                // Triage severity stripe
+                Container(
+                  width: 4,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: _triageColor(context),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
+                const SizedBox(width: 12),
 
-              // Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Expanded(
-                        child: Text(patient.fullName,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600, fontSize: 15)),
-                      ),
-                      if (patient.hasCriticalAllergies)
-                        Tooltip(
-                          message: 'Critical allergies',
-                          child: Icon(Icons.warning,
-                              size: 16, color: AppTheme.errorColor),
-                        ),
-                    ]),
-                    const SizedBox(height: 2),
-                    Text(
-                      [
-                        if (patient.mrn != null) patient.mrn!,
-                        patient.ageDisplay,
-                        patient.gender,
-                      ].join(' · '),
-                      style: TextStyle(fontSize: 12, color: AppTheme.gray600),
+                // Avatar
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: patient.hasCriticalAllergies
+                      ? AppColors.of(context).critical.withValues(alpha: 0.15)
+                      : AppColors.of(context).accent.withValues(alpha: 0.1),
+                  child: Text(
+                    '${patient.firstName[0]}${patient.lastName[0]}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: patient.hasCriticalAllergies
+                          ? AppColors.of(context).critical
+                          : AppColors.of(context).accent,
                     ),
-                    const SizedBox(height: 4),
-                    // When in consultation show doctor name; otherwise triage chip
-                    entry.isInConsultation
-                        ? Row(children: [
-                            Icon(Icons.medical_services,
-                                size: 13, color: Colors.blue.shade600),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                'Consulting with ${entry.seenByName ?? 'a doctor'}',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.blue.shade700,
-                                    fontWeight: FontWeight.w500),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ])
-                        : Row(children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: _triageColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                entry.triageSeverity?.toUpperCase() ?? 'UNSET',
-                                style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: _triageColor),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: AppTheme.warningColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                entry.status.toUpperCase(),
-                                style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppTheme.warningColor),
-                              ),
-                            ),
-                          ]),
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Icon(Icons.chevron_right,
-                  color: AppTheme.gray600.withValues(alpha: 0.4)),
-            ],
+                const SizedBox(width: 12),
+
+                // Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              patient.fullName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                          if (patient.hasCriticalAllergies)
+                            Tooltip(
+                              message: 'Critical allergies',
+                              child: Icon(
+                                Icons.warning,
+                                size: 16,
+                                color: AppColors.of(context).critical,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        [
+                          if (patient.mrn != null) patient.mrn!,
+                          patient.ageDisplay,
+                          patient.gender,
+                        ].join(' · '),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.of(context).textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      // When in consultation show doctor name; otherwise triage chip
+                      entry.isInConsultation
+                          ? Row(
+                              children: [
+                                Icon(
+                                  Icons.medical_services,
+                                  size: 13,
+                                  color: Colors.blue.shade600,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    'Consulting with ${entry.seenByName ?? 'a doctor'}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.blue.shade700,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 1,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _triageColor(
+                                      context,
+                                    ).withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    entry.triageSeverity?.toUpperCase() ??
+                                        'UNSET',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: _triageColor(context),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 1,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.of(
+                                      context,
+                                    ).warning.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    entry.status.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.of(context).warning,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.chevron_right,
+                  color: AppColors.of(
+                    context,
+                  ).textSecondary.withValues(alpha: 0.4),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
       ), // Card
     ); // Opacity
   }
@@ -541,21 +619,27 @@ class _EmptyRoster extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.event_available,
-                size: 64,
-                color: AppTheme.gray600.withValues(alpha: 0.5)),
+            Icon(
+              Icons.event_available,
+              size: 64,
+              color: AppColors.of(context).textSecondary.withValues(alpha: 0.5),
+            ),
             const SizedBox(height: 16),
-            const Text('No patients on today\'s roster',
-                style:
-                    TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                textAlign: TextAlign.center),
+            const Text(
+              'No patients on today\'s roster',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 8),
             Text(
               isNurse
                   ? 'Tap "Add to Roster" to queue existing patients, '
-                      'or register a new patient.'
+                        'or register a new patient.'
                   : 'No roster entries for today.',
-              style: TextStyle(fontSize: 13, color: AppTheme.gray600),
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.of(context).textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -576,11 +660,17 @@ class _ErrorView extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.error_outline, size: 48, color: AppTheme.errorColor),
+          Icon(
+            Icons.error_outline,
+            size: 48,
+            color: AppColors.of(context).critical,
+          ),
           const SizedBox(height: 12),
-          Text(message,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppTheme.gray600)),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.of(context).textSecondary),
+          ),
           const SizedBox(height: 16),
           AdaptiveFilledButton(onPressed: onRetry, child: const Text('Retry')),
         ],

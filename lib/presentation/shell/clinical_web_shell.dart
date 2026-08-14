@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../config/theme.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/intra_grant_provider.dart';
 import '../../data/providers/referral_provider.dart';
@@ -19,6 +18,7 @@ import '../subscription/screens/subscription_details_screen.dart';
 import '../sync/screens/sync_screen.dart';
 import '../sync/widgets/root_warning_banner.dart';
 import '../sync/widgets/sync_banner.dart';
+import '../../config/app_colors.dart';
 
 /// Web shell for clinical staff: collapsible NavigationRail sidebar + IndexedStack.
 /// Four primary destinations: Dashboard · Patients · Roster · Access Grants.
@@ -116,11 +116,13 @@ class _ClinicalSidebar extends StatelessWidget {
                 selectedIndex: selectedIndex,
                 onDestinationSelected: onDestinationSelected,
                 backgroundColor: Colors.white,
-                selectedIconTheme:
-                    IconThemeData(color: AppTheme.primaryColor),
+                selectedIconTheme: IconThemeData(
+                  color: AppColors.of(context).accent,
+                ),
                 selectedLabelTextStyle: TextStyle(
-                    color: AppTheme.primaryColor,
-                    fontWeight: FontWeight.w600),
+                  color: AppColors.of(context).accent,
+                  fontWeight: FontWeight.w600,
+                ),
                 destinations: [
                   const NavigationRailDestination(
                     icon: Icon(Icons.dashboard_outlined),
@@ -182,9 +184,7 @@ class _ClinicalSidebar extends StatelessWidget {
               ),
             ),
           ),
-          ClipRect(
-            child: _SidebarFooter(expanded: expanded),
-          ),
+          ClipRect(child: _SidebarFooter(expanded: expanded)),
         ],
       ),
     );
@@ -218,7 +218,8 @@ class _SidebarFooter extends StatelessWidget {
               color: const Color(0xFF1565C0),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                    builder: (_) => const SubscriptionDetailsScreen()),
+                  builder: (_) => const SubscriptionDetailsScreen(),
+                ),
               ),
             ),
           if (auth.canEmergencyAccess && sub.isProfessionalOrHigher == true)
@@ -229,7 +230,8 @@ class _SidebarFooter extends StatelessWidget {
               color: Colors.red,
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                    builder: (_) => const EmergencyAccessScreen()),
+                  builder: (_) => const EmergencyAccessScreen(),
+                ),
               ),
             ),
           if (sub.isProfessionalOrHigher == true)
@@ -242,7 +244,8 @@ class _SidebarFooter extends StatelessWidget {
                 expanded: expanded,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                      builder: (_) => const ReferralsScreen()),
+                    builder: (_) => const ReferralsScreen(),
+                  ),
                 ),
               ),
             ),
@@ -257,8 +260,7 @@ class _SidebarFooter extends StatelessWidget {
               expanded: expanded,
               color: sync.hasPendingConflicts ? Colors.orange.shade700 : null,
               onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                    builder: (_) => const SyncScreen()),
+                MaterialPageRoute<void>(builder: (_) => const SyncScreen()),
               ),
             ),
           ),
@@ -268,7 +270,8 @@ class _SidebarFooter extends StatelessWidget {
             expanded: expanded,
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                  builder: (_) => const SubscriptionDetailsScreen()),
+                builder: (_) => const SubscriptionDetailsScreen(),
+              ),
             ),
           ),
           _FooterItem(
@@ -277,7 +280,8 @@ class _SidebarFooter extends StatelessWidget {
             expanded: expanded,
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                  builder: (_) => const StaffProfileScreen()),
+                builder: (_) => const StaffProfileScreen(),
+              ),
             ),
           ),
           _FooterItem(

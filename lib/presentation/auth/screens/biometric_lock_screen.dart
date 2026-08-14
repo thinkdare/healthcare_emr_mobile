@@ -44,7 +44,7 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
     });
 
     final svc = context.read<BiometricProvider>().service;
-    final ok  = await svc.authenticate(
+    final ok = await svc.authenticate(
       reason: 'Unlock Voya to access patient records',
     );
 
@@ -77,7 +77,7 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
     return PopScope(
       canPop: false, // cannot dismiss by back gesture
       child: Scaffold(
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.of(context).accent,
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -93,24 +93,31 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                       color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Icon(Icons.health_and_safety,
-                        size: 48, color: Colors.white),
+                    child: const Icon(
+                      Icons.health_and_safety,
+                      size: 48,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(height: 24),
 
-                  const Text('Voya',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1)),
+                  const Text(
+                    'Voya',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
+                  ),
                   const SizedBox(height: 8),
 
                   Text(
                     'Welcome back, ${auth.displayName}',
                     style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 15),
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 15,
+                    ),
                   ),
                   const SizedBox(height: 48),
 
@@ -135,15 +142,16 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                           ? Padding(
                               padding: const EdgeInsets.all(20),
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: AppColors.primary),
+                                strokeWidth: 2.5,
+                                color: AppColors.of(context).accent,
+                              ),
                             )
                           : Icon(
                               _biometricIcon(),
                               size: 36,
                               color: _failed
                                   ? Colors.red
-                                  : AppColors.primary,
+                                  : AppColors.of(context).accent,
                             ),
                     ),
                   ),
@@ -153,11 +161,12 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                     _authenticating
                         ? 'Verifying…'
                         : _failed
-                            ? 'Authentication failed. Try again.'
-                            : 'Tap to unlock with $_biometricLabel',
+                        ? 'Authentication failed. Try again.'
+                        : 'Tap to unlock with $_biometricLabel',
                     style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 13),
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 13,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 48),

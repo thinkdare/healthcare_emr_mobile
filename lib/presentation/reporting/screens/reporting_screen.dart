@@ -2,10 +2,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../core/platform.dart';
 import 'package:provider/provider.dart';
-import '../../../config/theme.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/reporting_provider.dart';
 import '../../../data/repositories/reporting_repository.dart';
+import '../../../config/app_colors.dart';
 
 class ReportingScreen extends StatefulWidget {
   const ReportingScreen({super.key});
@@ -80,8 +80,7 @@ class _ReportingScreenState extends State<ReportingScreen>
       body: Consumer<ReportingProvider>(
         builder: (context, rp, _) {
           if (rp.error != null) {
-            return _ErrorView(
-                message: rp.error!, onRetry: _loadAll);
+            return _ErrorView(message: rp.error!, onRetry: _loadAll);
           }
 
           return TabBarView(
@@ -118,7 +117,8 @@ class _OrgDashboardTab extends StatelessWidget {
       return const _EmptyStats(
         icon: Icons.bar_chart_outlined,
         message: 'Organisation stats not yet computed',
-        subtitle: 'Stats are generated nightly. '
+        subtitle:
+            'Stats are generated nightly. '
             'Check back after the first nightly run.',
       );
     }
@@ -139,14 +139,26 @@ class _OrgDashboardTab extends StatelessWidget {
           children: [
             _SectionHeader('Overview'),
             _StatsGrid([
-              _StatItem('Facilities',
-                  _str(stats['total_tenants']), Icons.business),
-              _StatItem('Staff Members',
-                  _str(stats['total_staff']), Icons.people),
-              _StatItem('Total Patients',
-                  _str(stats['total_patients']), Icons.personal_injury),
-              _StatItem('Active Subscriptions',
-                  _str(stats['active_subscriptions']), Icons.subscriptions),
+              _StatItem(
+                'Facilities',
+                _str(stats['total_tenants']),
+                Icons.business,
+              ),
+              _StatItem(
+                'Staff Members',
+                _str(stats['total_staff']),
+                Icons.people,
+              ),
+              _StatItem(
+                'Total Patients',
+                _str(stats['total_patients']),
+                Icons.personal_injury,
+              ),
+              _StatItem(
+                'Active Subscriptions',
+                _str(stats['active_subscriptions']),
+                Icons.subscriptions,
+              ),
             ]),
             const SizedBox(height: 24),
             if (stats['by_facility'] != null) ...[
@@ -157,8 +169,10 @@ class _OrgDashboardTab extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 'Stats generated: ${_formatTs(stats['generated_at'])}',
-                style: const TextStyle(
-                    fontSize: 11, color: AppTheme.gray600),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.of(context).textSecondary,
+                ),
               ),
             ],
           ],
@@ -181,16 +195,20 @@ class _OrgDashboardTab extends StatelessWidget {
               Text(
                 m['name'] as String? ?? 'Facility',
                 style: const TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 14),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
               ),
               const SizedBox(height: 8),
-              Row(children: [
-                _MiniStat('Patients', _str(m['patients'])),
-                const SizedBox(width: 16),
-                _MiniStat('Staff', _str(m['staff'])),
-                const SizedBox(width: 16),
-                _MiniStat('Appointments', _str(m['appointments'])),
-              ]),
+              Row(
+                children: [
+                  _MiniStat('Patients', _str(m['patients'])),
+                  const SizedBox(width: 16),
+                  _MiniStat('Staff', _str(m['staff'])),
+                  const SizedBox(width: 16),
+                  _MiniStat('Appointments', _str(m['appointments'])),
+                ],
+              ),
             ],
           ),
         ),
@@ -217,7 +235,8 @@ class _TenantDashboardTab extends StatelessWidget {
       return const _EmptyStats(
         icon: Icons.analytics_outlined,
         message: 'Facility stats not yet computed',
-        subtitle: 'Stats are generated nightly. '
+        subtitle:
+            'Stats are generated nightly. '
             'Check back after the first nightly run.',
       );
     }
@@ -227,9 +246,7 @@ class _TenantDashboardTab extends StatelessWidget {
         final auth = context.read<AuthProvider>();
         final tenantId = auth.activeFacility?.id;
         if (tenantId != null) {
-          await context
-              .read<ReportingProvider>()
-              .loadTenantDashboard(tenantId);
+          await context.read<ReportingProvider>().loadTenantDashboard(tenantId);
         }
       },
       child: SingleChildScrollView(
@@ -240,47 +257,77 @@ class _TenantDashboardTab extends StatelessWidget {
           children: [
             _SectionHeader('Patient Activity'),
             _StatsGrid([
-              _StatItem('Total Patients',
-                  _str(stats['total_patients']), Icons.personal_injury),
-              _StatItem('New (30 days)',
-                  _str(stats['new_patients_30d']), Icons.person_add),
-              _StatItem('Appointments',
-                  _str(stats['total_appointments']), Icons.event),
-              _StatItem('Prescriptions',
-                  _str(stats['total_prescriptions']), Icons.medication),
+              _StatItem(
+                'Total Patients',
+                _str(stats['total_patients']),
+                Icons.personal_injury,
+              ),
+              _StatItem(
+                'New (30 days)',
+                _str(stats['new_patients_30d']),
+                Icons.person_add,
+              ),
+              _StatItem(
+                'Appointments',
+                _str(stats['total_appointments']),
+                Icons.event,
+              ),
+              _StatItem(
+                'Prescriptions',
+                _str(stats['total_prescriptions']),
+                Icons.medication,
+              ),
             ]),
             const SizedBox(height: 24),
             _SectionHeader('Clinical Activity'),
             _StatsGrid([
-              _StatItem('Lab Orders',
-                  _str(stats['total_lab_results']), Icons.science),
-              _StatItem('Documents',
-                  _str(stats['total_documents']), Icons.folder),
-              _StatItem('Emergency Events',
-                  _str(stats['emergency_access_count']),
-                  Icons.warning_amber,
-                  color: AppTheme.errorColor),
-              _StatItem('Access Grants',
-                  _str(stats['access_grants_count']), Icons.shield),
+              _StatItem(
+                'Lab Orders',
+                _str(stats['total_lab_results']),
+                Icons.science,
+              ),
+              _StatItem(
+                'Documents',
+                _str(stats['total_documents']),
+                Icons.folder,
+              ),
+              _StatItem(
+                'Emergency Events',
+                _str(stats['emergency_access_count']),
+                Icons.warning_amber,
+                color: AppColors.of(context).critical,
+              ),
+              _StatItem(
+                'Access Grants',
+                _str(stats['access_grants_count']),
+                Icons.shield,
+              ),
             ]),
             const SizedBox(height: 24),
             _SectionHeader('Compliance'),
             _StatsGrid([
-              _StatItem('Audit Events',
-                  _str(stats['audit_log_count']), Icons.history),
-              _StatItem('Unreviewed Emergency',
-                  _str(stats['unreviewed_emergency_count']),
-                  Icons.rate_review,
-                  color: (stats['unreviewed_emergency_count'] as num? ?? 0) > 0
-                      ? AppTheme.warningColor
-                      : AppTheme.successColor),
+              _StatItem(
+                'Audit Events',
+                _str(stats['audit_log_count']),
+                Icons.history,
+              ),
+              _StatItem(
+                'Unreviewed Emergency',
+                _str(stats['unreviewed_emergency_count']),
+                Icons.rate_review,
+                color: (stats['unreviewed_emergency_count'] as num? ?? 0) > 0
+                    ? AppColors.of(context).warning
+                    : AppColors.of(context).success,
+              ),
             ]),
             if (stats['generated_at'] != null) ...[
               const SizedBox(height: 16),
               Text(
                 'Stats generated: ${_formatTs(stats['generated_at'])}',
-                style: const TextStyle(
-                    fontSize: 11, color: AppTheme.gray600),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.of(context).textSecondary,
+                ),
               ),
             ],
           ],
@@ -375,76 +422,85 @@ class _AuditLogTabState extends State<_AuditLogTab> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Filter Audit Log',
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                'Filter Audit Log',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 16),
               AdaptiveDropdown<String?>(
                 value: _actionFilter,
                 decoration: const InputDecoration(labelText: 'Action'),
-                items: _actions.map((a) => DropdownMenuItem(
-                      value: a,
-                      child: Text(a == null ? 'All actions' : _label(a)),
-                    )).toList(),
-                onChanged: (v) =>
-                    setLocal(() => _actionFilter = v),
+                items: _actions
+                    .map(
+                      (a) => DropdownMenuItem(
+                        value: a,
+                        child: Text(a == null ? 'All actions' : _label(a)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) => setLocal(() => _actionFilter = v),
               ),
               const SizedBox(height: 12),
               AdaptiveDropdown<String?>(
                 value: _authorityFilter,
-                decoration:
-                    const InputDecoration(labelText: 'Access authority'),
-                items: _authorities.map((a) => DropdownMenuItem(
-                      value: a,
-                      child: Text(a == null
-                          ? 'All authorities'
-                          : _authorityLabel(a)),
-                    )).toList(),
-                onChanged: (v) =>
-                    setLocal(() => _authorityFilter = v),
+                decoration: const InputDecoration(
+                  labelText: 'Access authority',
+                ),
+                items: _authorities
+                    .map(
+                      (a) => DropdownMenuItem(
+                        value: a,
+                        child: Text(
+                          a == null ? 'All authorities' : _authorityLabel(a),
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) => setLocal(() => _authorityFilter = v),
               ),
               const SizedBox(height: 12),
               AdaptiveDropdown<bool?>(
                 value: _emergencyFilter,
-                decoration:
-                    const InputDecoration(labelText: 'Emergency events'),
+                decoration: const InputDecoration(
+                  labelText: 'Emergency events',
+                ),
                 items: const [
                   DropdownMenuItem(value: null, child: Text('All events')),
+                  DropdownMenuItem(value: true, child: Text('Emergency only')),
                   DropdownMenuItem(
-                      value: true,
-                      child: Text('Emergency only')),
-                  DropdownMenuItem(
-                      value: false,
-                      child: Text('Non-emergency only')),
+                    value: false,
+                    child: Text('Non-emergency only'),
+                  ),
                 ],
-                onChanged: (v) =>
-                    setLocal(() => _emergencyFilter = v),
+                onChanged: (v) => setLocal(() => _emergencyFilter = v),
               ),
               const SizedBox(height: 20),
-              Row(children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      setLocal(() {
-                        _actionFilter = null;
-                        _authorityFilter = null;
-                        _emergencyFilter = null;
-                      });
-                    },
-                    child: const Text('Clear'),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        setLocal(() {
+                          _actionFilter = null;
+                          _authorityFilter = null;
+                          _emergencyFilter = null;
+                        });
+                      },
+                      child: const Text('Clear'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: AdaptiveFilledButton(
-                    onPressed: () {
-                      Navigator.of(ctx).pop();
-                      _applyFilters();
-                    },
-                    child: const Text('Apply'),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: AdaptiveFilledButton(
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        _applyFilters();
+                      },
+                      child: const Text('Apply'),
+                    ),
                   ),
-                ),
-              ]),
+                ],
+              ),
             ],
           ),
         ),
@@ -455,7 +511,8 @@ class _AuditLogTabState extends State<_AuditLogTab> {
   @override
   Widget build(BuildContext context) {
     final rp = widget.rp;
-    final hasFilters = _actionFilter != null ||
+    final hasFilters =
+        _actionFilter != null ||
         _authorityFilter != null ||
         _emergencyFilter != null;
 
@@ -463,15 +520,16 @@ class _AuditLogTabState extends State<_AuditLogTab> {
       children: [
         // Filter bar
         Container(
-          color: AppTheme.gray100,
-          padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          color: AppColors.of(context).surfaceTint,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
               Text(
                 '${rp.auditTotal} events',
-                style: const TextStyle(
-                    fontSize: 13, color: AppTheme.gray600),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.of(context).textSecondary,
+                ),
               ),
               const Spacer(),
               Badge(
@@ -487,15 +545,13 @@ class _AuditLogTabState extends State<_AuditLogTab> {
         ),
 
         if (rp.loadingAudit && rp.auditLogs.isEmpty)
-          const Expanded(
-              child: Center(child: CircularProgressIndicator()))
+          const Expanded(child: Center(child: CircularProgressIndicator()))
         else if (rp.auditLogs.isEmpty)
           const Expanded(
             child: _EmptyStats(
               icon: Icons.history_outlined,
               message: 'No audit events found',
-              subtitle:
-                  'Try changing the filter or check back later.',
+              subtitle: 'Try changing the filter or check back later.',
             ),
           )
         else
@@ -504,20 +560,17 @@ class _AuditLogTabState extends State<_AuditLogTab> {
               onRefresh: () {
                 final auth = context.read<AuthProvider>();
                 final tenantId = auth.activeFacility?.id ?? '';
-                return widget.rp
-                    .loadAuditLog(tenantId, refresh: true);
+                return widget.rp.loadAuditLog(tenantId, refresh: true);
               },
               child: ListView.builder(
                 controller: _scrollCtrl,
                 padding: const EdgeInsets.all(8),
-                itemCount: rp.auditLogs.length +
-                    (rp.auditHasMore ? 1 : 0),
+                itemCount: rp.auditLogs.length + (rp.auditHasMore ? 1 : 0),
                 itemBuilder: (ctx, i) {
                   if (i == rp.auditLogs.length) {
                     return const Padding(
                       padding: EdgeInsets.all(16),
-                      child: Center(
-                          child: CircularProgressIndicator()),
+                      child: Center(child: CircularProgressIndicator()),
                     );
                   }
                   return _AuditEntryCard(entry: rp.auditLogs[i]);
@@ -530,23 +583,23 @@ class _AuditLogTabState extends State<_AuditLogTab> {
   }
 
   String _label(String action) => switch (action) {
-        'viewed'           => 'Viewed',
-        'created'          => 'Created',
-        'updated'          => 'Updated',
-        'deleted'          => 'Deleted',
-        'emergency_access' => 'Emergency Access',
-        'access_denied'    => 'Access Denied',
-        _                  => action,
-      };
+    'viewed' => 'Viewed',
+    'created' => 'Created',
+    'updated' => 'Updated',
+    'deleted' => 'Deleted',
+    'emergency_access' => 'Emergency Access',
+    'access_denied' => 'Access Denied',
+    _ => action,
+  };
 
   String _authorityLabel(String a) => switch (a) {
-        'primary_provider'   => 'Primary Provider',
-        'intra_tenant_grant' => 'Intra-facility Grant',
-        'cross_tenant_grant' => 'Cross-facility Grant',
-        'emergency'          => 'Emergency',
-        'denied'             => 'Denied',
-        _                    => a,
-      };
+    'primary_provider' => 'Primary Provider',
+    'intra_tenant_grant' => 'Intra-facility Grant',
+    'cross_tenant_grant' => 'Cross-facility Grant',
+    'emergency' => 'Emergency',
+    'denied' => 'Denied',
+    _ => a,
+  };
 }
 
 class _AuditEntryCard extends StatelessWidget {
@@ -556,7 +609,7 @@ class _AuditEntryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final emergencyColor = entry.wasEmergency
-        ? AppTheme.errorColor
+        ? AppColors.of(context).critical
         : null;
 
     return Card(
@@ -565,7 +618,8 @@ class _AuditEntryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         side: entry.wasEmergency
             ? BorderSide(
-                color: AppTheme.errorColor.withValues(alpha: 0.4))
+                color: AppColors.of(context).critical.withValues(alpha: 0.4),
+              )
             : BorderSide.none,
       ),
       child: Padding(
@@ -578,14 +632,14 @@ class _AuditEntryCard extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: (emergencyColor ?? AppTheme.primaryColor)
+                color: (emergencyColor ?? AppColors.of(context).accent)
                     .withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 _actionIcon(entry.action),
                 size: 18,
-                color: emergencyColor ?? AppTheme.primaryColor,
+                color: emergencyColor ?? AppColors.of(context).accent,
               ),
             ),
             const SizedBox(width: 12),
@@ -594,53 +648,70 @@ class _AuditEntryCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: [
-                    Text(
-                      entry.actionDisplay,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                        color: emergencyColor,
-                      ),
-                    ),
-                    if (entry.resourceType != null) ...[
-                      const Text(' · ',
-                          style: TextStyle(color: AppTheme.gray600)),
+                  Row(
+                    children: [
                       Text(
-                        entry.resourceType!,
-                        style: const TextStyle(
-                            fontSize: 12, color: AppTheme.gray600),
-                      ),
-                    ],
-                    const Spacer(),
-                    if (entry.wasEmergency)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppTheme.errorColor.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(4),
+                        entry.actionDisplay,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          color: emergencyColor,
                         ),
-                        child: const Text(
-                          'EMERGENCY',
+                      ),
+                      if (entry.resourceType != null) ...[
+                        Text(
+                          ' · ',
                           style: TextStyle(
+                            color: AppColors.of(context).textSecondary,
+                          ),
+                        ),
+                        Text(
+                          entry.resourceType!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.of(context).textSecondary,
+                          ),
+                        ),
+                      ],
+                      const Spacer(),
+                      if (entry.wasEmergency)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.of(
+                              context,
+                            ).critical.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'EMERGENCY',
+                            style: TextStyle(
                               fontSize: 9,
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.errorColor),
+                              color: AppColors.of(context).critical,
+                            ),
+                          ),
                         ),
-                      ),
-                  ]),
+                    ],
+                  ),
                   const SizedBox(height: 2),
                   Text(
                     entry.authorityDisplay,
-                    style: const TextStyle(
-                        fontSize: 11, color: AppTheme.gray600),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.of(context).textSecondary,
+                    ),
                   ),
                   if (entry.accessedAt != null)
                     Text(
                       _formatDate(entry.accessedAt!),
-                      style: const TextStyle(
-                          fontSize: 11, color: AppTheme.gray600),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.of(context).textSecondary,
+                      ),
                     ),
                 ],
               ),
@@ -652,14 +723,14 @@ class _AuditEntryCard extends StatelessWidget {
   }
 
   IconData _actionIcon(String action) => switch (action) {
-        'viewed'           => Icons.visibility,
-        'created'          => Icons.add_circle_outline,
-        'updated'          => Icons.edit_outlined,
-        'deleted'          => Icons.delete_outline,
-        'emergency_access' => Icons.warning_amber,
-        'access_denied'    => Icons.block,
-        _                  => Icons.receipt_long_outlined,
-      };
+    'viewed' => Icons.visibility,
+    'created' => Icons.add_circle_outline,
+    'updated' => Icons.edit_outlined,
+    'deleted' => Icons.delete_outline,
+    'emergency_access' => Icons.warning_amber,
+    'access_denied' => Icons.block,
+    _ => Icons.receipt_long_outlined,
+  };
 }
 
 // ── Audit Summary Tab ─────────────────────────────────────────────────────────
@@ -733,13 +804,28 @@ class _AuditSummaryTabState extends State<_AuditSummaryTab> {
             if (widget.rp.loadingAuditSummary)
               const Center(child: CircularProgressIndicator())
             else if (summary == null)
-              FilledButton(onPressed: _load, child: const Text('Generate Summary'))
+              FilledButton(
+                onPressed: _load,
+                child: const Text('Generate Summary'),
+              )
             else ...[
               _StatsGrid([
-                _StatItem('Total Events', _str(summary['total_events']), Icons.bar_chart),
-                _StatItem('Emergency Events', _str(summary['emergency_events']),
-                    Icons.warning_amber, color: AppTheme.errorColor),
-                _StatItem('Denied Events', _str(summary['denied_events']), Icons.block),
+                _StatItem(
+                  'Total Events',
+                  _str(summary['total_events']),
+                  Icons.bar_chart,
+                ),
+                _StatItem(
+                  'Emergency Events',
+                  _str(summary['emergency_events']),
+                  Icons.warning_amber,
+                  color: AppColors.of(context).critical,
+                ),
+                _StatItem(
+                  'Denied Events',
+                  _str(summary['denied_events']),
+                  Icons.block,
+                ),
               ]),
               const SizedBox(height: 24),
               const _SectionHeader('By Action'),
@@ -759,15 +845,20 @@ class _AuditSummaryTabState extends State<_AuditSummaryTab> {
       return [Text('No data.', style: TextStyle(color: Colors.grey.shade600))];
     }
     return raw.entries
-        .map((e) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  Expanded(child: Text(e.key.toString().replaceAll('_', ' '))),
-                  Text(e.value.toString(), style: const TextStyle(fontWeight: FontWeight.w600)),
-                ],
-              ),
-            ))
+        .map(
+          (e) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Expanded(child: Text(e.key.toString().replaceAll('_', ' '))),
+                Text(
+                  e.value.toString(),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        )
         .toList();
   }
 }
@@ -799,11 +890,14 @@ class _DsarTabState extends State<_DsarTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Generate a data subject access request report covering all recorded '
             'activity for a patient across facilities. Requires the patient\'s '
             'master patient ID.',
-            style: TextStyle(fontSize: 13, color: AppTheme.gray600),
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.of(context).textSecondary,
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -824,8 +918,10 @@ class _DsarTabState extends State<_DsarTab> {
                   },
             child: widget.rp.loadingDsar
                 ? const SizedBox(
-                    height: 18, width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2))
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : const Text('Generate Report'),
           ),
           const SizedBox(height: 24),
@@ -843,42 +939,70 @@ class _DsarTabState extends State<_DsarTab> {
     return [
       _SectionHeader('Patient'),
       Text('${master['first_name'] ?? ''} ${master['last_name'] ?? ''}'.trim()),
-      Text('DOB: ${master['date_of_birth'] ?? '—'}', style: const TextStyle(fontSize: 12)),
+      Text(
+        'DOB: ${master['date_of_birth'] ?? '—'}',
+        style: const TextStyle(fontSize: 12),
+      ),
       const SizedBox(height: 16),
       _SectionHeader('Summary'),
       _StatsGrid([
-        _StatItem('Total Access Events', _str(summary['total_access_events']), Icons.history),
-        _StatItem('Tenants Queried', _str(summary['tenants_queried']), Icons.business),
+        _StatItem(
+          'Total Access Events',
+          _str(summary['total_access_events']),
+          Icons.history,
+        ),
+        _StatItem(
+          'Tenants Queried',
+          _str(summary['tenants_queried']),
+          Icons.business,
+        ),
       ]),
       const SizedBox(height: 16),
-      _SectionHeader('Cross-Tenant Accesses (${(sources['cross_tenant_accesses'] as List? ?? []).length})'),
-      ...(sources['cross_tenant_accesses'] as List? ?? [])
-          .map((e) => _RawEntryCard(entry: e as Map)),
+      _SectionHeader(
+        'Cross-Tenant Accesses (${(sources['cross_tenant_accesses'] as List? ?? []).length})',
+      ),
+      ...(sources['cross_tenant_accesses'] as List? ?? []).map(
+        (e) => _RawEntryCard(entry: e as Map),
+      ),
       const SizedBox(height: 16),
-      _SectionHeader('Emergency Accesses (${(sources['emergency_accesses'] as List? ?? []).length})'),
-      ...(sources['emergency_accesses'] as List? ?? [])
-          .map((e) => _RawEntryCard(entry: e as Map)),
+      _SectionHeader(
+        'Emergency Accesses (${(sources['emergency_accesses'] as List? ?? []).length})',
+      ),
+      ...(sources['emergency_accesses'] as List? ?? []).map(
+        (e) => _RawEntryCard(entry: e as Map),
+      ),
       const SizedBox(height: 16),
-      _SectionHeader('Consent Events (${(sources['consent_events'] as List? ?? []).length})'),
-      ...(sources['consent_events'] as List? ?? [])
-          .map((e) => _RawEntryCard(entry: e as Map)),
+      _SectionHeader(
+        'Consent Events (${(sources['consent_events'] as List? ?? []).length})',
+      ),
+      ...(sources['consent_events'] as List? ?? []).map(
+        (e) => _RawEntryCard(entry: e as Map),
+      ),
       const SizedBox(height: 16),
       _SectionHeader('Facility Audit Logs'),
       if ((sources['facility_audit_logs'] as Map? ?? {}).isEmpty)
-        Text('No facility audit logs.', style: TextStyle(color: Colors.grey.shade600))
+        Text(
+          'No facility audit logs.',
+          style: TextStyle(color: Colors.grey.shade600),
+        )
       else
-        ...((sources['facility_audit_logs'] as Map).entries.map((tenantEntry) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(tenantEntry.key.toString(),
-                      style: const TextStyle(fontWeight: FontWeight.w700)),
-                  ...(tenantEntry.value as List)
-                      .map((e) => _RawEntryCard(entry: e as Map)),
-                ],
-              ),
-            ))),
+        ...((sources['facility_audit_logs'] as Map).entries.map(
+          (tenantEntry) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tenantEntry.key.toString(),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                ...(tenantEntry.value as List).map(
+                  (e) => _RawEntryCard(entry: e as Map),
+                ),
+              ],
+            ),
+          ),
+        )),
     ];
   }
 }
@@ -914,10 +1038,11 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         text,
-        style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.gray900),
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: AppColors.of(context).textPrimary,
+        ),
       ),
     );
   }
@@ -956,7 +1081,7 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = item.color ?? AppTheme.primaryColor;
+    final color = item.color ?? AppColors.of(context).accent;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -973,14 +1098,17 @@ class _StatCard extends StatelessWidget {
           Text(
             item.value,
             style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: color),
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
           Text(
             item.label,
-            style: const TextStyle(
-                fontSize: 11, color: AppTheme.gray600),
+            style: TextStyle(
+              fontSize: 11,
+              color: AppColors.of(context).textSecondary,
+            ),
             maxLines: 2,
           ),
         ],
@@ -999,12 +1127,17 @@ class _MiniStat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(value,
-            style: const TextStyle(
-                fontWeight: FontWeight.bold, fontSize: 15)),
-        Text(label,
-            style: const TextStyle(
-                fontSize: 11, color: AppTheme.gray600)),
+        Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: AppColors.of(context).textSecondary,
+          ),
+        ),
       ],
     );
   }
@@ -1014,10 +1147,11 @@ class _EmptyStats extends StatelessWidget {
   final IconData icon;
   final String message;
   final String subtitle;
-  const _EmptyStats(
-      {required this.icon,
-      required this.message,
-      required this.subtitle});
+  const _EmptyStats({
+    required this.icon,
+    required this.message,
+    required this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1027,18 +1161,26 @@ class _EmptyStats extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon,
-                size: 56, color: AppTheme.gray600.withValues(alpha: 0.4)),
+            Icon(
+              icon,
+              size: 56,
+              color: AppColors.of(context).textSecondary.withValues(alpha: 0.4),
+            ),
             const SizedBox(height: 16),
-            Text(message,
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w600),
-                textAlign: TextAlign.center),
+            Text(
+              message,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 8),
-            Text(subtitle,
-                style: const TextStyle(
-                    fontSize: 13, color: AppTheme.gray600),
-                textAlign: TextAlign.center),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.of(context).textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -1059,12 +1201,17 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline,
-                size: 48, color: AppTheme.errorColor),
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: AppColors.of(context).critical,
+            ),
             const SizedBox(height: 12),
-            Text(message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppTheme.gray600)),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.of(context).textSecondary),
+            ),
             const SizedBox(height: 16),
             AdaptiveFilledButton(
               icon: const Icon(Icons.refresh, size: 18),

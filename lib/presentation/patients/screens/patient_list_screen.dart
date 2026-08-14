@@ -4,9 +4,9 @@ import 'package:provider/provider.dart';
 import '../../../core/platform.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/patient_provider.dart';
-import '../../../config/theme.dart';
 import '../widgets/patient_card.dart';
 import 'patient_form_screen.dart';
+import '../../../config/app_colors.dart';
 
 class PatientListScreen extends StatefulWidget {
   const PatientListScreen({super.key});
@@ -27,7 +27,9 @@ class _PatientListScreenState extends State<PatientListScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = context.read<AuthProvider>();
-      context.read<PatientProvider>().loadPatients(providerId: auth.currentUserId);
+      context.read<PatientProvider>().loadPatients(
+        providerId: auth.currentUserId,
+      );
     });
   }
 
@@ -43,9 +45,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       final auth = context.read<AuthProvider>();
-      context
-          .read<PatientProvider>()
-          .loadMore(providerId: auth.currentUserId);
+      context.read<PatientProvider>().loadMore(providerId: auth.currentUserId);
     }
   }
 
@@ -54,17 +54,17 @@ class _PatientListScreenState extends State<PatientListScreen> {
     context.read<PatientProvider>().clearSearch();
     _searchController.clear();
     await context.read<PatientProvider>().loadPatients(
-          providerId: auth.currentUserId,
-          forceRefresh: true,
-        );
+      providerId: auth.currentUserId,
+      forceRefresh: true,
+    );
   }
 
   void _onSearchChanged(String query) {
     final auth = context.read<AuthProvider>();
     context.read<PatientProvider>().search(
-          query,
-          providerId: auth.currentUserId,
-        );
+      query,
+      providerId: auth.currentUserId,
+    );
   }
 
   @override
@@ -74,13 +74,15 @@ class _PatientListScreenState extends State<PatientListScreen> {
         onPressed: () async {
           final result = await Navigator.of(context).push(
             kIsIOS
-                ? CupertinoPageRoute(
-                    builder: (_) => const PatientFormScreen())
-                : MaterialPageRoute(
-                    builder: (_) => const PatientFormScreen()),
+                ? CupertinoPageRoute(builder: (_) => const PatientFormScreen())
+                : MaterialPageRoute(builder: (_) => const PatientFormScreen()),
           );
           if (result != null && context.mounted) {
-            showAdaptiveToast(context, 'Patient registered', type: ToastType.success);
+            showAdaptiveToast(
+              context,
+              'Patient registered',
+              type: ToastType.success,
+            );
           }
         },
         tooltip: 'New Patient',
@@ -98,9 +100,9 @@ class _PatientListScreenState extends State<PatientListScreen> {
                     context.read<PatientProvider>().clearSearch();
                   }
                 },
-                child: Icon(_showSearchBar
-                    ? CupertinoIcons.xmark
-                    : CupertinoIcons.search),
+                child: Icon(
+                  _showSearchBar ? CupertinoIcons.xmark : CupertinoIcons.search,
+                ),
               ),
             )
           : AppBar(
@@ -121,8 +123,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
                   : const Text('Patients'),
               actions: [
                 IconButton(
-                  icon:
-                      Icon(_showSearchBar ? Icons.close : Icons.search),
+                  icon: Icon(_showSearchBar ? Icons.close : Icons.search),
                   tooltip: _showSearchBar ? 'Close search' : 'Search',
                   onPressed: () {
                     setState(() => _showSearchBar = !_showSearchBar);
@@ -149,7 +150,9 @@ class _PatientListScreenState extends State<PatientListScreen> {
               if (kIsIOS && _showSearchBar)
                 Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: CupertinoSearchTextField(
                     controller: _searchController,
                     onChanged: _onSearchChanged,
@@ -180,44 +183,40 @@ class _PatientListScreenState extends State<PatientListScreen> {
                             : const CircularProgressIndicator(),
                       )
                     : isSearching
-                        ? Center(
-                            child: kIsIOS
-                                ? const CupertinoActivityIndicator()
-                                : const CircularProgressIndicator(),
-                          )
-                        : patients.isEmpty
-                            ? _EmptyState(
-                                isSearching: _showSearchBar &&
-                                    _searchController.text.isNotEmpty,
-                                searchQuery: _searchController.text,
-                              )
-                            : RefreshIndicator(
-                                onRefresh: _onRefresh,
-                                child: ListView.builder(
-                                  controller: _scrollController,
-                                  padding: const EdgeInsets.only(
-                                      top: 8, bottom: 32),
-                                  itemCount: patients.length +
-                                      (patientProvider.isLoadingMore
-                                          ? 1
-                                          : 0),
-                                  itemBuilder: (_, index) {
-                                    if (index == patients.length) {
-                                      return Padding(
-                                        padding: const EdgeInsets.all(16),
-                                        child: Center(
-                                          child: kIsIOS
-                                              ? const CupertinoActivityIndicator()
-                                              : const CircularProgressIndicator(),
-                                        ),
-                                      );
-                                    }
-                                    return PatientCard(
-                                      patient: patients[index],
-                                    );
-                                  },
+                    ? Center(
+                        child: kIsIOS
+                            ? const CupertinoActivityIndicator()
+                            : const CircularProgressIndicator(),
+                      )
+                    : patients.isEmpty
+                    ? _EmptyState(
+                        isSearching:
+                            _showSearchBar && _searchController.text.isNotEmpty,
+                        searchQuery: _searchController.text,
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _onRefresh,
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.only(top: 8, bottom: 32),
+                          itemCount:
+                              patients.length +
+                              (patientProvider.isLoadingMore ? 1 : 0),
+                          itemBuilder: (_, index) {
+                            if (index == patients.length) {
+                              return Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Center(
+                                  child: kIsIOS
+                                      ? const CupertinoActivityIndicator()
+                                      : const CircularProgressIndicator(),
                                 ),
-                              ),
+                              );
+                            }
+                            return PatientCard(patient: patients[index]);
+                          },
+                        ),
+                      ),
               ),
             ],
           );
@@ -246,12 +245,15 @@ class _CacheBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppTheme.warningColor.withValues(alpha: 0.12),
+      color: AppColors.of(context).warning.withValues(alpha: 0.12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Icon(Icons.offline_bolt,
-              size: 16, color: AppTheme.warningColor),
+          Icon(
+            Icons.offline_bolt,
+            size: 16,
+            color: AppColors.of(context).warning,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -259,13 +261,14 @@ class _CacheBanner extends StatelessWidget {
                   ? 'Showing cached data · last updated ${_timeAgo(lastRefreshed!)}'
                   : 'Showing cached data',
               style: TextStyle(
-                  fontSize: 12, color: AppTheme.warningColor),
+                fontSize: 12,
+                color: AppColors.of(context).warning,
+              ),
             ),
           ),
           AdaptiveTextButton(
             onPressed: onRefresh,
-            child: const Text('Refresh',
-                style: TextStyle(fontSize: 12)),
+            child: const Text('Refresh', style: TextStyle(fontSize: 12)),
           ),
         ],
       ),
@@ -284,21 +287,31 @@ class _ErrorBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppTheme.errorColor.withValues(alpha: 0.08),
+      color: AppColors.of(context).critical.withValues(alpha: 0.08),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          const Icon(Icons.error_outline,
-              size: 16, color: AppTheme.errorColor),
+          Icon(
+            Icons.error_outline,
+            size: 16,
+            color: AppColors.of(context).critical,
+          ),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(message,
-                style: const TextStyle(
-                    fontSize: 12, color: AppTheme.errorColor)),
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.of(context).critical,
+              ),
+            ),
           ),
           IconButton(
-            icon: const Icon(Icons.close,
-                size: 16, color: AppTheme.errorColor),
+            icon: Icon(
+              Icons.close,
+              size: 16,
+              color: AppColors.of(context).critical,
+            ),
             onPressed: onDismiss,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -315,8 +328,7 @@ class _EmptyState extends StatelessWidget {
   final bool isSearching;
   final String searchQuery;
 
-  const _EmptyState(
-      {required this.isSearching, required this.searchQuery});
+  const _EmptyState({required this.isSearching, required this.searchQuery});
 
   @override
   Widget build(BuildContext context) {
@@ -329,7 +341,7 @@ class _EmptyState extends StatelessWidget {
             Icon(
               isSearching ? Icons.search_off : Icons.people_outline,
               size: 64,
-              color: AppTheme.gray600,
+              color: AppColors.of(context).textSecondary,
             ),
             const SizedBox(height: 16),
             Text(
@@ -337,9 +349,10 @@ class _EmptyState extends StatelessWidget {
                   ? 'No patients matching "$searchQuery"'
                   : 'No patients yet',
               style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.gray600),
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.of(context).textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
@@ -347,7 +360,10 @@ class _EmptyState extends StatelessWidget {
               isSearching
                   ? 'Try a different name, MRN, phone or email'
                   : 'Add your first patient to get started',
-              style: TextStyle(fontSize: 13, color: AppTheme.gray600),
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.of(context).textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
           ],

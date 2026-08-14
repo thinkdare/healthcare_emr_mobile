@@ -5,8 +5,8 @@ import 'package:provider/provider.dart';
 import '../../../data/models/organization_models_enhanced.dart';
 import '../../../data/repositories/facility_repository.dart';
 import '../../../core/api/api_client.dart';
-import '../../../config/theme.dart';
 import 'facility_form_screen.dart';
+import '../../../config/app_colors.dart';
 
 class FacilitiesListScreen extends StatefulWidget {
   const FacilitiesListScreen({super.key});
@@ -63,14 +63,20 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
       try {
         await _repository.deleteFacility(facility.id);
         if (mounted) {
-          showAdaptiveToast(context, 'Facility deleted successfully',
-              type: ToastType.success);
+          showAdaptiveToast(
+            context,
+            'Facility deleted successfully',
+            type: ToastType.success,
+          );
           _loadFacilities();
         }
       } catch (e) {
         if (mounted) {
-          showAdaptiveToast(context, 'Failed to delete facility: $e',
-              type: ToastType.error);
+          showAdaptiveToast(
+            context,
+            'Failed to delete facility: $e',
+            type: ToastType.error,
+          );
         }
       }
     }
@@ -102,7 +108,11 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
       }
     } catch (e) {
       if (mounted) {
-        showAdaptiveToast(context, 'Failed to suspend staff: $e', type: ToastType.error);
+        showAdaptiveToast(
+          context,
+          'Failed to suspend staff: $e',
+          type: ToastType.error,
+        );
       }
     }
   }
@@ -110,10 +120,8 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
   Future<void> _navigateToAdd() async {
     final result = await Navigator.of(context).push(
       kIsIOS
-          ? CupertinoPageRoute<bool>(
-              builder: (_) => const FacilityFormScreen())
-          : MaterialPageRoute<bool>(
-              builder: (_) => const FacilityFormScreen()),
+          ? CupertinoPageRoute<bool>(builder: (_) => const FacilityFormScreen())
+          : MaterialPageRoute<bool>(builder: (_) => const FacilityFormScreen()),
     );
     if (result == true) _loadFacilities();
   }
@@ -122,9 +130,11 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
     final result = await Navigator.of(context).push(
       kIsIOS
           ? CupertinoPageRoute<bool>(
-              builder: (_) => FacilityFormScreen(facility: facility))
+              builder: (_) => FacilityFormScreen(facility: facility),
+            )
           : MaterialPageRoute<bool>(
-              builder: (_) => FacilityFormScreen(facility: facility)),
+              builder: (_) => FacilityFormScreen(facility: facility),
+            ),
     );
     if (result == true) _loadFacilities();
   }
@@ -187,19 +197,26 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: AppTheme.errorColor),
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: AppColors.of(context).critical,
+            ),
             const SizedBox(height: 16),
             Text(
               'Failed to load facilities',
               style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.gray900),
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.of(context).textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
-            Text(_error!,
-                style: TextStyle(color: AppTheme.gray600),
-                textAlign: TextAlign.center),
+            Text(
+              _error!,
+              style: TextStyle(color: AppColors.of(context).textSecondary),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 24),
             AdaptiveFilledButton(
               onPressed: _loadFacilities,
@@ -215,19 +232,25 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.business,
-                size: 80, color: AppTheme.gray600.withValues(alpha: 0.5)),
+            Icon(
+              Icons.business,
+              size: 80,
+              color: AppColors.of(context).textSecondary.withValues(alpha: 0.5),
+            ),
             const SizedBox(height: 16),
             Text(
               'No facilities yet',
               style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.gray900),
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: AppColors.of(context).textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
-            Text('Add your first facility to get started',
-                style: TextStyle(color: AppTheme.gray600)),
+            Text(
+              'Add your first facility to get started',
+              style: TextStyle(color: AppColors.of(context).textSecondary),
+            ),
             const SizedBox(height: 24),
             AdaptiveFilledButton(
               onPressed: _navigateToAdd,
@@ -293,12 +316,14 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      color: AppColors.of(
+                        context,
+                      ).accent.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       _facilityIcon(facility.type),
-                      color: AppTheme.primaryColor,
+                      color: AppColors.of(context).accent,
                       size: 24,
                     ),
                   ),
@@ -310,7 +335,9 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                         Text(
                           facility.name,
                           style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -318,7 +345,9 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                         Text(
                           _facilityTypeLabels[facility.type] ?? facility.type,
                           style: TextStyle(
-                              fontSize: 14, color: AppTheme.gray600),
+                            fontSize: 14,
+                            color: AppColors.of(context).textSecondary,
+                          ),
                         ),
                       ],
                     ),
@@ -327,7 +356,10 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              _buildInfoRow(Icons.location_on, facility.address ?? 'No address on file'),
+              _buildInfoRow(
+                Icons.location_on,
+                facility.address ?? 'No address on file',
+              ),
               if (facility.phone != null) ...[
                 const SizedBox(height: 8),
                 _buildInfoRow(Icons.phone, facility.phone!),
@@ -344,24 +376,31 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color:
-                            AppTheme.warningColor.withValues(alpha: 0.1),
+                        color: AppColors.of(
+                          context,
+                        ).warning.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.emergency,
-                              size: 14, color: AppTheme.warningColor),
+                          Icon(
+                            Icons.emergency,
+                            size: 14,
+                            color: AppColors.of(context).warning,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             'Emergency',
                             style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.warningColor),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.of(context).warning,
+                            ),
                           ),
                         ],
                       ),
@@ -381,8 +420,10 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
       return CupertinoButton(
         padding: EdgeInsets.zero,
         onPressed: () => _showIOSActions(facility),
-        child: const Icon(CupertinoIcons.ellipsis_circle,
-            color: CupertinoColors.systemGrey),
+        child: const Icon(
+          CupertinoIcons.ellipsis_circle,
+          color: CupertinoColors.systemGrey,
+        ),
       );
     }
     return PopupMenuButton<String>(
@@ -406,25 +447,33 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
             ],
           ),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'suspend_staff',
           child: Row(
             children: [
-              Icon(Icons.block, size: 20, color: AppTheme.warningColor),
+              Icon(Icons.block, size: 20, color: AppColors.of(context).warning),
               SizedBox(width: 8),
-              Text('Suspend All Staff',
-                  style: TextStyle(color: AppTheme.warningColor)),
+              Text(
+                'Suspend All Staff',
+                style: TextStyle(color: AppColors.of(context).warning),
+              ),
             ],
           ),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'delete',
           child: Row(
             children: [
-              Icon(Icons.delete, size: 20, color: AppTheme.errorColor),
+              Icon(
+                Icons.delete,
+                size: 20,
+                color: AppColors.of(context).critical,
+              ),
               SizedBox(width: 8),
-              Text('Delete',
-                  style: TextStyle(color: AppTheme.errorColor)),
+              Text(
+                'Delete',
+                style: TextStyle(color: AppColors.of(context).critical),
+              ),
             ],
           ),
         ),
@@ -477,12 +526,15 @@ class _FacilitiesListScreenState extends State<FacilitiesListScreen> {
   Widget _buildInfoRow(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: AppTheme.gray600),
+        Icon(icon, size: 16, color: AppColors.of(context).textSecondary),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             text,
-            style: TextStyle(fontSize: 14, color: AppTheme.gray600),
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.of(context).textSecondary,
+            ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -516,7 +568,9 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? AppTheme.successColor : AppTheme.errorColor;
+    final color = active
+        ? AppColors.of(context).success
+        : AppColors.of(context).critical;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -535,7 +589,10 @@ class _StatusBadge extends StatelessWidget {
           Text(
             active ? activeLabel : inactiveLabel,
             style: TextStyle(
-                fontSize: 12, fontWeight: FontWeight.w600, color: color),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
           ),
         ],
       ),

@@ -3,12 +3,17 @@
 // iOS root — CupertinoApp + CupertinoTabScaffold with four tabs.
 // Each tab has its own independent navigation stack via CupertinoTabView.
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show Theme, ThemeData;
 import 'package:provider/provider.dart';
 
 import '../../config/app_colors.dart';
+import '../../config/app_color_scope.dart';
+import '../../config/app_color_tokens.dart';
+import '../../config/theme.dart';
 import '../../core/biometric/biometric_provider.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/intra_grant_provider.dart';
+import '../../data/providers/theme_mode_provider.dart';
 import '../access_grants/screens/access_grants_screen.dart';
 import '../auth/screens/biometric_lock_screen.dart';
 import '../auth/screens/login_screen.dart';
@@ -26,13 +31,42 @@ class IOSShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoApp(
-      title: 'Healthcare EMR',
-      debugShowCheckedModeBanner: false,
-      theme: const CupertinoThemeData(
-        primaryColor: AppColors.primary,
-      ),
-      home: const _IOSAuthWrapper(),
+    return Consumer<ThemeModeProvider>(
+      builder: (context, themeModeProvider, _) {
+        return Builder(
+          builder: (context) {
+            final brightness = themeModeProvider.resolvedBrightness(context);
+            final tokens = brightness == Brightness.dark
+                ? AppColorTokens.dark
+                : AppColorTokens.light;
+            // Most screens reachable from this shell are built from Material
+            // widgets even though the outer chrome is Cupertino. CupertinoApp
+            // only bridges `brightness`/`primaryColor` into Material's
+            // Theme.of(context); everything else falls back to stock Material
+            // 3 defaults. Injecting the real ThemeData below the CupertinoApp
+            // via `builder` is what actually delivers the palette to the iOS
+            // UI. Navigation and Cupertino chrome are untouched.
+            final ThemeData materialTheme = brightness == Brightness.dark
+                ? AppTheme.darkTheme
+                : AppTheme.lightTheme;
+            return AppColorScope(
+              tokens: tokens,
+              child: CupertinoApp(
+                title: 'Healthcare EMR',
+                debugShowCheckedModeBanner: false,
+                theme: CupertinoThemeData(
+                  brightness: brightness,
+                  primaryColor: tokens.accent,
+                  scaffoldBackgroundColor: tokens.background,
+                ),
+                builder: (context, child) =>
+                    Theme(data: materialTheme, child: child ?? const SizedBox.shrink()),
+                home: const _IOSAuthWrapper(),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -76,7 +110,7 @@ class _IOSTabs extends StatelessWidget {
                 return Consumer<IntraGrantProvider>(
                   builder: (context, intra, _) => CupertinoTabScaffold(
                     tabBar: CupertinoTabBar(
-                      activeColor: AppColors.primary,
+                      activeColor: AppColors.of(context).accent,
                       items: [
                         const BottomNavigationBarItem(
                           icon: Icon(CupertinoIcons.person_crop_circle),
@@ -84,7 +118,8 @@ class _IOSTabs extends StatelessWidget {
                         ),
                         const BottomNavigationBarItem(
                           icon: Icon(
-                              CupertinoIcons.list_bullet_below_rectangle),
+                            CupertinoIcons.list_bullet_below_rectangle,
+                          ),
                           label: 'Roster',
                         ),
                         BottomNavigationBarItem(
@@ -133,4 +168,3 @@ class _IOSTabs extends StatelessWidget {
     );
   }
 }
-

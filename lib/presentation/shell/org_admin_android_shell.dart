@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../config/theme.dart';
 import '../../core/api/api_client.dart';
 import '../../data/repositories/staff_repository.dart';
 import '../facilities/screens/facilities_list_screen.dart';
 import '../more/org_admin_more_screen.dart';
 import '../organization/screens/org_dashboard_screen.dart';
 import '../staff/screens/staff_management_screen.dart';
+import '../../config/app_colors.dart';
 
 /// Android bottom-nav shell for org admin users.
 /// Four tabs: Overview · Facilities · Staff · More — no drawer.
@@ -27,7 +27,8 @@ class _OrgAdminAndroidShellState extends State<OrgAdminAndroidShell> {
       const OrgDashboardScreen(),
       const FacilitiesListScreen(),
       StaffManagementScreen(
-          repository: StaffRepository(apiClient: context.read<ApiClient>())),
+        repository: StaffRepository(apiClient: context.read<ApiClient>()),
+      ),
       const OrgAdminMoreScreen(),
     ];
 
@@ -37,7 +38,7 @@ class _OrgAdminAndroidShellState extends State<OrgAdminAndroidShell> {
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppTheme.primaryColor,
+        selectedItemColor: AppColors.of(context).accent,
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(
@@ -55,10 +56,7 @@ class _OrgAdminAndroidShellState extends State<OrgAdminAndroidShell> {
             activeIcon: Icon(Icons.group),
             label: 'Staff',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.more_horiz),
-            label: 'More',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.more_horiz), label: 'More'),
         ],
       ),
     );

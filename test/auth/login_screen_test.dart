@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import 'package:healthcare_emr_mobile/config/app_color_scope.dart';
+import 'package:healthcare_emr_mobile/config/app_color_tokens.dart';
 import 'package:healthcare_emr_mobile/core/api/api_client.dart';
 import 'package:healthcare_emr_mobile/core/database/local_database.dart';
 import 'package:healthcare_emr_mobile/data/providers/auth_provider.dart';
@@ -44,7 +46,12 @@ Widget _wrap(ApiClient apiClient) {
         ),
       ),
     ],
-    child: const MaterialApp(home: LoginScreen()),
+    child: MaterialApp(
+      home: AppColorScope(
+        tokens: AppColorTokens.light,
+        child: const LoginScreen(),
+      ),
+    ),
   );
 }
 

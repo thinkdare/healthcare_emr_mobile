@@ -7,16 +7,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../config/theme.dart';
 import '../../../core/platform.dart';
 import '../../../data/providers/subscription_provider.dart';
+import '../../../config/app_colors.dart';
 
 class PaymentReturnScreen extends StatefulWidget {
-  final String status;        // success | cancelled | pending | unknown
+  final String status; // success | cancelled | pending | unknown
   final String? reference;
   final String? gateway;
   final String? transactionId; // Flutterwave
-  final String? sessionId;     // Stripe
+  final String? sessionId; // Stripe
 
   const PaymentReturnScreen({
     super.key,
@@ -45,22 +45,22 @@ class _PaymentReturnScreenState extends State<PaymentReturnScreen> {
 
   Future<void> _verify() async {
     setState(() {
-      _verifyState  = _VerifyState.verifying;
+      _verifyState = _VerifyState.verifying;
       _errorMessage = null;
     });
 
     final sp = context.read<SubscriptionProvider>();
     final ok = await sp.verifyPayment(
-      reference:     widget.reference!,
-      gateway:       widget.gateway ?? 'paystack',
+      reference: widget.reference!,
+      gateway: widget.gateway ?? 'paystack',
       transactionId: widget.transactionId,
-      sessionId:     widget.sessionId,
+      sessionId: widget.sessionId,
     );
 
     if (!mounted) return;
 
     setState(() {
-      _verifyState  = ok ? _VerifyState.success : _VerifyState.failed;
+      _verifyState = ok ? _VerifyState.success : _VerifyState.failed;
       _errorMessage = ok ? null : sp.error;
     });
   }
@@ -87,9 +87,10 @@ class _PaymentReturnScreenState extends State<PaymentReturnScreen> {
     if (widget.status == 'cancelled') {
       return _StatusView(
         icon: Icons.cancel_outlined,
-        color: AppTheme.warningColor,
+        color: AppColors.of(context).warning,
         title: 'Payment cancelled',
-        subtitle: 'You cancelled the payment. Your current subscription has not changed.',
+        subtitle:
+            'You cancelled the payment. Your current subscription has not changed.',
         actions: [
           _ActionButton(
             label: 'Go back',
@@ -102,14 +103,19 @@ class _PaymentReturnScreenState extends State<PaymentReturnScreen> {
     // Verifying in progress
     if (_verifyState == _VerifyState.verifying ||
         (_verifyState == _VerifyState.idle && widget.status == 'success')) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 16),
-            Text('Verifying payment…',
-                style: TextStyle(fontSize: 15, color: AppTheme.gray600)),
+            Text(
+              'Verifying payment…',
+              style: TextStyle(
+                fontSize: 15,
+                color: AppColors.of(context).textSecondary,
+              ),
+            ),
           ],
         ),
       );
@@ -119,9 +125,10 @@ class _PaymentReturnScreenState extends State<PaymentReturnScreen> {
     if (_verifyState == _VerifyState.success) {
       return _StatusView(
         icon: Icons.check_circle_outline,
-        color: AppTheme.successColor,
+        color: AppColors.of(context).success,
         title: 'Payment successful!',
-        subtitle: 'Your subscription has been activated. You now have full access to Voya.',
+        subtitle:
+            'Your subscription has been activated. You now have full access to Voya.',
         actions: [
           _ActionButton(
             label: 'Continue',
@@ -136,9 +143,10 @@ class _PaymentReturnScreenState extends State<PaymentReturnScreen> {
     if (_verifyState == _VerifyState.failed) {
       return _StatusView(
         icon: Icons.error_outline,
-        color: AppTheme.errorColor,
+        color: AppColors.of(context).critical,
         title: 'Verification failed',
-        subtitle: _errorMessage ??
+        subtitle:
+            _errorMessage ??
             'We could not confirm your payment. If money was deducted, please contact support with your reference: ${widget.reference ?? "N/A"}',
         actions: [
           _ActionButton(
@@ -157,17 +165,13 @@ class _PaymentReturnScreenState extends State<PaymentReturnScreen> {
     // Unknown / pending status
     return _StatusView(
       icon: Icons.hourglass_empty,
-      color: AppTheme.warningColor,
+      color: AppColors.of(context).warning,
       title: 'Payment pending',
       subtitle:
           'Your payment is being processed. Your subscription will be activated once confirmed. Reference: ${widget.reference ?? "N/A"}',
       actions: [
         if (widget.reference != null)
-          _ActionButton(
-            label: 'Check now',
-            onPressed: _verify,
-            primary: true,
-          ),
+          _ActionButton(label: 'Check now', onPressed: _verify, primary: true),
         _ActionButton(
           label: 'Go back',
           onPressed: () => Navigator.of(context).pop(),
@@ -204,14 +208,20 @@ class _StatusView extends StatelessWidget {
           children: [
             Icon(icon, size: 72, color: color),
             const SizedBox(height: 20),
-            Text(title,
-                style: const TextStyle(
-                    fontSize: 22, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 12),
-            Text(subtitle,
-                style: TextStyle(fontSize: 14, color: AppTheme.gray600),
-                textAlign: TextAlign.center),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.of(context).textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 32),
             ...actions,
           ],

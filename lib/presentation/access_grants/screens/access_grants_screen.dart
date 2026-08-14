@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../config/theme.dart';
 import '../../../core/platform.dart';
 import '../../../data/models/access_grant_models.dart';
 import '../../../data/models/intra_grant_models.dart';
@@ -12,6 +11,7 @@ import '../widgets/create_intra_grant_sheet.dart';
 import '../widgets/transfer_request_card.dart';
 import 'cross_tenant_patient_screen.dart';
 import 'request_access_screen.dart';
+import '../../../config/app_colors.dart';
 
 class AccessGrantsScreen extends StatefulWidget {
   const AccessGrantsScreen({super.key});
@@ -71,68 +71,74 @@ class _AccessGrantsScreenState extends State<AccessGrantsScreen>
                 ),
               ],
               bottom: TabBar(
-          controller: _tabs,
-          tabs: [
-            Tab(
-              child: Consumer<AccessGrantProvider>(
-                builder: (context, p, child) => Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('Pending Approval'),
-                    if (p.pendingCount > 0) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppTheme.errorColor,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '${p.pendingCount}',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold),
-                        ),
+                controller: _tabs,
+                tabs: [
+                  Tab(
+                    child: Consumer<AccessGrantProvider>(
+                      builder: (context, p, child) => Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Pending Approval'),
+                          if (p.pendingCount > 0) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.of(context).critical,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${p.pendingCount}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    ],
-                  ],
-                ),
+                    ),
+                  ),
+                  const Tab(text: 'My Requests'),
+                  Consumer<IntraGrantProvider>(
+                    builder: (context, intra, child) => Tab(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Same Facility'),
+                          if (intra.pendingIncomingCount > 0) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.of(context).critical,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${intra.pendingIncomingCount}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const Tab(text: 'My Requests'),
-            Consumer<IntraGrantProvider>(
-              builder: (context, intra, child) => Tab(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('Same Facility'),
-                    if (intra.pendingIncomingCount > 0) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppTheme.errorColor,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '${intra.pendingIncomingCount}',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
       floatingActionButton: ListenableBuilder(
         listenable: _tabs,
         builder: (context, _) {
@@ -147,8 +153,9 @@ class _AccessGrantsScreenState extends State<AccessGrantsScreen>
                   isScrollControlled: true,
                   backgroundColor: Colors.white,
                   shape: const RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(16)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(16),
+                    ),
                   ),
                   builder: (_) => const CreateIntraGrantSheet(),
                 );
@@ -166,9 +173,11 @@ class _AccessGrantsScreenState extends State<AccessGrantsScreen>
               final created = await Navigator.of(context).push<bool>(
                 kIsIOS
                     ? CupertinoPageRoute(
-                        builder: (_) => const RequestAccessScreen())
+                        builder: (_) => const RequestAccessScreen(),
+                      )
                     : MaterialPageRoute(
-                        builder: (_) => const RequestAccessScreen()),
+                        builder: (_) => const RequestAccessScreen(),
+                      ),
               );
               if (created == true && mounted) provider.loadGrants();
             },
@@ -191,7 +200,9 @@ class _AccessGrantsScreenState extends State<AccessGrantsScreen>
                   children: {
                     0: Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 2),
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
                       child: Text(
                         cross.pendingCount > 0
                             ? 'Pending (${cross.pendingCount})'
@@ -200,14 +211,17 @@ class _AccessGrantsScreenState extends State<AccessGrantsScreen>
                       ),
                     ),
                     1: const Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                      child: Text('My Requests',
-                          style: TextStyle(fontSize: 13)),
+                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      child: Text(
+                        'My Requests',
+                        style: TextStyle(fontSize: 13),
+                      ),
                     ),
                     2: Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 2),
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
                       child: Text(
                         intra.pendingIncomingCount > 0
                             ? 'Same Facility (${intra.pendingIncomingCount})'
@@ -223,14 +237,16 @@ class _AccessGrantsScreenState extends State<AccessGrantsScreen>
             builder: (context, provider, child) => provider.error != null
                 ? _ErrorBanner(
                     message: provider.error!,
-                    onDismiss: provider.clearError)
+                    onDismiss: provider.clearError,
+                  )
                 : const SizedBox.shrink(),
           ),
           Consumer<IntraGrantProvider>(
             builder: (context, intra, child) => intra.error != null
                 ? _ErrorBanner(
                     message: intra.error!,
-                    onDismiss: intra.clearError)
+                    onDismiss: intra.clearError,
+                  )
                 : const SizedBox.shrink(),
           ),
           Expanded(
@@ -301,13 +317,18 @@ class _PendingGrantCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.shield_outlined, color: AppTheme.warningColor),
+                Icon(
+                  Icons.shield_outlined,
+                  color: AppColors.of(context).warning,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Request from ${grant.requestingTenantName}',
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 15),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
                 _StatusChip(status: grant.status),
@@ -342,8 +363,8 @@ class _PendingGrantCard extends StatelessWidget {
                     icon: const Icon(Icons.close, size: 18),
                     label: const Text('Deny'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.errorColor,
-                      side: const BorderSide(color: AppTheme.errorColor),
+                      foregroundColor: AppColors.of(context).critical,
+                      side: BorderSide(color: AppColors.of(context).critical),
                     ),
                     onPressed: () => _showDenyDialog(context, grant.id),
                   ),
@@ -387,8 +408,9 @@ class _PendingGrantCard extends StatelessWidget {
         ),
         actions: [
           AdaptiveTextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
           AdaptiveFilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Approve'),
@@ -398,14 +420,23 @@ class _PendingGrantCard extends StatelessWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      final ok = await context
-          .read<AccessGrantProvider>()
-          .approve(id, notes: notesCtrl.text.trim());
+      final ok = await context.read<AccessGrantProvider>().approve(
+        id,
+        notes: notesCtrl.text.trim(),
+      );
       if (context.mounted) {
         if (ok) {
-          showAdaptiveToast(context, 'Access granted.', type: ToastType.success);
+          showAdaptiveToast(
+            context,
+            'Access granted.',
+            type: ToastType.success,
+          );
         } else {
-          showAdaptiveToast(context, context.read<AccessGrantProvider>().error ?? 'Failed', type: ToastType.error);
+          showAdaptiveToast(
+            context,
+            context.read<AccessGrantProvider>().error ?? 'Failed',
+            type: ToastType.error,
+          );
         }
       }
     }
@@ -435,8 +466,9 @@ class _PendingGrantCard extends StatelessWidget {
         ),
         actions: [
           AdaptiveTextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
           AdaptiveFilledButton(
             onPressed: () {
               if (formKey.currentState!.validate()) {
@@ -450,13 +482,16 @@ class _PendingGrantCard extends StatelessWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      final ok = await context
-          .read<AccessGrantProvider>()
-          .deny(id, reasonCtrl.text.trim());
+      final ok = await context.read<AccessGrantProvider>().deny(
+        id,
+        reasonCtrl.text.trim(),
+      );
       if (context.mounted) {
         showAdaptiveToast(
           context,
-          ok ? 'Access denied.' : context.read<AccessGrantProvider>().error ?? 'Failed',
+          ok
+              ? 'Access denied.'
+              : context.read<AccessGrantProvider>().error ?? 'Failed',
           type: ok ? ToastType.info : ToastType.error,
         );
       }
@@ -507,13 +542,18 @@ class _MyGrantCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.lock_open_outlined, color: AppTheme.primaryColor),
+                Icon(
+                  Icons.lock_open_outlined,
+                  color: AppColors.of(context).accent,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     grant.grantingTenantName,
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 15),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
                 _StatusChip(status: grant.status),
@@ -536,18 +576,30 @@ class _MyGrantCard extends StatelessWidget {
               _InfoRow(
                 'Expires',
                 _formatDate(grant.expiresAt!),
-                valueColor: grant.isExpired ? AppTheme.errorColor : null,
+                valueColor: grant.isExpired
+                    ? AppColors.of(context).critical
+                    : null,
               ),
             ],
             if (grant.autoApproved) ...[
               const SizedBox(height: 8),
-              Row(children: [
-                Icon(Icons.auto_awesome, size: 14, color: AppTheme.successColor),
-                const SizedBox(width: 4),
-                Text('Auto-approved (same organisation)',
+              Row(
+                children: [
+                  Icon(
+                    Icons.auto_awesome,
+                    size: 14,
+                    color: AppColors.of(context).success,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Auto-approved (same organisation)',
                     style: TextStyle(
-                        fontSize: 12, color: AppTheme.successColor)),
-              ]),
+                      fontSize: 12,
+                      color: AppColors.of(context).success,
+                    ),
+                  ),
+                ],
+              ),
             ],
             if (grant.isActive && grant.globalPatientId != null) ...[
               const SizedBox(height: 12),
@@ -559,15 +611,17 @@ class _MyGrantCard extends StatelessWidget {
                     kIsIOS
                         ? CupertinoPageRoute(
                             builder: (_) => CrossTenantPatientScreen(
-                              repository:
-                                  context.read<AccessGrantProvider>().repository,
+                              repository: context
+                                  .read<AccessGrantProvider>()
+                                  .repository,
                               grant: grant,
                             ),
                           )
                         : MaterialPageRoute(
                             builder: (_) => CrossTenantPatientScreen(
-                              repository:
-                                  context.read<AccessGrantProvider>().repository,
+                              repository: context
+                                  .read<AccessGrantProvider>()
+                                  .repository,
                               grant: grant,
                             ),
                           ),
@@ -584,13 +638,17 @@ class _MyGrantCard extends StatelessWidget {
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.cancel_outlined, size: 18),
                   label: Text(
-                      grant.isPending ? 'Cancel Request' : 'Revoke Access'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.errorColor,
-                    side: const BorderSide(color: AppTheme.errorColor),
+                    grant.isPending ? 'Cancel Request' : 'Revoke Access',
                   ),
-                  onPressed: () => _showRevokeDialog(context, grant.id,
-                      isPending: grant.isPending),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.of(context).critical,
+                    side: BorderSide(color: AppColors.of(context).critical),
+                  ),
+                  onPressed: () => _showRevokeDialog(
+                    context,
+                    grant.id,
+                    isPending: grant.isPending,
+                  ),
                 ),
               ),
             ],
@@ -600,8 +658,11 @@ class _MyGrantCard extends StatelessWidget {
     );
   }
 
-  Future<void> _showRevokeDialog(BuildContext context, String id,
-      {required bool isPending}) async {
+  Future<void> _showRevokeDialog(
+    BuildContext context,
+    String id, {
+    required bool isPending,
+  }) async {
     final reasonCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
     final confirmed = await showDialog<bool>(
@@ -626,8 +687,9 @@ class _MyGrantCard extends StatelessWidget {
         ),
         actions: [
           AdaptiveTextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
           AdaptiveFilledButton(
             onPressed: () {
               if (formKey.currentState!.validate()) {
@@ -641,9 +703,10 @@ class _MyGrantCard extends StatelessWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      final ok = await context
-          .read<AccessGrantProvider>()
-          .revoke(id, reasonCtrl.text.trim());
+      final ok = await context.read<AccessGrantProvider>().revoke(
+        id,
+        reasonCtrl.text.trim(),
+      );
       if (context.mounted) {
         showAdaptiveToast(
           context,
@@ -667,11 +730,11 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, label) = switch (status) {
-      'approved' => (AppTheme.successColor, 'Approved'),
-      'pending'  => (AppTheme.warningColor, 'Pending'),
-      'denied'   => (AppTheme.errorColor,   'Denied'),
-      'revoked'  => (AppTheme.gray600,      'Revoked'),
-      _          => (AppTheme.gray600,      status),
+      'approved' => (AppColors.of(context).success, 'Approved'),
+      'pending' => (AppColors.of(context).warning, 'Pending'),
+      'denied' => (AppColors.of(context).critical, 'Denied'),
+      'revoked' => (AppColors.of(context).textSecondary, 'Revoked'),
+      _ => (AppColors.of(context).textSecondary, status),
     };
 
     return Container(
@@ -683,7 +746,10 @@ class _StatusChip extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-            fontSize: 11, fontWeight: FontWeight.w600, color: color),
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
       ),
     );
   }
@@ -702,18 +768,24 @@ class _InfoRow extends StatelessWidget {
       children: [
         SizedBox(
           width: 90,
-          child: Text('$label:',
-              style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.gray600,
-                  fontWeight: FontWeight.w500)),
+          child: Text(
+            '$label:',
+            style: TextStyle(
+              fontSize: 12,
+              color: AppColors.of(context).textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
         Expanded(
-          child: Text(value,
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: valueColor)),
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: valueColor,
+            ),
+          ),
         ),
       ],
     );
@@ -724,8 +796,11 @@ class _EmptyState extends StatelessWidget {
   final IconData icon;
   final String message;
   final String subtitle;
-  const _EmptyState(
-      {required this.icon, required this.message, required this.subtitle});
+  const _EmptyState({
+    required this.icon,
+    required this.message,
+    required this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -735,17 +810,25 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon,
-                size: 64,
-                color: AppTheme.gray600.withValues(alpha: 0.4)),
+            Icon(
+              icon,
+              size: 64,
+              color: AppColors.of(context).textSecondary.withValues(alpha: 0.4),
+            ),
             const SizedBox(height: 16),
-            Text(message,
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w600)),
+            Text(
+              message,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 8),
-            Text(subtitle,
-                style: TextStyle(fontSize: 13, color: AppTheme.gray600),
-                textAlign: TextAlign.center),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.of(context).textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -761,19 +844,31 @@ class _ErrorBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppTheme.errorColor.withValues(alpha: 0.08),
+      color: AppColors.of(context).critical.withValues(alpha: 0.08),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, size: 16, color: AppTheme.errorColor),
+          Icon(
+            Icons.error_outline,
+            size: 16,
+            color: AppColors.of(context).critical,
+          ),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(message,
-                style: const TextStyle(
-                    fontSize: 12, color: AppTheme.errorColor)),
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.of(context).critical,
+              ),
+            ),
           ),
           IconButton(
-            icon: const Icon(Icons.close, size: 16, color: AppTheme.errorColor),
+            icon: Icon(
+              Icons.close,
+              size: 16,
+              color: AppColors.of(context).critical,
+            ),
             onPressed: onDismiss,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -802,12 +897,15 @@ class _SameFacilityTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pendingIncoming = incoming.where((g) => g.isPending).toList();
-    final otherIncoming   = incoming.where((g) => !g.isPending).toList();
+    final otherIncoming = incoming.where((g) => !g.isPending).toList();
 
     return Consumer<IntraTransferProvider>(
       builder: (context, transferProvider, child) {
         final pendingTransfers = transferProvider.pendingIncoming;
-        final hasContent = incoming.isNotEmpty || outgoing.isNotEmpty || pendingTransfers.isNotEmpty;
+        final hasContent =
+            incoming.isNotEmpty ||
+            outgoing.isNotEmpty ||
+            pendingTransfers.isNotEmpty;
 
         if (!hasContent) {
           return _EmptyState(
@@ -820,28 +918,34 @@ class _SameFacilityTab extends StatelessWidget {
         return RefreshIndicator(
           onRefresh: () async {
             await context.read<IntraGrantProvider>().loadGrants();
-            if (context.mounted) await context.read<IntraTransferProvider>().load();
+            if (context.mounted)
+              await context.read<IntraTransferProvider>().load();
           },
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
             children: [
               if (pendingTransfers.isNotEmpty) ...[
                 _SectionHeader('Transfer requests', Colors.orange.shade700),
-                ...pendingTransfers.map((t) => TransferRequestCard(transfer: t)),
+                ...pendingTransfers.map(
+                  (t) => TransferRequestCard(transfer: t),
+                ),
                 const SizedBox(height: 8),
               ],
               if (pendingIncoming.isNotEmpty) ...[
-                _SectionHeader('Needs your response', AppTheme.warningColor),
+                _SectionHeader(
+                  'Needs your response',
+                  AppColors.of(context).warning,
+                ),
                 ...pendingIncoming.map((g) => _IncomingGrantCard(grant: g)),
                 const SizedBox(height: 8),
               ],
               if (outgoing.isNotEmpty) ...[
-                _SectionHeader('My requests', AppTheme.primaryColor),
+                _SectionHeader('My requests', AppColors.of(context).accent),
                 ...outgoing.map((g) => _OutgoingGrantCard(grant: g)),
                 const SizedBox(height: 8),
               ],
               if (otherIncoming.isNotEmpty) ...[
-                _SectionHeader('Handled', AppTheme.gray600),
+                _SectionHeader('Handled', AppColors.of(context).textSecondary),
                 ...otherIncoming.map((g) => _IncomingGrantCard(grant: g)),
               ],
             ],
@@ -859,14 +963,17 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(title.toUpperCase(),
-            style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: color,
-                letterSpacing: 0.6)),
-      );
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      title.toUpperCase(),
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        color: color,
+        letterSpacing: 0.6,
+      ),
+    ),
+  );
 }
 
 // ── Incoming card (Doctor B's perspective) ────────────────────────────────────
@@ -892,7 +999,9 @@ class _IncomingGrantCard extends StatelessWidget {
                   child: Text(
                     grant.patientName ?? 'Patient',
                     style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 15),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
                 _IntraStatusChip(status: grant.status),
@@ -900,17 +1009,21 @@ class _IncomingGrantCard extends StatelessWidget {
             ),
             if (grant.patientMrn != null) ...[
               const SizedBox(height: 2),
-              Text('MRN: ${grant.patientMrn}',
-                  style:
-                      TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+              Text(
+                'MRN: ${grant.patientMrn}',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+              ),
             ],
             const Divider(height: 20),
-            Text(grant.question,
-                style: const TextStyle(fontSize: 13, height: 1.4)),
+            Text(
+              grant.question,
+              style: const TextStyle(fontSize: 13, height: 1.4),
+            ),
             const SizedBox(height: 6),
-            Text(_formatDate(grant.createdAt),
-                style:
-                    TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+            Text(
+              _formatDate(grant.createdAt),
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+            ),
             if (grant.hasResponse) ...[
               const SizedBox(height: 12),
               Container(
@@ -926,9 +1039,10 @@ class _IncomingGrantCard extends StatelessWidget {
                     const Icon(Icons.reply, size: 14, color: Colors.grey),
                     const SizedBox(width: 6),
                     Expanded(
-                      child: Text(grant.response!,
-                          style: const TextStyle(
-                              fontSize: 13, height: 1.4)),
+                      child: Text(
+                        grant.response!,
+                        style: const TextStyle(fontSize: 13, height: 1.4),
+                      ),
                     ),
                   ],
                 ),
@@ -941,19 +1055,17 @@ class _IncomingGrantCard extends StatelessWidget {
                   Expanded(
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.errorColor,
-                        side: const BorderSide(color: AppTheme.errorColor),
+                        foregroundColor: AppColors.of(context).critical,
+                        side: BorderSide(color: AppColors.of(context).critical),
                       ),
-                      onPressed: () =>
-                          _showDeclineDialog(context, grant.id),
+                      onPressed: () => _showDeclineDialog(context, grant.id),
                       child: const Text('Decline'),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: AdaptiveFilledButton(
-                      onPressed: () =>
-                          _showAcceptOptions(context, grant),
+                      onPressed: () => _showAcceptOptions(context, grant),
                       child: const Text('Accept'),
                     ),
                   ),
@@ -977,17 +1089,21 @@ class _IncomingGrantCard extends StatelessWidget {
   }
 
   Future<void> _showAcceptOptions(
-      BuildContext context, IntraAccessGrantModel grant) async {
+    BuildContext context,
+    IntraAccessGrantModel grant,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Accept consultation?'),
         content: const Text(
-            'You will gain view access to the patient record until you close the consultation.'),
+          'You will gain view access to the patient record until you close the consultation.',
+        ),
         actions: [
           AdaptiveTextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
           AdaptiveFilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Accept'),
@@ -998,9 +1114,11 @@ class _IncomingGrantCard extends StatelessWidget {
     if (confirmed == true && context.mounted) {
       final ok = await context.read<IntraGrantProvider>().accept(grant.id);
       if (context.mounted) {
-        showAdaptiveToast(context,
-            ok ? 'Request accepted.' : 'Failed to accept.',
-            type: ok ? ToastType.success : ToastType.error);
+        showAdaptiveToast(
+          context,
+          ok ? 'Request accepted.' : 'Failed to accept.',
+          type: ok ? ToastType.success : ToastType.error,
+        );
       }
     }
   }
@@ -1031,8 +1149,9 @@ class _IncomingGrantCard extends StatelessWidget {
         ),
         actions: [
           AdaptiveTextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
           AdaptiveFilledButton(
             onPressed: () {
               if (formKey.currentState!.validate()) {
@@ -1045,13 +1164,16 @@ class _IncomingGrantCard extends StatelessWidget {
       ),
     );
     if (confirmed == true && context.mounted) {
-      final ok = await context
-          .read<IntraGrantProvider>()
-          .decline(id, ctrl.text.trim());
+      final ok = await context.read<IntraGrantProvider>().decline(
+        id,
+        ctrl.text.trim(),
+      );
       if (context.mounted) {
         showAdaptiveToast(
           context,
-          ok ? 'Response sent.' : context.read<IntraGrantProvider>().error ?? 'Failed',
+          ok
+              ? 'Response sent.'
+              : context.read<IntraGrantProvider>().error ?? 'Failed',
           type: ok ? ToastType.info : ToastType.error,
         );
       }
@@ -1085,8 +1207,9 @@ class _IncomingGrantCard extends StatelessWidget {
         ),
         actions: [
           AdaptiveTextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
           AdaptiveFilledButton(
             onPressed: () {
               if (formKey.currentState!.validate()) {
@@ -1099,13 +1222,16 @@ class _IncomingGrantCard extends StatelessWidget {
       ),
     );
     if (confirmed == true && context.mounted) {
-      final ok = await context
-          .read<IntraGrantProvider>()
-          .complete(id, ctrl.text.trim());
+      final ok = await context.read<IntraGrantProvider>().complete(
+        id,
+        ctrl.text.trim(),
+      );
       if (context.mounted) {
         showAdaptiveToast(
           context,
-          ok ? 'Consultation closed.' : context.read<IntraGrantProvider>().error ?? 'Failed',
+          ok
+              ? 'Consultation closed.'
+              : context.read<IntraGrantProvider>().error ?? 'Failed',
           type: ok ? ToastType.success : ToastType.error,
         );
       }
@@ -1131,26 +1257,30 @@ class _OutgoingGrantCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.send_outlined,
-                    size: 18, color: Colors.indigo),
+                const Icon(Icons.send_outlined, size: 18, color: Colors.indigo),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     grant.patientName ?? 'Patient',
                     style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 15),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
                 _IntraStatusChip(status: grant.status),
               ],
             ),
             const Divider(height: 20),
-            Text(grant.question,
-                style: const TextStyle(fontSize: 13, height: 1.4)),
+            Text(
+              grant.question,
+              style: const TextStyle(fontSize: 13, height: 1.4),
+            ),
             const SizedBox(height: 6),
-            Text('Sent ${_formatDate(grant.createdAt)}',
-                style:
-                    TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+            Text(
+              'Sent ${_formatDate(grant.createdAt)}',
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+            ),
             // Response note
             if (grant.hasResponse) ...[
               const SizedBox(height: 12),
@@ -1183,26 +1313,33 @@ class _OutgoingGrantCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          grant.isDeclined ? 'Response' : 'Consultation response',
+                          grant.isDeclined
+                              ? 'Response'
+                              : 'Consultation response',
                           style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: grant.isDeclined
-                                  ? Colors.orange.shade700
-                                  : Colors.green.shade700),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: grant.isDeclined
+                                ? Colors.orange.shade700
+                                : Colors.green.shade700,
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Text(grant.response!,
-                        style:
-                            const TextStyle(fontSize: 13, height: 1.4)),
+                    Text(
+                      grant.response!,
+                      style: const TextStyle(fontSize: 13, height: 1.4),
+                    ),
                     if (grant.respondedAt != null) ...[
                       const SizedBox(height: 4),
-                      Text(_formatDate(grant.respondedAt!),
-                          style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey.shade600)),
+                      Text(
+                        _formatDate(grant.respondedAt!),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -1215,16 +1352,16 @@ class _OutgoingGrantCard extends StatelessWidget {
                     width: 12,
                     height: 12,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.grey.shade400),
+                      strokeWidth: 2,
+                      color: Colors.grey.shade400,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     grant.isPending
                         ? 'Waiting for response…'
                         : 'Colleague is reviewing…',
-                    style: TextStyle(
-                        fontSize: 12, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
                 ],
               ),
@@ -1236,8 +1373,8 @@ class _OutgoingGrantCard extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.errorColor,
-                    side: const BorderSide(color: AppTheme.errorColor),
+                    foregroundColor: AppColors.of(context).critical,
+                    side: BorderSide(color: AppColors.of(context).critical),
                   ),
                   onPressed: () => _confirmCancel(context, grant.id),
                   child: const Text('Cancel request'),
@@ -1258,23 +1395,27 @@ class _OutgoingGrantCard extends StatelessWidget {
         content: const Text('Your consultation request will be withdrawn.'),
         actions: [
           AdaptiveTextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Keep')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Keep'),
+          ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.of(context).critical,
+            ),
             child: const Text('Cancel request'),
           ),
         ],
       ),
     );
     if (confirmed == true && context.mounted) {
-      final ok =
-          await context.read<IntraGrantProvider>().cancel(id);
+      final ok = await context.read<IntraGrantProvider>().cancel(id);
       if (context.mounted) {
         showAdaptiveToast(
           context,
-          ok ? 'Request cancelled.' : context.read<IntraGrantProvider>().error ?? 'Failed',
+          ok
+              ? 'Request cancelled.'
+              : context.read<IntraGrantProvider>().error ?? 'Failed',
           type: ok ? ToastType.info : ToastType.error,
         );
       }
@@ -1289,12 +1430,12 @@ class _IntraStatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, label) = switch (status) {
-      'pending'   => (AppTheme.warningColor,  'Pending'),
-      'accepted'  => (Colors.blue,            'In review'),
-      'declined'  => (AppTheme.errorColor,    'Declined'),
-      'completed' => (AppTheme.successColor,  'Completed'),
-      'cancelled' => (AppTheme.gray600,       'Cancelled'),
-      _           => (AppTheme.gray600,       status),
+      'pending' => (AppColors.of(context).warning, 'Pending'),
+      'accepted' => (Colors.blue, 'In review'),
+      'declined' => (AppColors.of(context).critical, 'Declined'),
+      'completed' => (AppColors.of(context).success, 'Completed'),
+      'cancelled' => (AppColors.of(context).textSecondary, 'Cancelled'),
+      _ => (AppColors.of(context).textSecondary, status),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -1302,9 +1443,14 @@ class _IntraStatusChip extends StatelessWidget {
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(label,
-          style: TextStyle(
-              fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
     );
   }
 }

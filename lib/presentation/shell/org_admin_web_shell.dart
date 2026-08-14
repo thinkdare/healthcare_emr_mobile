@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../config/theme.dart';
 import '../../core/api/api_client.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/repositories/organization_repository.dart';
@@ -14,6 +13,7 @@ import '../providers/screens/provider_invitation_screen.dart';
 import '../reporting/screens/reporting_screen.dart';
 import '../staff/screens/staff_management_screen.dart';
 import '../subscription/screens/subscription_details_screen.dart';
+import '../../config/app_colors.dart';
 
 /// Web shell for org admin users: collapsible NavigationRail sidebar + IndexedStack.
 class OrgAdminWebShell extends StatefulWidget {
@@ -43,15 +43,11 @@ class _OrgAdminWebShellState extends State<OrgAdminWebShell> {
             expanded: _sidebarExpanded,
             onToggle: () =>
                 setState(() => _sidebarExpanded = !_sidebarExpanded),
-            onDestinationSelected: (i) =>
-                setState(() => _selectedIndex = i),
+            onDestinationSelected: (i) => setState(() => _selectedIndex = i),
           ),
           const VerticalDivider(width: 1, thickness: 1),
           Expanded(
-            child: IndexedStack(
-              index: _selectedIndex,
-              children: _screens,
-            ),
+            child: IndexedStack(index: _selectedIndex, children: _screens),
           ),
         ],
       ),
@@ -87,8 +83,7 @@ class _OrgAdminSidebar extends StatelessWidget {
               children: [
                 const SizedBox(width: 8),
                 IconButton(
-                  icon: Icon(
-                      expanded ? Icons.menu_open : Icons.menu),
+                  icon: Icon(expanded ? Icons.menu_open : Icons.menu),
                   onPressed: onToggle,
                   tooltip: expanded ? 'Collapse' : 'Expand',
                 ),
@@ -102,10 +97,13 @@ class _OrgAdminSidebar extends StatelessWidget {
               selectedIndex: selectedIndex,
               onDestinationSelected: onDestinationSelected,
               backgroundColor: Colors.white,
-              selectedIconTheme:
-                  IconThemeData(color: AppTheme.primaryColor),
-              selectedLabelTextStyle:
-                  TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.w600),
+              selectedIconTheme: IconThemeData(
+                color: AppColors.of(context).accent,
+              ),
+              selectedLabelTextStyle: TextStyle(
+                color: AppColors.of(context).accent,
+                fontWeight: FontWeight.w600,
+              ),
               destinations: const [
                 NavigationRailDestination(
                   icon: Icon(Icons.business_center_outlined),
@@ -126,9 +124,7 @@ class _OrgAdminSidebar extends StatelessWidget {
             ),
           ),
           // Footer actions
-          ClipRect(
-            child: _SidebarFooter(expanded: expanded),
-          ),
+          ClipRect(child: _SidebarFooter(expanded: expanded)),
         ],
       ),
     );
@@ -157,7 +153,8 @@ class _SidebarFooter extends StatelessWidget {
               MaterialPageRoute<void>(
                 builder: (_) => OrganizationProfileScreen(
                   repository: OrganizationRepository(
-                      apiClient: context.read<ApiClient>()),
+                    apiClient: context.read<ApiClient>(),
+                  ),
                 ),
               ),
             ),
@@ -168,7 +165,8 @@ class _SidebarFooter extends StatelessWidget {
             expanded: expanded,
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => const SubscriptionDetailsScreen()),
+                builder: (_) => const SubscriptionDetailsScreen(),
+              ),
             ),
           ),
           _FooterItem(
@@ -176,8 +174,7 @@ class _SidebarFooter extends StatelessWidget {
             label: 'Reporting',
             expanded: expanded,
             onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const ReportingScreen()),
+              MaterialPageRoute<void>(builder: (_) => const ReportingScreen()),
             ),
           ),
           _FooterItem(
@@ -186,7 +183,8 @@ class _SidebarFooter extends StatelessWidget {
             expanded: expanded,
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => const ProviderInvitationScreen()),
+                builder: (_) => const ProviderInvitationScreen(),
+              ),
             ),
           ),
           _FooterItem(

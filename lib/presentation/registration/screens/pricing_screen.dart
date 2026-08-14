@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../config/theme.dart';
 import '../../../core/platform.dart';
 import '../../../data/models/subscription_models.dart';
 import '../../../data/providers/subscription_provider.dart';
+import '../../../config/app_colors.dart';
 
 class PricingScreen extends StatefulWidget {
   const PricingScreen({super.key});
@@ -36,14 +36,22 @@ class _PricingScreenState extends State<PricingScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.info_outline, size: 48, color: AppTheme.gray600),
+                  Icon(
+                    Icons.info_outline,
+                    size: 48,
+                    color: AppColors.of(context).textSecondary,
+                  ),
                   const SizedBox(height: 12),
                   const Text('No plans available.'),
                   if (sp.error != null) ...[
                     const SizedBox(height: 8),
-                    Text(sp.error!,
-                        style:
-                            TextStyle(color: AppTheme.errorColor, fontSize: 13)),
+                    Text(
+                      sp.error!,
+                      style: TextStyle(
+                        color: AppColors.of(context).critical,
+                        fontSize: 13,
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     AdaptiveFilledButton(
                       onPressed: () => sp.loadPlans(),
@@ -69,7 +77,10 @@ class _PricingScreenState extends State<PricingScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Start with a free trial. No credit card required.',
-                  style: TextStyle(fontSize: 16, color: AppTheme.gray600),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.of(context).textSecondary,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -103,20 +114,29 @@ class _PlanCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(plan.name,
-                style:
-                    const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            Text(
+              plan.name,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
             if (plan.description != null) ...[
               const SizedBox(height: 4),
-              Text(plan.description!,
-                  style: TextStyle(color: AppTheme.gray600, fontSize: 13)),
+              Text(
+                plan.description!,
+                style: TextStyle(
+                  color: AppColors.of(context).textSecondary,
+                  fontSize: 13,
+                ),
+              ),
             ],
             const SizedBox(height: 12),
-            Text(displayPrice,
-                style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor)),
+            Text(
+              displayPrice,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppColors.of(context).accent,
+              ),
+            ),
             if (plan.limits.isNotEmpty) ...[
               const SizedBox(height: 10),
               Wrap(
@@ -124,26 +144,39 @@ class _PlanCard extends StatelessWidget {
                 children: [
                   if (plan.limits['max_facilities'] != null)
                     Chip(
-                        label:
-                            Text('${plan.limits['max_facilities']} facilities')),
+                      label: Text(
+                        '${plan.limits['max_facilities']} facilities',
+                      ),
+                    ),
                   if (plan.limits['max_staff'] != null)
                     Chip(label: Text('${plan.limits['max_staff']} staff')),
                   if (plan.limits['max_patients'] != null)
-                    Chip(label: Text('${plan.limits['max_patients']} patients')),
+                    Chip(
+                      label: Text('${plan.limits['max_patients']} patients'),
+                    ),
                 ],
               ),
             ],
             if (plan.features.isNotEmpty) ...[
               const SizedBox(height: 12),
-              ...plan.features.map((f) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Row(children: [
-                      Icon(Icons.check, size: 16, color: AppTheme.successColor),
+              ...plan.features.map(
+                (f) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check,
+                        size: 16,
+                        color: AppColors.of(context).success,
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
-                          child: Text(f, style: const TextStyle(fontSize: 13))),
-                    ]),
-                  )),
+                        child: Text(f, style: const TextStyle(fontSize: 13)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
             const SizedBox(height: 16),
             SizedBox(

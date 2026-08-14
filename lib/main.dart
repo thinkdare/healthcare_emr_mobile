@@ -4,7 +4,7 @@ import 'dart:io' show Platform;
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/cupertino.dart' show CupertinoPageRoute;
-import 'package:flutter/material.dart' show BuildContext, CircularProgressIndicator, MaterialApp, MaterialPageRoute, Navigator, Scaffold;
+import 'package:flutter/material.dart' show BuildContext, Brightness, CircularProgressIndicator, MaterialApp, MaterialPageRoute, Navigator, Scaffold, Theme;
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -44,6 +44,10 @@ import 'core/security/root_detection_provider.dart';
 import 'core/notifications/push_notification_service.dart';
 import 'data/providers/intra_grant_provider.dart';
 import 'data/providers/intra_transfer_provider.dart';
+import 'data/providers/theme_mode_provider.dart';
+import 'config/app_color_scope.dart';
+import 'config/app_color_tokens.dart';
+import 'config/theme.dart';
 import 'data/repositories/device_token_repository.dart';
 import 'data/repositories/intra_grant_repository.dart';
 import 'data/repositories/intra_transfer_repository.dart';
@@ -321,6 +325,9 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(
           create: (_) => RootDetectionProvider(),
         ),
+        ChangeNotifierProvider(
+          create: (_) => ThemeModeProvider()..load(),
+        ),
       ],
       // Platform branch: web → OrgAdminWebShell or ClinicalWebShell (by role)
       // iOS → IOSShell (branches internally on isOrgAdmin)
@@ -341,21 +348,34 @@ class _WebRoot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Healthcare EMR',
-      debugShowCheckedModeBanner: false,
-      home: Consumer<AuthProvider>(
-        builder: (context, auth, _) {
-          if (auth.isLoading) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-          if (!auth.isAuthenticated) return const LoginScreen();
-          if (auth.isOrgAdmin) return const OrgAdminWebShell();
-          return const ClinicalWebShell();
-        },
-      ),
+    return Consumer<ThemeModeProvider>(
+      builder: (context, themeMode, _) {
+        return MaterialApp(
+          title: 'Healthcare EMR',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeMode.mode,
+          builder: (context, child) {
+            final tokens = Theme.of(context).brightness == Brightness.dark
+                ? AppColorTokens.dark
+                : AppColorTokens.light;
+            return AppColorScope(tokens: tokens, child: child!);
+          },
+          home: Consumer<AuthProvider>(
+            builder: (context, auth, _) {
+              if (auth.isLoading) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
+              if (!auth.isAuthenticated) return const LoginScreen();
+              if (auth.isOrgAdmin) return const OrgAdminWebShell();
+              return const ClinicalWebShell();
+            },
+          ),
+        );
+      },
     );
   }
 }

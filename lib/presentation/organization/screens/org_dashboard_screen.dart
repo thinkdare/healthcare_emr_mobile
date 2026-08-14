@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../config/theme.dart';
 import '../../../core/platform.dart';
 import '../../../data/models/organization_models_enhanced.dart';
 import '../../../data/providers/auth_provider.dart';
@@ -10,6 +9,7 @@ import '../../../data/repositories/organization_repository.dart';
 import '../../common/error_view.dart';
 import '../../subscription/screens/subscription_details_screen.dart';
 import '../../reporting/screens/reporting_screen.dart';
+import '../../../config/app_colors.dart';
 
 class OrgDashboardScreen extends StatefulWidget {
   const OrgDashboardScreen({super.key});
@@ -30,9 +30,7 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _repository = OrganizationRepository(
-      apiClient: context.read<ApiClient>(),
-    );
+    _repository = OrganizationRepository(apiClient: context.read<ApiClient>());
     _load();
   }
 
@@ -56,25 +54,30 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
       _repository
           .getOrganization(orgId)
           .then<({OrganizationEnhancedModel? org, String? err})>(
-              (v) => (org: v, err: null))
-          .catchError((e) =>
-              (org: null, err: e.toString())
-                  as ({OrganizationEnhancedModel? org, String? err})),
+            (v) => (org: v, err: null),
+          )
+          .catchError(
+            (e) =>
+                (org: null, err: e.toString())
+                    as ({OrganizationEnhancedModel? org, String? err}),
+          ),
       _repository
           .getOrgStats(orgId)
           .then<({OrgStatsModel? stats, String? err})>(
-              (v) => (stats: v, err: null))
-          .catchError((e) =>
-              (stats: null, err: e.toString())
-                  as ({OrgStatsModel? stats, String? err})),
+            (v) => (stats: v, err: null),
+          )
+          .catchError(
+            (e) =>
+                (stats: null, err: e.toString())
+                    as ({OrgStatsModel? stats, String? err}),
+          ),
     ]);
 
     if (!mounted) return;
 
     final orgResult =
         results[0] as ({OrganizationEnhancedModel? org, String? err});
-    final statsResult =
-        results[1] as ({OrgStatsModel? stats, String? err});
+    final statsResult = results[1] as ({OrgStatsModel? stats, String? err});
 
     if (orgResult.org == null) {
       setState(() {
@@ -96,9 +99,7 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
   Widget build(BuildContext context) {
     if (kIsIOS) {
       return CupertinoPageScaffold(
-        navigationBar: const CupertinoNavigationBar(
-          middle: Text('Overview'),
-        ),
+        navigationBar: const CupertinoNavigationBar(middle: Text('Overview')),
         child: SafeArea(child: _buildContent()),
       );
     }
@@ -130,10 +131,11 @@ class _OrgDashboardScreenState extends State<OrgDashboardScreen> {
             child: Text(
               'QUICK ACTIONS',
               style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.8,
-                  color: Colors.grey.shade600),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+                color: Colors.grey.shade600,
+              ),
             ),
           ),
           _QuickActions(isWide: isWide),
@@ -151,8 +153,11 @@ class _GradientHeader extends StatelessWidget {
   final OrgStatsModel? stats;
   final bool statsError;
 
-  const _GradientHeader(
-      {required this.org, this.stats, required this.statsError});
+  const _GradientHeader({
+    required this.org,
+    this.stats,
+    required this.statsError,
+  });
 
   static const _typeLabels = {
     'state': 'State',
@@ -167,9 +172,9 @@ class _GradientHeader extends StatelessWidget {
     final isWide = MediaQuery.of(context).size.width > 700;
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+          colors: [AppColors.of(context).accent, AppColors.of(context).accent],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -181,9 +186,10 @@ class _GradientHeader extends StatelessWidget {
           Text(
             org.name,
             style: const TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.bold),
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
@@ -202,19 +208,22 @@ class _GradientHeader extends StatelessWidget {
   List<Widget> _buildStatTiles() {
     final tiles = [
       _DashStatTile(
-          label: 'Facilities',
-          value: statsError ? '—' : '${stats?.totalFacilities ?? '—'}',
-          warning: statsError),
+        label: 'Facilities',
+        value: statsError ? '—' : '${stats?.totalFacilities ?? '—'}',
+        warning: statsError,
+      ),
       const SizedBox(width: 8),
       _DashStatTile(
-          label: 'Staff',
-          value: statsError ? '—' : '${stats?.totalStaff ?? '—'}',
-          warning: statsError),
+        label: 'Staff',
+        value: statsError ? '—' : '${stats?.totalStaff ?? '—'}',
+        warning: statsError,
+      ),
       const SizedBox(width: 8),
       _DashStatTile(
-          label: 'Patients',
-          value: statsError ? '—' : '${stats?.totalPatients ?? '—'}',
-          warning: statsError),
+        label: 'Patients',
+        value: statsError ? '—' : '${stats?.totalPatients ?? '—'}',
+        warning: statsError,
+      ),
     ];
     return tiles;
   }
@@ -225,8 +234,11 @@ class _DashStatTile extends StatelessWidget {
   final String value;
   final bool warning;
 
-  const _DashStatTile(
-      {required this.label, required this.value, this.warning = false});
+  const _DashStatTile({
+    required this.label,
+    required this.value,
+    this.warning = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -237,24 +249,36 @@ class _DashStatTile extends StatelessWidget {
           color: Colors.white.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Column(children: [
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text(value,
-                style: const TextStyle(
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
-                    fontWeight: FontWeight.bold)),
-            if (warning) ...[
-              const SizedBox(width: 4),
-              const Icon(Icons.warning_amber,
-                  size: 14, color: Colors.white70),
-            ],
-          ]),
-          const SizedBox(height: 2),
-          Text(label,
-              style:
-                  const TextStyle(color: Colors.white70, fontSize: 11)),
-        ]),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (warning) ...[
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.warning_amber,
+                    size: 14,
+                    color: Colors.white70,
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white70, fontSize: 11),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -304,9 +328,11 @@ class _SubscriptionBanner extends StatelessWidget {
       onTap: () => Navigator.of(context).push(
         kIsIOS
             ? CupertinoPageRoute<void>(
-                builder: (_) => const SubscriptionDetailsScreen())
+                builder: (_) => const SubscriptionDetailsScreen(),
+              )
             : MaterialPageRoute<void>(
-                builder: (_) => const SubscriptionDetailsScreen()),
+                builder: (_) => const SubscriptionDetailsScreen(),
+              ),
       ),
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -321,11 +347,14 @@ class _SubscriptionBanner extends StatelessWidget {
             Icon(icon, size: 16, color: textColor),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(message,
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: textColor)),
+              child: Text(
+                message,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: textColor,
+                ),
+              ),
             ),
             Icon(Icons.chevron_right, size: 16, color: textColor),
           ],
@@ -385,8 +414,11 @@ class _ActionTile extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _ActionTile(
-      {required this.icon, required this.label, required this.onTap});
+  const _ActionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -404,12 +436,14 @@ class _ActionTile extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 28, color: AppTheme.primaryColor),
+              Icon(icon, size: 28, color: AppColors.of(context).accent),
               const SizedBox(height: 8),
               Text(
                 label,
                 style: const TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.w500),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

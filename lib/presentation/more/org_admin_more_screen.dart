@@ -39,25 +39,31 @@ class _IOSMoreScreen extends StatelessWidget {
               header: Text(
                 'Admin',
                 style: TextStyle(
-                    color: CupertinoColors.systemOrange.resolveFrom(context)),
+                  color: CupertinoColors.systemOrange.resolveFrom(context),
+                ),
               ),
               children: [
                 CupertinoListTile(
-                  leading: const Icon(CupertinoIcons.building_2_fill,
-                      color: CupertinoColors.systemOrange),
+                  leading: const Icon(
+                    CupertinoIcons.building_2_fill,
+                    color: CupertinoColors.systemOrange,
+                  ),
                   title: const Text('Organisation Profile'),
                   trailing: const CupertinoListTileChevron(),
                   onTap: () => _push(
                     context,
                     OrganizationProfileScreen(
                       repository: OrganizationRepository(
-                          apiClient: context.read<ApiClient>()),
+                        apiClient: context.read<ApiClient>(),
+                      ),
                     ),
                   ),
                 ),
                 CupertinoListTile(
-                  leading: const Icon(CupertinoIcons.mail,
-                      color: CupertinoColors.systemOrange),
+                  leading: const Icon(
+                    CupertinoIcons.mail,
+                    color: CupertinoColors.systemOrange,
+                  ),
                   title: const Text('Invite Staff'),
                   trailing: const CupertinoListTileChevron(),
                   onTap: () => _push(context, const ProviderInvitationScreen()),
@@ -68,23 +74,29 @@ class _IOSMoreScreen extends StatelessWidget {
               header: const Text('Account'),
               children: [
                 CupertinoListTile(
-                  leading: const Icon(CupertinoIcons.creditcard,
-                      color: AppColors.primary),
+                  leading: Icon(
+                    CupertinoIcons.creditcard,
+                    color: AppColors.of(context).accent,
+                  ),
                   title: const Text('Subscription & Billing'),
                   trailing: const CupertinoListTileChevron(),
                   onTap: () =>
                       _push(context, const SubscriptionDetailsScreen()),
                 ),
                 CupertinoListTile(
-                  leading: const Icon(CupertinoIcons.chart_bar_square,
-                      color: AppColors.primary),
+                  leading: Icon(
+                    CupertinoIcons.chart_bar_square,
+                    color: AppColors.of(context).accent,
+                  ),
                   title: const Text('Reporting & Compliance'),
                   trailing: const CupertinoListTileChevron(),
                   onTap: () => _push(context, const ReportingScreen()),
                 ),
                 CupertinoListTile(
-                  leading: const Icon(CupertinoIcons.person_crop_square,
-                      color: AppColors.primary),
+                  leading: Icon(
+                    CupertinoIcons.person_crop_square,
+                    color: AppColors.of(context).accent,
+                  ),
                   title: const Text('Staff Profile'),
                   trailing: const CupertinoListTileChevron(),
                   onTap: () => _push(context, const StaffProfileScreen()),
@@ -94,10 +106,14 @@ class _IOSMoreScreen extends StatelessWidget {
             CupertinoListSection.insetGrouped(
               children: [
                 CupertinoListTile(
-                  leading: const Icon(CupertinoIcons.square_arrow_left,
-                      color: AppColors.error),
-                  title: const Text('Sign Out',
-                      style: TextStyle(color: AppColors.error)),
+                  leading: Icon(
+                    CupertinoIcons.square_arrow_left,
+                    color: AppColors.of(context).critical,
+                  ),
+                  title: Text(
+                    'Sign Out',
+                    style: TextStyle(color: AppColors.of(context).critical),
+                  ),
                   onTap: () => _confirmSignOut(context),
                 ),
               ],
@@ -109,8 +125,7 @@ class _IOSMoreScreen extends StatelessWidget {
   }
 
   void _push(BuildContext context, Widget screen) {
-    Navigator.of(context)
-        .push(CupertinoPageRoute(builder: (_) => screen));
+    Navigator.of(context).push(CupertinoPageRoute(builder: (_) => screen));
   }
 
   Future<void> _confirmSignOut(BuildContext context) async {
@@ -158,15 +173,15 @@ class _AndroidMoreScreen extends StatelessWidget {
         children: [
           _SectionHeader(label: 'Admin', color: Colors.orange.shade700),
           ListTile(
-            leading:
-                Icon(Icons.business, color: Colors.orange.shade700),
+            leading: Icon(Icons.business, color: Colors.orange.shade700),
             title: const Text('Organisation Profile'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _push(
               context,
               OrganizationProfileScreen(
                 repository: OrganizationRepository(
-                    apiClient: context.read<ApiClient>()),
+                  apiClient: context.read<ApiClient>(),
+                ),
               ),
             ),
           ),
@@ -198,9 +213,11 @@ class _AndroidMoreScreen extends StatelessWidget {
           ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.logout, color: AppColors.error),
-            title: const Text('Sign Out',
-                style: TextStyle(color: AppColors.error)),
+            leading: Icon(Icons.logout, color: AppColors.of(context).critical),
+            title: Text(
+              'Sign Out',
+              style: TextStyle(color: AppColors.of(context).critical),
+            ),
             onTap: () => _confirmSignOut(context),
           ),
         ],
@@ -225,7 +242,9 @@ class _AndroidMoreScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.of(context).critical,
+            ),
             child: const Text('Sign Out'),
           ),
         ],

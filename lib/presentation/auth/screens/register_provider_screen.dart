@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../config/theme.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/platform.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/repositories/staff_repository.dart';
 import 'facility_picker_screen.dart';
 import '../../dashboard/screens/provider_dashboard_screen.dart';
+import '../../../config/app_colors.dart';
 
 /// Two-step provider registration via staff invitation token.
 ///
@@ -32,13 +32,13 @@ class RegisterProviderScreen extends StatefulWidget {
 class _RegisterProviderScreenState extends State<RegisterProviderScreen> {
   // ── Form controllers ────────────────────────────────────────────────────────
 
-  final _tokenCtrl      = TextEditingController();
-  final _firstNameCtrl  = TextEditingController();
-  final _lastNameCtrl   = TextEditingController();
-  final _passwordCtrl   = TextEditingController();
-  final _confirmCtrl    = TextEditingController();
+  final _tokenCtrl = TextEditingController();
+  final _firstNameCtrl = TextEditingController();
+  final _lastNameCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
 
-  final _tokenFormKey   = GlobalKey<FormState>();
+  final _tokenFormKey = GlobalKey<FormState>();
   final _accountFormKey = GlobalKey<FormState>();
 
   // ── State ───────────────────────────────────────────────────────────────────
@@ -46,7 +46,7 @@ class _RegisterProviderScreenState extends State<RegisterProviderScreen> {
   _Step _step = _Step.token;
   bool _loading = false;
   bool _obscurePassword = true;
-  bool _obscureConfirm  = true;
+  bool _obscureConfirm = true;
   String? _error;
 
   InvitationDetails? _invitation;
@@ -82,7 +82,10 @@ class _RegisterProviderScreenState extends State<RegisterProviderScreen> {
   Future<void> _validateToken() async {
     if (!_tokenFormKey.currentState!.validate()) return;
 
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
     try {
       final details = await _staffRepo.validateInvitation(
@@ -91,14 +94,14 @@ class _RegisterProviderScreenState extends State<RegisterProviderScreen> {
       if (!mounted) return;
       setState(() {
         _invitation = details;
-        _step       = _Step.account;
-        _loading    = false;
+        _step = _Step.account;
+        _loading = false;
       });
     } on Exception catch (e) {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error   = _friendlyError(e.toString());
+        _error = _friendlyError(e.toString());
       });
     }
   }
@@ -106,20 +109,23 @@ class _RegisterProviderScreenState extends State<RegisterProviderScreen> {
   Future<void> _register() async {
     if (!_accountFormKey.currentState!.validate()) return;
 
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
     // Capture before async gap
     final apiClient = context.read<ApiClient>();
-    final authProv  = context.read<AuthProvider>();
+    final authProv = context.read<AuthProvider>();
 
     try {
       final token = await _staffRepo.registerViaInvitation(
-        token:     _invitation!.token.isNotEmpty
+        token: _invitation!.token.isNotEmpty
             ? _invitation!.token
             : _tokenCtrl.text.trim(),
         firstName: _firstNameCtrl.text.trim(),
-        lastName:  _lastNameCtrl.text.trim(),
-        password:  _passwordCtrl.text,
+        lastName: _lastNameCtrl.text.trim(),
+        password: _passwordCtrl.text,
       );
 
       await apiClient.saveToken(token);
@@ -133,7 +139,7 @@ class _RegisterProviderScreenState extends State<RegisterProviderScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error   = _friendlyError(e.toString());
+        _error = _friendlyError(e.toString());
       });
     }
   }
@@ -153,9 +159,9 @@ class _RegisterProviderScreenState extends State<RegisterProviderScreen> {
 
   void _backToTokenStep() {
     setState(() {
-      _step       = _Step.token;
+      _step = _Step.token;
       _invitation = null;
-      _error      = null;
+      _error = null;
       _firstNameCtrl.clear();
       _lastNameCtrl.clear();
       _passwordCtrl.clear();
@@ -179,8 +185,11 @@ class _RegisterProviderScreenState extends State<RegisterProviderScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Header
-                  Icon(Icons.local_hospital,
-                      size: 72, color: AppTheme.primaryColor),
+                  Icon(
+                    Icons.local_hospital,
+                    size: 72,
+                    color: AppColors.of(context).accent,
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     'Healthcare EMR',
@@ -193,7 +202,10 @@ class _RegisterProviderScreenState extends State<RegisterProviderScreen> {
                         ? 'Accept your invitation'
                         : 'Create your account',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 15, color: AppTheme.gray600),
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: AppColors.of(context).textSecondary,
+                    ),
                   ),
                   const SizedBox(height: 36),
 
@@ -235,22 +247,28 @@ class _RegisterProviderScreenState extends State<RegisterProviderScreen> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.07),
+              color: AppColors.of(context).accent.withValues(alpha: 0.07),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.2)),
-            ),
-            child: Row(children: [
-              Icon(Icons.mail_outline,
-                  color: AppTheme.primaryColor, size: 20),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text(
-                  'Paste the invitation token from your email to get started.',
-                  style: TextStyle(fontSize: 13),
-                ),
+                color: AppColors.of(context).accent.withValues(alpha: 0.2),
               ),
-            ]),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.mail_outline,
+                  color: AppColors.of(context).accent,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Paste the invitation token from your email to get started.',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 20),
 
@@ -272,9 +290,7 @@ class _RegisterProviderScreenState extends State<RegisterProviderScreen> {
 
           AdaptiveFilledButton(
             onPressed: _loading ? null : _validateToken,
-            child: _loading
-                ? _Spinner()
-                : const Text('Verify invitation'),
+            child: _loading ? _Spinner() : const Text('Verify invitation'),
           ),
         ],
       ),
@@ -293,41 +309,41 @@ class _RegisterProviderScreenState extends State<RegisterProviderScreen> {
           // Invitation summary card
           _InvitationCard(
             facilityName: inv.facilityName,
-            staffType:    inv.staffTypeLabel,
-            email:        inv.email,
-            inviterName:  inv.inviterName,
+            staffType: inv.staffTypeLabel,
+            email: inv.email,
+            inviterName: inv.inviterName,
             onChangeToken: _backToTokenStep,
           ),
           const SizedBox(height: 20),
 
           // Name row
-          Row(children: [
-            Expanded(
-              child: TextFormField(
-                controller: _firstNameCtrl,
-                enabled: !_loading,
-                textCapitalization: TextCapitalization.words,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'First name *'),
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Required'
-                    : null,
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _firstNameCtrl,
+                  enabled: !_loading,
+                  textCapitalization: TextCapitalization.words,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(labelText: 'First name *'),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Required' : null,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: TextFormField(
-                controller: _lastNameCtrl,
-                enabled: !_loading,
-                textCapitalization: TextCapitalization.words,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Last name *'),
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Required'
-                    : null,
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextFormField(
+                  controller: _lastNameCtrl,
+                  enabled: !_loading,
+                  textCapitalization: TextCapitalization.words,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(labelText: 'Last name *'),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Required' : null,
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
           const SizedBox(height: 16),
 
           // Password
@@ -341,9 +357,11 @@ class _RegisterProviderScreenState extends State<RegisterProviderScreen> {
               hintText: 'At least 8 characters',
               prefixIcon: const Icon(Icons.lock_outlined),
               suffixIcon: IconButton(
-                icon: Icon(_obscurePassword
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined),
+                icon: Icon(
+                  _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                ),
                 onPressed: () =>
                     setState(() => _obscurePassword = !_obscurePassword),
               ),
@@ -367,9 +385,11 @@ class _RegisterProviderScreenState extends State<RegisterProviderScreen> {
               labelText: 'Confirm password *',
               prefixIcon: const Icon(Icons.lock_outlined),
               suffixIcon: IconButton(
-                icon: Icon(_obscureConfirm
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined),
+                icon: Icon(
+                  _obscureConfirm
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                ),
                 onPressed: () =>
                     setState(() => _obscureConfirm = !_obscureConfirm),
               ),
@@ -383,9 +403,7 @@ class _RegisterProviderScreenState extends State<RegisterProviderScreen> {
 
           AdaptiveFilledButton(
             onPressed: _loading ? null : _register,
-            child: _loading
-                ? _Spinner()
-                : const Text('Create account'),
+            child: _loading ? _Spinner() : const Text('Create account'),
           ),
         ],
       ),
@@ -395,9 +413,13 @@ class _RegisterProviderScreenState extends State<RegisterProviderScreen> {
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   String _friendlyError(String raw) {
-    if (raw.contains('expired')) return 'This invitation has expired. Ask your administrator for a new one.';
-    if (raw.contains('used') || raw.contains('already')) return 'This invitation has already been used.';
-    if (raw.contains('not found') || raw.contains('invalid') || raw.contains('Invalid')) {
+    if (raw.contains('expired'))
+      return 'This invitation has expired. Ask your administrator for a new one.';
+    if (raw.contains('used') || raw.contains('already'))
+      return 'This invitation has already been used.';
+    if (raw.contains('not found') ||
+        raw.contains('invalid') ||
+        raw.contains('Invalid')) {
       return 'Invitation not found. Check that you copied the full token.';
     }
     if (raw.contains('SocketException') || raw.contains('Connection')) {
@@ -436,32 +458,45 @@ class _InvitationCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.successColor.withValues(alpha: 0.06),
+        color: AppColors.of(context).success.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(10),
-        border:
-            Border.all(color: AppTheme.successColor.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: AppColors.of(context).success.withValues(alpha: 0.3),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Icon(Icons.check_circle, color: AppTheme.successColor, size: 18),
-            const SizedBox(width: 8),
-            const Text('Invitation verified',
+          Row(
+            children: [
+              Icon(
+                Icons.check_circle,
+                color: AppColors.of(context).success,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Invitation verified',
                 style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.successColor,
-                    fontSize: 13)),
-            const Spacer(),
-            GestureDetector(
-              onTap: onChangeToken,
-              child: Text('Change',
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.of(context).success,
+                  fontSize: 13,
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: onChangeToken,
+                child: Text(
+                  'Change',
                   style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.primaryColor,
-                      decoration: TextDecoration.underline)),
-            ),
-          ]),
+                    fontSize: 12,
+                    color: AppColors.of(context).accent,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 10),
           _Row(icon: Icons.local_hospital_outlined, text: facilityName),
           _Row(icon: Icons.badge_outlined, text: staffType),
@@ -483,15 +518,19 @@ class _Row extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 6),
-      child: Row(children: [
-        Icon(icon, size: 15, color: AppTheme.gray600),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(text,
+      child: Row(
+        children: [
+          Icon(icon, size: 15, color: AppColors.of(context).textSecondary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
               style: const TextStyle(fontSize: 13),
-              overflow: TextOverflow.ellipsis),
-        ),
-      ]),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -507,18 +546,31 @@ class _ErrorBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.errorColor.withValues(alpha: 0.09),
+        color: AppColors.of(context).critical.withValues(alpha: 0.09),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.errorColor.withValues(alpha: 0.3)),
-      ),
-      child: Row(children: [
-        Icon(Icons.error_outline, color: AppTheme.errorColor, size: 20),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(message,
-              style: TextStyle(color: AppTheme.errorColor, fontSize: 13)),
+        border: Border.all(
+          color: AppColors.of(context).critical.withValues(alpha: 0.3),
         ),
-      ]),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.error_outline,
+            color: AppColors.of(context).critical,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: AppColors.of(context).critical,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -529,10 +581,12 @@ class _Spinner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const SizedBox(
-      height: 20, width: 20,
+      height: 20,
+      width: 20,
       child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation(Colors.white)),
+        strokeWidth: 2,
+        valueColor: AlwaysStoppedAnimation(Colors.white),
+      ),
     );
   }
 }

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../config/theme.dart';
 import '../../../core/platform.dart';
 import '../../../data/models/patient_models.dart';
 import '../../../data/models/clinical_models.dart';
@@ -25,6 +24,7 @@ import '../widgets/clinical_forms.dart';
 import '../widgets/clinical_record_tab.dart';
 import '../widgets/clinical_record_forms.dart';
 import 'patient_form_screen.dart';
+import '../../../config/app_colors.dart';
 
 class PatientDetailScreen extends StatefulWidget {
   final PatientModel patient;
@@ -37,17 +37,17 @@ class PatientDetailScreen extends StatefulWidget {
 
 // Tabs available to each staff type (by index into _allTabs).
 // 0=Overview 1=Appointments 2=Prescriptions 3=Lab Results 4=Documents 5=Clinical Record 6=Notes 7=Ward
-const _nurseTabIndices      = [0, 1, 5, 6, 7];
+const _nurseTabIndices = [0, 1, 5, 6, 7];
 const _pharmacistTabIndices = [0, 2, 6];
-const _labTechTabIndices    = [0, 3, 6];
-const _doctorTabIndices     = [0, 1, 2, 3, 4, 5, 6, 7];
+const _labTechTabIndices = [0, 3, 6];
+const _doctorTabIndices = [0, 1, 2, 3, 4, 5, 6, 7];
 
 List<int> _tabIndicesFor(String staffType) => switch (staffType) {
-      'nurse' => _nurseTabIndices,
-      'pharmacist' => _pharmacistTabIndices,
-      'lab_technician' || 'lab_tech' => _labTechTabIndices,
-      _ => _doctorTabIndices, // doctor, admin, other
-    };
+  'nurse' => _nurseTabIndices,
+  'pharmacist' => _pharmacistTabIndices,
+  'lab_technician' || 'lab_tech' => _labTechTabIndices,
+  _ => _doctorTabIndices, // doctor, admin, other
+};
 
 class _PatientDetailScreenState extends State<PatientDetailScreen>
     with SingleTickerProviderStateMixin {
@@ -90,7 +90,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       case 2: // Prescriptions
         if (auth.staffType == 'pharmacist') {
           // Pharmacists use the fill dialog on individual cards, not the FAB.
-          showAdaptiveToast(context, 'Tap the Fill button on a prescription to dispense it');
+          showAdaptiveToast(
+            context,
+            'Tap the Fill button on a prescription to dispense it',
+          );
           return;
         }
         if (!auth.canPrescribe) {
@@ -100,8 +103,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         form = const PrescriptionForm();
         break;
       case 3: // Lab Results
-        if (auth.staffType == 'lab_technician' || auth.staffType == 'lab_tech') {
-          showAdaptiveToast(context, 'Tap the Record button on a lab order to enter results');
+        if (auth.staffType == 'lab_technician' ||
+            auth.staffType == 'lab_tech') {
+          showAdaptiveToast(
+            context,
+            'Tap the Record button on a lab order to enter results',
+          );
           return;
         }
         if (!auth.canOrderLabs) {
@@ -239,11 +246,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     if (formType == null || !mounted) return;
 
     final Widget form = switch (formType) {
-      _ when formType == DiagnosisForm    => const DiagnosisForm(),
-      _ when formType == ProblemForm      => const ProblemForm(),
-      _ when formType == ProcedureForm    => const ProcedureForm(),
+      _ when formType == DiagnosisForm => const DiagnosisForm(),
+      _ when formType == ProblemForm => const ProblemForm(),
+      _ when formType == ProcedureForm => const ProcedureForm(),
       _ when formType == ImmunizationForm => const ImmunizationForm(),
-      _                                   => const VitalSignForm(),
+      _ => const VitalSignForm(),
     };
 
     final created = await showModalBottomSheet<bool>(
@@ -262,9 +269,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     final updated = await Navigator.of(context).push<PatientModel>(
       kIsIOS
           ? CupertinoPageRoute(
-              builder: (_) => PatientFormScreen(patient: _patient))
+              builder: (_) => PatientFormScreen(patient: _patient),
+            )
           : MaterialPageRoute(
-              builder: (_) => PatientFormScreen(patient: _patient)),
+              builder: (_) => PatientFormScreen(patient: _patient),
+            ),
     );
     if (updated != null && mounted) {
       setState(() => _patient = updated);
@@ -285,11 +294,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       builder: (_) => CreateReferralSheet(patient: _patient),
     );
     if (mounted) {
-      final tenantId =
-          context.read<AuthProvider>().activeTenantId ?? '';
-      context
-          .read<ReferralProvider>()
-          .loadReferrals(currentTenantId: tenantId);
+      final tenantId = context.read<AuthProvider>().activeTenantId ?? '';
+      context.read<ReferralProvider>().loadReferrals(currentTenantId: tenantId);
     }
   }
 
@@ -299,12 +305,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       builder: (ctx) => AlertDialog(
         title: const Text('Activate Patient Record'),
         content: const Text(
-            'Records department staff only. This opens a time-limited window '
-            'for clinical write access to this patient.'),
+          'Records department staff only. This opens a time-limited window '
+          'for clinical write access to this patient.',
+        ),
         actions: [
           AdaptiveTextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
           AdaptiveFilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Activate'),
@@ -314,13 +322,16 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     );
     if (confirmed != true || !mounted) return;
 
-    final ok = await context.read<PatientProvider>().activatePatient(_patient.id);
+    final ok = await context.read<PatientProvider>().activatePatient(
+      _patient.id,
+    );
     if (!mounted) return;
     showAdaptiveToast(
       context,
       ok
           ? 'Patient record activated'
-          : context.read<PatientProvider>().error ?? 'Failed to activate record',
+          : context.read<PatientProvider>().error ??
+                'Failed to activate record',
       type: ok ? ToastType.success : ToastType.error,
     );
   }
@@ -385,7 +396,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   Widget build(BuildContext context) {
     final p = _patient;
     final auth = context.read<AuthProvider>();
-    final canEdit = auth.staffType == 'doctor' || auth.staffType == 'admin' ||
+    final canEdit =
+        auth.staffType == 'doctor' ||
+        auth.staffType == 'admin' ||
         auth.staffType == 'nurse';
     final isSuperAdmin = auth.currentUser?.isSuperAdmin ?? false;
     final canViewAuditLog =
@@ -410,7 +423,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                 CupertinoButton(
                   padding: EdgeInsets.zero,
                   onPressed: _openReferralSheet,
-                  child: const Icon(CupertinoIcons.arrow_right_arrow_left_circle),
+                  child: const Icon(
+                    CupertinoIcons.arrow_right_arrow_left_circle,
+                  ),
                 ),
               if (canEdit)
                 CupertinoButton(
@@ -420,8 +435,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                 ),
               CupertinoButton(
                 padding: EdgeInsets.zero,
-                onPressed: () =>
-                    context.read<ClinicalProvider>().loadAll(p.id),
+                onPressed: () => context.read<ClinicalProvider>().loadAll(p.id),
                 child: const Icon(CupertinoIcons.refresh),
               ),
               CupertinoButton(
@@ -458,7 +472,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                 children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: CupertinoSlidingSegmentedControl<int>(
                       groupValue: _iosSegment,
                       onValueChanged: (v) =>
@@ -466,8 +482,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                       children: {
                         for (int i = 0; i < _visibleIndices.length; i++)
                           i: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
                             child: Text(
                               const [
                                 'Overview',
@@ -508,13 +523,15 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
               onPressed: _openClinicalForm,
               tooltip: switch (_currentTab) {
                 1 => 'Book Appointment',
-                2 => auth.staffType == 'pharmacist'
-                    ? 'Fill Prescription'
-                    : 'New Prescription',
-                3 => auth.staffType == 'lab_technician' ||
-                        auth.staffType == 'lab_tech'
-                    ? 'Record Results'
-                    : 'Order Lab Test',
+                2 =>
+                  auth.staffType == 'pharmacist'
+                      ? 'Fill Prescription'
+                      : 'New Prescription',
+                3 =>
+                  auth.staffType == 'lab_technician' ||
+                          auth.staffType == 'lab_tech'
+                      ? 'Record Results'
+                      : 'Order Lab Test',
                 4 => 'Upload Document',
                 _ => 'Add',
               },
@@ -539,8 +556,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
-            onPressed: () =>
-                context.read<ClinicalProvider>().loadAll(p.id),
+            onPressed: () => context.read<ClinicalProvider>().loadAll(p.id),
           ),
           PopupMenuButton<String>(
             onSelected: (value) {
@@ -578,16 +594,17 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
           tabs: [
             for (final i in _visibleIndices)
               Tab(
-                  text: const [
-                'Overview',
-                'Appointments',
-                'Prescriptions',
-                'Lab Results',
-                'Documents',
-                'Clinical Record',
-                'Notes',
-                'Ward',
-              ][i]),
+                text: const [
+                  'Overview',
+                  'Appointments',
+                  'Prescriptions',
+                  'Lab Results',
+                  'Documents',
+                  'Clinical Record',
+                  'Notes',
+                  'Ward',
+                ][i],
+              ),
           ],
         ),
       ),
@@ -642,20 +659,27 @@ class _PatientAuditLogSheet extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppTheme.gray600.withValues(alpha: 0.3),
+              color: AppColors.of(context).textSecondary.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text('Audit Log',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            child: Text(
+              'Audit Log',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
           ),
           Expanded(
             child: logs.isEmpty
                 ? Center(
-                    child: Text('No audit entries',
-                        style: TextStyle(color: AppTheme.gray600)))
+                    child: Text(
+                      'No audit entries',
+                      style: TextStyle(
+                        color: AppColors.of(context).textSecondary,
+                      ),
+                    ),
+                  )
                 : ListView.separated(
                     controller: scrollController,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -670,18 +694,24 @@ class _PatientAuditLogSheet extends StatelessWidget {
                               ? Icons.warning_amber
                               : Icons.fingerprint,
                           color: log['was_emergency'] == true
-                              ? AppTheme.errorColor
-                              : AppTheme.gray600,
+                              ? AppColors.of(context).critical
+                              : AppColors.of(context).textSecondary,
                           size: 20,
                         ),
                         title: Text(
                           '${log['action'] ?? ''} · ${log['resource_type'] ?? ''}',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         subtitle: Text(
                           '${log['access_authority'] ?? ''} · ${log['accessed_at'] ?? ''}'
                           '${log['was_offline'] == true ? ' · offline' : ''}',
-                          style: TextStyle(fontSize: 11, color: AppTheme.gray600),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.of(context).textSecondary,
+                          ),
                         ),
                       );
                     },
@@ -718,14 +748,15 @@ class _OverviewTab extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 32,
-                        backgroundColor:
-                            AppTheme.primaryColor.withValues(alpha: 0.15),
+                        backgroundColor: AppColors.of(
+                          context,
+                        ).accent.withValues(alpha: 0.15),
                         child: Text(
                           p.firstName[0] + p.lastName[0],
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryColor,
+                            color: AppColors.of(context).accent,
                           ),
                         ),
                       ),
@@ -734,15 +765,20 @@ class _OverviewTab extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(p.fullName,
-                                style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold)),
+                            Text(
+                              p.fullName,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 4),
                             Text(
                               '${p.ageDisplay} · ${p.gender} · ${p.bloodType ?? 'Blood type unknown'}',
                               style: TextStyle(
-                                  color: AppTheme.gray600, fontSize: 14),
+                                color: AppColors.of(context).textSecondary,
+                                fontSize: 14,
+                              ),
                             ),
                           ],
                         ),
@@ -778,7 +814,10 @@ class _OverviewTab extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: OutlinedButton.icon(
-                          icon: const Icon(Icons.privacy_tip_outlined, size: 18),
+                          icon: const Icon(
+                            Icons.privacy_tip_outlined,
+                            size: 18,
+                          ),
                           label: const Text('Consent'),
                           onPressed: () => Navigator.of(context).push(
                             MaterialPageRoute(
@@ -806,7 +845,7 @@ class _OverviewTab extends StatelessWidget {
             _SectionHeader(
               'Allergies',
               badge: p.hasCriticalAllergies ? 'CRITICAL' : null,
-              badgeColor: AppTheme.errorColor,
+              badgeColor: AppColors.of(context).critical,
             ),
             Card(
               child: Padding(
@@ -819,14 +858,16 @@ class _OverviewTab extends StatelessWidget {
                       leading: Icon(
                         Icons.warning_rounded,
                         color: isSerious
-                            ? AppTheme.errorColor
-                            : AppTheme.warningColor,
+                            ? AppColors.of(context).critical
+                            : AppColors.of(context).warning,
                       ),
-                      title: Text(a.name,
-                          style:
-                              const TextStyle(fontWeight: FontWeight.w600)),
+                      title: Text(
+                        a.name,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
                       subtitle: Text(
-                          a.severity.replaceAll('_', ' ').toUpperCase()),
+                        a.severity.replaceAll('_', ' ').toUpperCase(),
+                      ),
                       dense: true,
                     );
                   }).toList(),
@@ -843,15 +884,23 @@ class _OverviewTab extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  children: p.currentMedications.map((m) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.medication,
-                        color: AppTheme.primaryColor),
-                    title: Text(m.name,
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: Text(m.displayDose),
-                    dense: true,
-                  )).toList(),
+                  children: p.currentMedications
+                      .map(
+                        (m) => ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(
+                            Icons.medication,
+                            color: AppColors.of(context).accent,
+                          ),
+                          title: Text(
+                            m.name,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: Text(m.displayDose),
+                          dense: true,
+                        ),
+                      )
+                      .toList(),
                 ),
               ),
             ),
@@ -867,11 +916,16 @@ class _OverviewTab extends StatelessWidget {
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: p.chronicConditions.map((c) => Chip(
-                    label: Text(c, style: const TextStyle(fontSize: 13)),
-                    backgroundColor:
-                        AppTheme.primaryColor.withValues(alpha: 0.08),
-                  )).toList(),
+                  children: p.chronicConditions
+                      .map(
+                        (c) => Chip(
+                          label: Text(c, style: const TextStyle(fontSize: 13)),
+                          backgroundColor: AppColors.of(
+                            context,
+                          ).accent.withValues(alpha: 0.08),
+                        ),
+                      )
+                      .toList(),
                 ),
               ),
             ),
@@ -884,16 +938,17 @@ class _OverviewTab extends StatelessWidget {
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(p.medicalHistory!,
-                    style: const TextStyle(fontSize: 13, height: 1.5)),
+                child: Text(
+                  p.medicalHistory!,
+                  style: const TextStyle(fontSize: 13, height: 1.5),
+                ),
               ),
             ),
             const SizedBox(height: 16),
           ],
 
           // Emergency contact
-          _SectionHeader('Emergency Contact',
-              icon: Icons.emergency),
+          _SectionHeader('Emergency Contact', icon: Icons.emergency),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -979,8 +1034,9 @@ class _AppointmentCardState extends State<_AppointmentCard> {
         ),
         actions: [
           AdaptiveTextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('No')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('No'),
+          ),
           AdaptiveFilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Cancel Appointment'),
@@ -992,15 +1048,17 @@ class _AppointmentCardState extends State<_AppointmentCard> {
 
     setState(() => _cancelling = true);
     final ok = await context.read<ClinicalProvider>().cancelAppointment(
-          widget.appt.id,
-          reason: reasonCtrl.text.trim().isEmpty ? null : reasonCtrl.text.trim(),
-        );
+      widget.appt.id,
+      reason: reasonCtrl.text.trim().isEmpty ? null : reasonCtrl.text.trim(),
+    );
     if (!mounted) return;
     setState(() => _cancelling = false);
 
     showAdaptiveToast(
       context,
-      ok ? 'Appointment cancelled' : context.read<ClinicalProvider>().error ?? 'Failed to cancel',
+      ok
+          ? 'Appointment cancelled'
+          : context.read<ClinicalProvider>().error ?? 'Failed to cancel',
       type: ok ? ToastType.success : ToastType.error,
     );
   }
@@ -1018,8 +1076,9 @@ class _AppointmentCardState extends State<_AppointmentCard> {
         ),
         actions: [
           AdaptiveTextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
           AdaptiveFilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Mark Complete'),
@@ -1031,15 +1090,17 @@ class _AppointmentCardState extends State<_AppointmentCard> {
 
     setState(() => _completing = true);
     final ok = await context.read<ClinicalProvider>().completeAppointment(
-          widget.appt.id,
-          notes: notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
-        );
+      widget.appt.id,
+      notes: notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
+    );
     if (!mounted) return;
     setState(() => _completing = false);
 
     showAdaptiveToast(
       context,
-      ok ? 'Appointment marked complete' : context.read<ClinicalProvider>().error ?? 'Failed to complete',
+      ok
+          ? 'Appointment marked complete'
+          : context.read<ClinicalProvider>().error ?? 'Failed to complete',
       type: ok ? ToastType.success : ToastType.error,
     );
   }
@@ -1048,7 +1109,8 @@ class _AppointmentCardState extends State<_AppointmentCard> {
   Widget build(BuildContext context) {
     final appt = widget.appt;
     final auth = context.read<AuthProvider>();
-    final canModify = (auth.currentUser?.isSuperAdmin ?? false) ||
+    final canModify =
+        (auth.currentUser?.isSuperAdmin ?? false) ||
         auth.currentUserId == appt.providerId;
     final isOpen = !['completed', 'cancelled', 'no_show'].contains(appt.status);
     final canCancel = canModify && isOpen;
@@ -1057,17 +1119,17 @@ class _AppointmentCardState extends State<_AppointmentCard> {
     Color statusColor;
     switch (appt.status) {
       case 'completed':
-        statusColor = AppTheme.successColor;
+        statusColor = AppColors.of(context).success;
         break;
       case 'cancelled':
       case 'no_show':
-        statusColor = AppTheme.gray600;
+        statusColor = AppColors.of(context).textSecondary;
         break;
       case 'checked_in':
-        statusColor = AppTheme.primaryColor;
+        statusColor = AppColors.of(context).accent;
         break;
       default:
-        statusColor = AppTheme.warningColor;
+        statusColor = AppColors.of(context).warning;
     }
 
     final dt = appt.appointmentDate;
@@ -1099,24 +1161,36 @@ class _AppointmentCardState extends State<_AppointmentCard> {
                       Text(
                         appt.appointmentType.replaceAll('_', ' ').toUpperCase(),
                         style: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w600),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(height: 2),
-                      Text(dateStr,
-                          style: TextStyle(
-                              color: AppTheme.gray600, fontSize: 13)),
+                      Text(
+                        dateStr,
+                        style: TextStyle(
+                          color: AppColors.of(context).textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
                       if (appt.reason != null) ...[
                         const SizedBox(height: 2),
-                        Text(appt.reason!,
-                            style: TextStyle(
-                                fontSize: 12, color: AppTheme.gray600)),
+                        Text(
+                          appt.reason!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.of(context).textSecondary,
+                          ),
+                        ),
                       ],
                     ],
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
@@ -1124,9 +1198,10 @@ class _AppointmentCardState extends State<_AppointmentCard> {
                   child: Text(
                     appt.status.replaceAll('_', ' ').toUpperCase(),
                     style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: statusColor),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: statusColor,
+                    ),
                   ),
                 ),
               ],
@@ -1143,7 +1218,8 @@ class _AppointmentCardState extends State<_AppointmentCard> {
                           ? const SizedBox(
                               width: 14,
                               height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2))
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Icon(Icons.check_circle_outline, size: 16),
                       label: Text(_completing ? 'Saving…' : 'Mark Complete'),
                     ),
@@ -1151,12 +1227,14 @@ class _AppointmentCardState extends State<_AppointmentCard> {
                     OutlinedButton.icon(
                       onPressed: _cancelling ? null : _cancel,
                       style: OutlinedButton.styleFrom(
-                          foregroundColor: AppTheme.errorColor),
+                        foregroundColor: AppColors.of(context).critical,
+                      ),
                       icon: _cancelling
                           ? const SizedBox(
                               width: 14,
                               height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2))
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Icon(Icons.event_busy, size: 16),
                       label: Text(_cancelling ? 'Cancelling…' : 'Cancel'),
                     ),
@@ -1180,18 +1258,14 @@ class _PrescriptionsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final prescriptions = context.watch<ClinicalProvider>().prescriptions;
     if (prescriptions.isEmpty) {
-      return _EmptyState(
-        icon: Icons.medication,
-        message: 'No prescriptions',
-      );
+      return _EmptyState(icon: Icons.medication, message: 'No prescriptions');
     }
     return RefreshIndicator(
       onRefresh: () => context.read<ClinicalProvider>().loadPrescriptions(),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: prescriptions.length,
-        itemBuilder: (context, i) =>
-            _PrescriptionCard(rx: prescriptions[i]),
+        itemBuilder: (context, i) => _PrescriptionCard(rx: prescriptions[i]),
       ),
     );
   }
@@ -1212,8 +1286,9 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
 
   Future<void> _refill() async {
     setState(() => _refilling = true);
-    final result =
-        await context.read<ClinicalProvider>().refillPrescription(widget.rx.id);
+    final result = await context.read<ClinicalProvider>().refillPrescription(
+      widget.rx.id,
+    );
     if (!mounted) return;
     setState(() => _refilling = false);
 
@@ -1228,15 +1303,17 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
 
   Future<void> _print() async {
     setState(() => _printing = true);
-    final payload =
-        await context.read<ClinicalProvider>().printPrescription(widget.rx.id);
+    final payload = await context.read<ClinicalProvider>().printPrescription(
+      widget.rx.id,
+    );
     if (!mounted) return;
     setState(() => _printing = false);
 
     if (payload == null) {
       showAdaptiveToast(
         context,
-        context.read<ClinicalProvider>().error ?? 'Failed to load print payload',
+        context.read<ClinicalProvider>().error ??
+            'Failed to load print payload',
         type: ToastType.error,
       );
       return;
@@ -1250,8 +1327,9 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
   Future<void> _showEditDialog() async {
     final dosageCtrl = TextEditingController(text: widget.rx.dosage);
     final frequencyCtrl = TextEditingController(text: widget.rx.frequency);
-    final instructionsCtrl =
-        TextEditingController(text: widget.rx.specialInstructions ?? '');
+    final instructionsCtrl = TextEditingController(
+      text: widget.rx.specialInstructions ?? '',
+    );
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -1274,15 +1352,17 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
             TextField(
               controller: instructionsCtrl,
               maxLines: 2,
-              decoration:
-                  const InputDecoration(labelText: 'Special instructions'),
+              decoration: const InputDecoration(
+                labelText: 'Special instructions',
+              ),
             ),
           ],
         ),
         actions: [
           AdaptiveTextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
           AdaptiveFilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Save'),
@@ -1293,30 +1373,31 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
 
     if (confirmed != true || !mounted) return;
 
-    final result = await context.read<ClinicalProvider>().updatePrescription(
-      widget.rx.id,
-      {
-        'dosage': dosageCtrl.text.trim(),
-        'frequency': frequencyCtrl.text.trim(),
-        'special_instructions': instructionsCtrl.text.trim().isEmpty
-            ? null
-            : instructionsCtrl.text.trim(),
-      },
-    );
+    final result = await context
+        .read<ClinicalProvider>()
+        .updatePrescription(widget.rx.id, {
+          'dosage': dosageCtrl.text.trim(),
+          'frequency': frequencyCtrl.text.trim(),
+          'special_instructions': instructionsCtrl.text.trim().isEmpty
+              ? null
+              : instructionsCtrl.text.trim(),
+        });
     if (!mounted) return;
 
     showAdaptiveToast(
       context,
       result != null
           ? 'Prescription updated'
-          : context.read<ClinicalProvider>().error ?? 'Failed to update prescription',
+          : context.read<ClinicalProvider>().error ??
+                'Failed to update prescription',
       type: result != null ? ToastType.success : ToastType.error,
     );
   }
 
   Future<void> _showFillDialog() async {
     final qtyCtrl = TextEditingController(
-        text: widget.rx.quantity?.toString() ?? '');
+      text: widget.rx.quantity?.toString() ?? '',
+    );
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -1325,24 +1406,33 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.rx.medicationName,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              widget.rx.medicationName,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 4),
-            Text(widget.rx.doseDisplay,
-                style: TextStyle(color: AppTheme.gray600, fontSize: 13)),
+            Text(
+              widget.rx.doseDisplay,
+              style: TextStyle(
+                color: AppColors.of(context).textSecondary,
+                fontSize: 13,
+              ),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: qtyCtrl,
               keyboardType: TextInputType.number,
-              decoration:
-                  const InputDecoration(labelText: 'Quantity dispensed'),
+              decoration: const InputDecoration(
+                labelText: 'Quantity dispensed',
+              ),
             ),
           ],
         ),
         actions: [
           AdaptiveTextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
           AdaptiveFilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Dispense'),
@@ -1354,14 +1444,19 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
     if (confirmed != true || !mounted) return;
     final qty = int.tryParse(qtyCtrl.text.trim());
     if (qty == null || qty <= 0) {
-      showAdaptiveToast(context, 'Enter a valid quantity', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        'Enter a valid quantity',
+        type: ToastType.error,
+      );
       return;
     }
 
     setState(() => _filling = true);
-    final result = await context
-        .read<ClinicalProvider>()
-        .fillPrescription(widget.rx.id, qty);
+    final result = await context.read<ClinicalProvider>().fillPrescription(
+      widget.rx.id,
+      qty,
+    );
     if (!mounted) return;
     setState(() => _filling = false);
 
@@ -1379,16 +1474,19 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
     final rx = widget.rx;
     final auth = context.read<AuthProvider>();
     final isPharmacist = auth.staffType == 'pharmacist';
-    final canFill = isPharmacist &&
+    final canFill =
+        isPharmacist &&
         (rx.status == 'pending' || rx.status == 'partially_filled');
     final isOpen = !['cancelled', 'discontinued'].contains(rx.status);
-    final canRefill =
-        auth.canPrescribe && rx.refillsRemaining > 0 && isOpen;
-    final canEdit = isOpen &&
+    final canRefill = auth.canPrescribe && rx.refillsRemaining > 0 && isOpen;
+    final canEdit =
+        isOpen &&
         ((auth.currentUser?.isSuperAdmin ?? false) ||
             auth.currentUserId == rx.prescriberId);
     final canPrint = auth.canPrescribe;
-    final color = rx.isActive ? AppTheme.successColor : AppTheme.gray600;
+    final color = rx.isActive
+        ? AppColors.of(context).success
+        : AppColors.of(context).textSecondary;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
@@ -1399,16 +1497,26 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
           children: [
             Row(
               children: [
-                Icon(Icons.medication, color: AppTheme.primaryColor, size: 20),
+                Icon(
+                  Icons.medication,
+                  color: AppColors.of(context).accent,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(rx.medicationName,
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w600)),
+                  child: Text(
+                    rx.medicationName,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
@@ -1416,28 +1524,42 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
                   child: Text(
                     rx.status.toUpperCase(),
                     style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: color),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            Text(rx.doseDisplay,
-                style: TextStyle(fontSize: 13, color: AppTheme.gray600)),
+            Text(
+              rx.doseDisplay,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.of(context).textSecondary,
+              ),
+            ),
             if (rx.refillsRemaining > 0) ...[
               const SizedBox(height: 4),
-              Text('${rx.refillsRemaining} refill(s) remaining',
-                  style: TextStyle(fontSize: 12, color: AppTheme.gray600)),
+              Text(
+                '${rx.refillsRemaining} refill(s) remaining',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.of(context).textSecondary,
+                ),
+              ),
             ],
             if (rx.specialInstructions != null) ...[
               const SizedBox(height: 6),
-              Text(rx.specialInstructions!,
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.warningColor,
-                      fontStyle: FontStyle.italic)),
+              Text(
+                rx.specialInstructions!,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.of(context).warning,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
             ],
             if (canFill) ...[
               const SizedBox(height: 10),
@@ -1450,12 +1572,12 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
                           width: 14,
                           height: 14,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation(Colors.white)))
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        )
                       : const Icon(Icons.local_pharmacy, size: 16),
-                  child:
-                      Text(_filling ? 'Dispensing…' : 'Dispense / Fill'),
+                  child: Text(_filling ? 'Dispensing…' : 'Dispense / Fill'),
                 ),
               ),
             ],
@@ -1471,7 +1593,8 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
                           ? const SizedBox(
                               width: 14,
                               height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2))
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Icon(Icons.autorenew, size: 16),
                       label: Text(_refilling ? 'Refilling…' : 'Refill'),
                     ),
@@ -1488,7 +1611,8 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
                           ? const SizedBox(
                               width: 14,
                               height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2))
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Icon(Icons.print_outlined, size: 16),
                       label: Text(_printing ? 'Loading…' : 'Print'),
                     ),
@@ -1545,15 +1669,21 @@ class _PrescriptionPrintDialog extends StatelessWidget {
     return AlertDialog(
       title: const Text('Prescription'),
       content: SingleChildScrollView(
-        child: Text(_formatted, style: const TextStyle(fontFamily: 'monospace')),
+        child: Text(
+          _formatted,
+          style: const TextStyle(fontFamily: 'monospace'),
+        ),
       ),
       actions: [
         AdaptiveTextButton(
           onPressed: () async {
             await Clipboard.setData(ClipboardData(text: _formatted));
             if (context.mounted) {
-              showAdaptiveToast(context, 'Copied to clipboard',
-                  type: ToastType.success);
+              showAdaptiveToast(
+                context,
+                'Copied to clipboard',
+                type: ToastType.success,
+              );
             }
           },
           child: const Text('Copy'),
@@ -1577,10 +1707,7 @@ class _LabResultsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final labs = context.watch<ClinicalProvider>().labResults;
     if (labs.isEmpty) {
-      return _EmptyState(
-        icon: Icons.science,
-        message: 'No lab results',
-      );
+      return _EmptyState(icon: Icons.science, message: 'No lab results');
     }
     return RefreshIndicator(
       onRefresh: () => context.read<ClinicalProvider>().loadLabResults(),
@@ -1613,11 +1740,13 @@ class _LabResultCardState extends State<_LabResultCard> {
       builder: (ctx) => AlertDialog(
         title: const Text('Cancel Lab Test'),
         content: Text(
-            'Cancel the "${widget.lab.testName}" order? This cannot be undone.'),
+          'Cancel the "${widget.lab.testName}" order? This cannot be undone.',
+        ),
         actions: [
           AdaptiveTextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('No')),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('No'),
+          ),
           AdaptiveFilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Cancel Test'),
@@ -1628,8 +1757,9 @@ class _LabResultCardState extends State<_LabResultCard> {
     if (confirmed != true || !mounted) return;
 
     setState(() => _cancelling = true);
-    final result =
-        await context.read<ClinicalProvider>().cancelLabResult(widget.lab.id);
+    final result = await context.read<ClinicalProvider>().cancelLabResult(
+      widget.lab.id,
+    );
     if (!mounted) return;
     setState(() => _cancelling = false);
 
@@ -1644,15 +1774,17 @@ class _LabResultCardState extends State<_LabResultCard> {
 
   Future<void> _print() async {
     setState(() => _printing = true);
-    final payload =
-        await context.read<ClinicalProvider>().printLabOrder(widget.lab.id);
+    final payload = await context.read<ClinicalProvider>().printLabOrder(
+      widget.lab.id,
+    );
     if (!mounted) return;
     setState(() => _printing = false);
 
     if (payload == null) {
       showAdaptiveToast(
         context,
-        context.read<ClinicalProvider>().error ?? 'Failed to load print payload',
+        context.read<ClinicalProvider>().error ??
+            'Failed to load print payload',
         type: ToastType.error,
       );
       return;
@@ -1684,13 +1816,16 @@ class _LabResultCardState extends State<_LabResultCard> {
                 controller: interpretationCtrl,
                 maxLines: 3,
                 decoration: const InputDecoration(
-                    labelText: 'Interpretation (optional)'),
+                  labelText: 'Interpretation (optional)',
+                ),
               ),
               const SizedBox(height: 8),
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Requires follow-up',
-                    style: TextStyle(fontSize: 13)),
+                title: const Text(
+                  'Requires follow-up',
+                  style: TextStyle(fontSize: 13),
+                ),
                 value: requiresFollowup,
                 onChanged: (v) => setLocal(() => requiresFollowup = v ?? false),
               ),
@@ -1698,8 +1833,9 @@ class _LabResultCardState extends State<_LabResultCard> {
           ),
           actions: [
             AdaptiveTextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancel')),
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
             AdaptiveFilledButton(
               onPressed: () => Navigator.of(ctx).pop(true),
               child: const Text('Mark Reviewed'),
@@ -1713,8 +1849,9 @@ class _LabResultCardState extends State<_LabResultCard> {
     setState(() => _reviewing = true);
     final result = await context.read<ClinicalProvider>().reviewLabResult(
       widget.lab.id,
-      interpretation:
-          interpretationCtrl.text.trim().isEmpty ? null : interpretationCtrl.text.trim(),
+      interpretation: interpretationCtrl.text.trim().isEmpty
+          ? null
+          : interpretationCtrl.text.trim(),
       requiresFollowup: requiresFollowup,
     );
     if (!mounted) return;
@@ -1724,7 +1861,8 @@ class _LabResultCardState extends State<_LabResultCard> {
       context,
       result != null
           ? 'Results reviewed'
-          : context.read<ClinicalProvider>().error ?? 'Failed to review results',
+          : context.read<ClinicalProvider>().error ??
+                'Failed to review results',
       type: result != null ? ToastType.success : ToastType.error,
     );
   }
@@ -1746,27 +1884,33 @@ class _LabResultCardState extends State<_LabResultCard> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.lab.testName,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  widget.lab.testName,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 if (widget.lab.testType != null) ...[
                   const SizedBox(height: 2),
-                  Text(widget.lab.testType!,
-                      style: TextStyle(
-                          color: AppTheme.gray600, fontSize: 13)),
+                  Text(
+                    widget.lab.testType!,
+                    style: TextStyle(
+                      color: AppColors.of(context).textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
                 ],
                 const SizedBox(height: 16),
                 TextField(
                   controller: resultsCtrl,
                   maxLines: 3,
-                  decoration:
-                      const InputDecoration(labelText: 'Results *'),
+                  decoration: const InputDecoration(labelText: 'Results *'),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: interpretationCtrl,
                   maxLines: 2,
                   decoration: const InputDecoration(
-                      labelText: 'Interpretation (optional)'),
+                    labelText: 'Interpretation (optional)',
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -1779,8 +1923,10 @@ class _LabResultCardState extends State<_LabResultCard> {
                 const SizedBox(height: 8),
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Requires follow-up',
-                      style: TextStyle(fontSize: 13)),
+                  title: const Text(
+                    'Requires follow-up',
+                    style: TextStyle(fontSize: 13),
+                  ),
                   value: requiresFollowup,
                   onChanged: (v) =>
                       setLocal(() => requiresFollowup = v ?? false),
@@ -1790,8 +1936,9 @@ class _LabResultCardState extends State<_LabResultCard> {
           ),
           actions: [
             AdaptiveTextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancel')),
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
             AdaptiveFilledButton(
               onPressed: () => Navigator.of(ctx).pop(true),
               child: const Text('Submit'),
@@ -1814,17 +1961,16 @@ class _LabResultCardState extends State<_LabResultCard> {
         .toList();
 
     setState(() => _recording = true);
-    final result = await context.read<ClinicalProvider>().recordLabResult(
-      widget.lab.id,
-      {
-        'results': resultsCtrl.text.trim(),
-        if (interpretationCtrl.text.trim().isNotEmpty)
-          'interpretation': interpretationCtrl.text.trim(),
-        'abnormal_flags': flags,
-        'requires_followup': requiresFollowup,
-        'sample_collected_at': DateTime.now().toIso8601String(),
-      },
-    );
+    final result = await context
+        .read<ClinicalProvider>()
+        .recordLabResult(widget.lab.id, {
+          'results': resultsCtrl.text.trim(),
+          if (interpretationCtrl.text.trim().isNotEmpty)
+            'interpretation': interpretationCtrl.text.trim(),
+          'abnormal_flags': flags,
+          'requires_followup': requiresFollowup,
+          'sample_collected_at': DateTime.now().toIso8601String(),
+        });
     if (!mounted) return;
     setState(() => _recording = false);
 
@@ -1832,7 +1978,8 @@ class _LabResultCardState extends State<_LabResultCard> {
       context,
       result != null
           ? 'Results recorded successfully'
-          : context.read<ClinicalProvider>().error ?? 'Failed to record results',
+          : context.read<ClinicalProvider>().error ??
+                'Failed to record results',
       type: result != null ? ToastType.success : ToastType.error,
     );
   }
@@ -1841,15 +1988,17 @@ class _LabResultCardState extends State<_LabResultCard> {
   Widget build(BuildContext context) {
     final lab = widget.lab;
     final auth = context.read<AuthProvider>();
-    final isLabTech = auth.staffType == 'lab_technician' ||
-        auth.staffType == 'lab_tech';
+    final isLabTech =
+        auth.staffType == 'lab_technician' || auth.staffType == 'lab_tech';
     final canRecord = isLabTech && lab.isPending;
     final isOpen = lab.status != 'completed' && lab.status != 'cancelled';
-    final canCancel = isOpen &&
+    final canCancel =
+        isOpen &&
         ((auth.currentUser?.isSuperAdmin ?? false) ||
             auth.currentUserId == lab.orderedById);
     final canPrint = auth.canOrderLabs;
-    final canReview = lab.isCompleted &&
+    final canReview =
+        lab.isCompleted &&
         lab.reviewedById == null &&
         ((auth.currentUser?.isSuperAdmin ?? false) ||
             auth.currentUserId == lab.orderedById);
@@ -1857,14 +2006,15 @@ class _LabResultCardState extends State<_LabResultCard> {
     Color statusColor;
     switch (lab.status) {
       case 'completed':
-        statusColor =
-            lab.hasAbnormalResults ? AppTheme.errorColor : AppTheme.successColor;
+        statusColor = lab.hasAbnormalResults
+            ? AppColors.of(context).critical
+            : AppColors.of(context).success;
         break;
       case 'cancelled':
-        statusColor = AppTheme.gray600;
+        statusColor = AppColors.of(context).textSecondary;
         break;
       default:
-        statusColor = AppTheme.warningColor;
+        statusColor = AppColors.of(context).warning;
     }
 
     return Card(
@@ -1876,31 +2026,46 @@ class _LabResultCardState extends State<_LabResultCard> {
           children: [
             Row(
               children: [
-                Icon(Icons.science, color: AppTheme.primaryColor, size: 20),
+                Icon(
+                  Icons.science,
+                  color: AppColors.of(context).accent,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(lab.testName,
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w600)),
+                  child: Text(
+                    lab.testName,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 if (lab.isUrgent)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     margin: const EdgeInsets.only(right: 6),
                     decoration: BoxDecoration(
-                      color: AppTheme.errorColor,
+                      color: AppColors.of(context).critical,
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: Text(lab.priority.toUpperCase(),
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold)),
+                    child: Text(
+                      lab.priority.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
@@ -1908,45 +2073,70 @@ class _LabResultCardState extends State<_LabResultCard> {
                   child: Text(
                     lab.status.replaceAll('_', ' ').toUpperCase(),
                     style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: statusColor),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: statusColor,
+                    ),
                   ),
                 ),
               ],
             ),
             if (lab.testType != null) ...[
               const SizedBox(height: 4),
-              Text(lab.testType!,
-                  style: TextStyle(fontSize: 13, color: AppTheme.gray600)),
+              Text(
+                lab.testType!,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.of(context).textSecondary,
+                ),
+              ),
             ],
             if (lab.results != null && lab.results!.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text('Results: ${lab.results!}',
-                  style: const TextStyle(fontSize: 13)),
+              Text(
+                'Results: ${lab.results!}',
+                style: const TextStyle(fontSize: 13),
+              ),
             ],
             if (lab.abnormalFlags.isNotEmpty) ...[
               const SizedBox(height: 6),
               Wrap(
                 spacing: 6,
-                children: lab.abnormalFlags.map((f) => Chip(
-                  label: Text(f, style: const TextStyle(fontSize: 11)),
-                  backgroundColor: AppTheme.errorColor.withValues(alpha: 0.1),
-                  side: BorderSide(
-                      color: AppTheme.errorColor.withValues(alpha: 0.3)),
-                  padding: EdgeInsets.zero,
-                )).toList(),
+                children: lab.abnormalFlags
+                    .map(
+                      (f) => Chip(
+                        label: Text(f, style: const TextStyle(fontSize: 11)),
+                        backgroundColor: AppColors.of(
+                          context,
+                        ).critical.withValues(alpha: 0.1),
+                        side: BorderSide(
+                          color: AppColors.of(
+                            context,
+                          ).critical.withValues(alpha: 0.3),
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
+                    )
+                    .toList(),
               ),
             ],
             if (lab.requiresFollowup) ...[
               const SizedBox(height: 6),
               Row(
                 children: [
-                  Icon(Icons.flag, size: 14, color: AppTheme.warningColor),
+                  Icon(
+                    Icons.flag,
+                    size: 14,
+                    color: AppColors.of(context).warning,
+                  ),
                   const SizedBox(width: 4),
-                  Text('Follow-up required',
-                      style: TextStyle(
-                          fontSize: 12, color: AppTheme.warningColor)),
+                  Text(
+                    'Follow-up required',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.of(context).warning,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -1961,9 +2151,10 @@ class _LabResultCardState extends State<_LabResultCard> {
                           width: 14,
                           height: 14,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation(Colors.white)))
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        )
                       : const Icon(Icons.science, size: 16),
                   child: Text(_recording ? 'Saving…' : 'Record Results'),
                 ),
@@ -1982,8 +2173,12 @@ class _LabResultCardState extends State<_LabResultCard> {
                               width: 14,
                               height: 14,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation(Colors.white)))
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
                           : const Icon(Icons.fact_check_outlined, size: 16),
                       child: Text(_reviewing ? 'Saving…' : 'Review Results'),
                     ),
@@ -1991,12 +2186,14 @@ class _LabResultCardState extends State<_LabResultCard> {
                     OutlinedButton.icon(
                       onPressed: _cancelling ? null : _cancel,
                       style: OutlinedButton.styleFrom(
-                          foregroundColor: AppTheme.errorColor),
+                        foregroundColor: AppColors.of(context).critical,
+                      ),
                       icon: _cancelling
                           ? const SizedBox(
                               width: 14,
                               height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2))
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Icon(Icons.cancel_outlined, size: 16),
                       label: Text(_cancelling ? 'Cancelling…' : 'Cancel Test'),
                     ),
@@ -2007,7 +2204,8 @@ class _LabResultCardState extends State<_LabResultCard> {
                           ? const SizedBox(
                               width: 14,
                               height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2))
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Icon(Icons.print_outlined, size: 16),
                       label: Text(_printing ? 'Loading…' : 'Print'),
                     ),
@@ -2043,7 +2241,8 @@ class _LabOrderPrintDialog extends StatelessWidget {
     if (patient?['mrn'] != null) buffer.writeln('MRN: ${patient?['mrn']}');
     buffer.writeln('');
     buffer.writeln('Test: ${order?['test_name'] ?? ''}');
-    if (order?['test_type'] != null) buffer.writeln('Type: ${order?['test_type']}');
+    if (order?['test_type'] != null)
+      buffer.writeln('Type: ${order?['test_type']}');
     buffer.writeln('Priority: ${order?['priority'] ?? ''}');
     if (order?['ordered_date'] != null) {
       buffer.writeln('Ordered: ${order?['ordered_date']}');
@@ -2059,15 +2258,21 @@ class _LabOrderPrintDialog extends StatelessWidget {
     return AlertDialog(
       title: const Text('Lab Order'),
       content: SingleChildScrollView(
-        child: Text(_formatted, style: const TextStyle(fontFamily: 'monospace')),
+        child: Text(
+          _formatted,
+          style: const TextStyle(fontFamily: 'monospace'),
+        ),
       ),
       actions: [
         AdaptiveTextButton(
           onPressed: () async {
             await Clipboard.setData(ClipboardData(text: _formatted));
             if (context.mounted) {
-              showAdaptiveToast(context, 'Copied to clipboard',
-                  type: ToastType.success);
+              showAdaptiveToast(
+                context,
+                'Copied to clipboard',
+                type: ToastType.success,
+              );
             }
           },
           child: const Text('Copy'),
@@ -2091,10 +2296,7 @@ class _DocumentsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final docs = context.watch<ClinicalProvider>().documents;
     if (docs.isEmpty) {
-      return _EmptyState(
-        icon: Icons.folder_outlined,
-        message: 'No documents',
-      );
+      return _EmptyState(icon: Icons.folder_outlined, message: 'No documents');
     }
     return RefreshIndicator(
       onRefresh: () => context.read<ClinicalProvider>().loadDocuments(),
@@ -2120,14 +2322,18 @@ class _DocumentCardState extends State<_DocumentCard> {
 
   Future<void> _download() async {
     setState(() => _downloading = true);
-    final url = await context
-        .read<ClinicalProvider>()
-        .getDocumentDownloadUrl(widget.doc.id);
+    final url = await context.read<ClinicalProvider>().getDocumentDownloadUrl(
+      widget.doc.id,
+    );
     if (!mounted) return;
     setState(() => _downloading = false);
 
     if (url == null) {
-      showAdaptiveToast(context, 'Could not retrieve document URL', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        'Could not retrieve document URL',
+        type: ToastType.error,
+      );
       return;
     }
 
@@ -2136,7 +2342,11 @@ class _DocumentCardState extends State<_DocumentCard> {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (mounted) {
-        showAdaptiveToast(context, 'Could not open document', type: ToastType.error);
+        showAdaptiveToast(
+          context,
+          'Could not open document',
+          type: ToastType.error,
+        );
       }
     }
   }
@@ -2160,20 +2370,25 @@ class _DocumentCardState extends State<_DocumentCard> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            color: AppColors.of(context).accent.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: AppTheme.primaryColor),
+          child: Icon(icon, color: AppColors.of(context).accent),
         ),
-        title: Text(doc.title,
-            style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(
+          doc.title,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
         subtitle: Text(
           [
             doc.documentType.replaceAll('_', ' '),
             if (doc.fileSizeDisplay.isNotEmpty) doc.fileSizeDisplay,
             if (doc.isConfidential) 'Confidential',
           ].join(' · '),
-          style: TextStyle(fontSize: 12, color: AppTheme.gray600),
+          style: TextStyle(
+            fontSize: 12,
+            color: AppColors.of(context).textSecondary,
+          ),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -2181,7 +2396,11 @@ class _DocumentCardState extends State<_DocumentCard> {
             if (doc.isConfidential)
               Padding(
                 padding: const EdgeInsets.only(right: 4),
-                child: Icon(Icons.lock, size: 16, color: AppTheme.warningColor),
+                child: Icon(
+                  Icons.lock,
+                  size: 16,
+                  color: AppColors.of(context).warning,
+                ),
               ),
             _downloading
                 ? const SizedBox(
@@ -2191,7 +2410,7 @@ class _DocumentCardState extends State<_DocumentCard> {
                   )
                 : IconButton(
                     icon: const Icon(Icons.download_outlined, size: 22),
-                    color: AppTheme.primaryColor,
+                    color: AppColors.of(context).accent,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     tooltip: 'View / Download',
@@ -2212,8 +2431,7 @@ class _SectionHeader extends StatelessWidget {
   final Color? badgeColor;
   final IconData? icon;
 
-  const _SectionHeader(this.title,
-      {this.badge, this.badgeColor, this.icon});
+  const _SectionHeader(this.title, {this.badge, this.badgeColor, this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -2222,26 +2440,29 @@ class _SectionHeader extends StatelessWidget {
       child: Row(
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 18, color: AppTheme.gray600),
+            Icon(icon, size: 18, color: AppColors.of(context).textSecondary),
             const SizedBox(width: 6),
           ],
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
           if (badge != null) ...[
             const SizedBox(width: 8),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: badgeColor ?? AppTheme.errorColor,
+                color: badgeColor ?? AppColors.of(context).critical,
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: Text(badge!,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold)),
+              child: Text(
+                badge!,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ],
@@ -2264,16 +2485,20 @@ class _InfoRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 110,
-            child: Text(label,
-                style: TextStyle(
-                    color: AppTheme.gray600,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13)),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: AppColors.of(context).textSecondary,
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+              ),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: const TextStyle(
-                    fontWeight: FontWeight.w600, fontSize: 13)),
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+            ),
           ),
         ],
       ),
@@ -2292,10 +2517,19 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 64, color: AppTheme.gray600.withValues(alpha: 0.5)),
+          Icon(
+            icon,
+            size: 64,
+            color: AppColors.of(context).textSecondary.withValues(alpha: 0.5),
+          ),
           const SizedBox(height: 12),
-          Text(message,
-              style: TextStyle(fontSize: 16, color: AppTheme.gray600)),
+          Text(
+            message,
+            style: TextStyle(
+              fontSize: 16,
+              color: AppColors.of(context).textSecondary,
+            ),
+          ),
         ],
       ),
     );
@@ -2313,11 +2547,17 @@ class _ErrorView extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.error_outline, size: 48, color: AppTheme.errorColor),
+          Icon(
+            Icons.error_outline,
+            size: 48,
+            color: AppColors.of(context).critical,
+          ),
           const SizedBox(height: 12),
-          Text(message,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppTheme.gray600)),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.of(context).textSecondary),
+          ),
           const SizedBox(height: 16),
           AdaptiveFilledButton(onPressed: onRetry, child: const Text('Retry')),
         ],
@@ -2375,15 +2615,18 @@ class _NotesTabState extends State<_NotesTab> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline,
-                  size: 48, color: Colors.grey.shade400),
+              Icon(Icons.error_outline, size: 48, color: Colors.grey.shade400),
               const SizedBox(height: 12),
-              Text(_error!,
-                  style: TextStyle(color: AppTheme.gray600),
-                  textAlign: TextAlign.center),
+              Text(
+                _error!,
+                style: TextStyle(color: AppColors.of(context).textSecondary),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 16),
               AdaptiveFilledButton(
-                  onPressed: _load, child: const Text('Retry')),
+                onPressed: _load,
+                child: const Text('Retry'),
+              ),
             ],
           ),
         ),
@@ -2397,16 +2640,19 @@ class _NotesTabState extends State<_NotesTab> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.notes_outlined,
-                  size: 56, color: Colors.grey.shade300),
+              Icon(Icons.notes_outlined, size: 56, color: Colors.grey.shade300),
               const SizedBox(height: 16),
-              const Text('No clinical notes',
-                  style: TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w600)),
+              const Text(
+                'No clinical notes',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
               const SizedBox(height: 8),
               Text(
                 'Consultation responses will appear here once a colleague has reviewed this patient.',
-                style: TextStyle(fontSize: 13, color: AppTheme.gray600),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.of(context).textSecondary,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -2434,9 +2680,13 @@ class _ClinicalNoteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isResponse = note.isConsultationResponse;
     final isDeclined = note.isConsultationDeclined;
-    final accentColor = isDeclined ? AppTheme.warningColor : AppTheme.successColor;
+    final accentColor = isDeclined
+        ? AppColors.of(context).warning
+        : AppColors.of(context).success;
     final bgColor = isDeclined ? Colors.orange.shade50 : Colors.green.shade50;
-    final borderColor = isDeclined ? Colors.orange.shade200 : Colors.green.shade200;
+    final borderColor = isDeclined
+        ? Colors.orange.shade200
+        : Colors.green.shade200;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -2451,17 +2701,21 @@ class _ClinicalNoteCard extends StatelessWidget {
                   isResponse
                       ? Icons.check_circle_outline
                       : isDeclined
-                          ? Icons.cancel_outlined
-                          : Icons.notes_outlined,
+                      ? Icons.cancel_outlined
+                      : Icons.notes_outlined,
                   size: 18,
-                  color: isResponse || isDeclined ? accentColor : AppTheme.primaryColor,
+                  color: isResponse || isDeclined
+                      ? accentColor
+                      : AppColors.of(context).accent,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     note.displayTitle,
                     style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 15),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
               ],
@@ -2480,12 +2734,16 @@ class _ClinicalNoteCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: borderColor),
                 ),
-                child: Text(note.body,
-                    style: const TextStyle(fontSize: 13, height: 1.5)),
+                child: Text(
+                  note.body,
+                  style: const TextStyle(fontSize: 13, height: 1.5),
+                ),
               )
             else
-              Text(note.body,
-                  style: const TextStyle(fontSize: 13, height: 1.5)),
+              Text(
+                note.body,
+                style: const TextStyle(fontSize: 13, height: 1.5),
+              ),
           ],
         ),
       ),
@@ -2525,25 +2783,38 @@ class _WardTab extends StatelessWidget {
                     color: Colors.red.shade50,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(ward.error!,
-                      style: TextStyle(color: Colors.red.shade700, fontSize: 12)),
+                  child: Text(
+                    ward.error!,
+                    style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                  ),
                 ),
               _WardSection(
                 title: 'Admission Requests',
                 onRequest: () => _openSheet(
                   context,
-                  RequestAdmissionSheet(patientId: patientId, wards: ward.wards),
+                  RequestAdmissionSheet(
+                    patientId: patientId,
+                    wards: ward.wards,
+                  ),
                 ),
                 onForce: () => _openSheet(
                   context,
                   RequestAdmissionSheet(
-                      patientId: patientId, wards: ward.wards, force: true),
+                    patientId: patientId,
+                    wards: ward.wards,
+                    force: true,
+                  ),
                 ),
                 children: ward.admissionRequests.isEmpty
                     ? [const _EmptyHint(text: 'No admission requests yet.')]
                     : ward.admissionRequests
-                        .map((r) => _AdmissionCard(patientId: patientId, request: r))
-                        .toList(),
+                          .map(
+                            (r) => _AdmissionCard(
+                              patientId: patientId,
+                              request: r,
+                            ),
+                          )
+                          .toList(),
               ),
               const SizedBox(height: 20),
               _WardSection(
@@ -2555,13 +2826,19 @@ class _WardTab extends StatelessWidget {
                 onForce: () => _openSheet(
                   context,
                   RequestTransferSheet(
-                      patientId: patientId, wards: ward.wards, force: true),
+                    patientId: patientId,
+                    wards: ward.wards,
+                    force: true,
+                  ),
                 ),
                 children: ward.transferRequests.isEmpty
                     ? [const _EmptyHint(text: 'No transfer requests yet.')]
                     : ward.transferRequests
-                        .map((r) => _TransferCard(patientId: patientId, request: r))
-                        .toList(),
+                          .map(
+                            (r) =>
+                                _TransferCard(patientId: patientId, request: r),
+                          )
+                          .toList(),
               ),
               const SizedBox(height: 20),
               _WardSection(
@@ -2577,8 +2854,13 @@ class _WardTab extends StatelessWidget {
                 children: ward.dischargeRequests.isEmpty
                     ? [const _EmptyHint(text: 'No discharge requests yet.')]
                     : ward.dischargeRequests
-                        .map((r) => _DischargeCard(patientId: patientId, request: r))
-                        .toList(),
+                          .map(
+                            (r) => _DischargeCard(
+                              patientId: patientId,
+                              request: r,
+                            ),
+                          )
+                          .toList(),
               ),
             ],
           ),
@@ -2592,7 +2874,8 @@ class _WardTab extends StatelessWidget {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => ChangeNotifierProvider.value(value: provider, child: sheet),
+      builder: (_) =>
+          ChangeNotifierProvider.value(value: provider, child: sheet),
     );
   }
 }
@@ -2618,11 +2901,19 @@ class _WardSection extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text(title,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
             ),
             TextButton(onPressed: onForce, child: const Text('Force')),
-            FilledButton.tonal(onPressed: onRequest, child: const Text('Request')),
+            FilledButton.tonal(
+              onPressed: onRequest,
+              child: const Text('Request'),
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -2638,9 +2929,12 @@ class _EmptyHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Text(text, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 12),
+    child: Text(
+      text,
+      style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+    ),
+  );
 }
 
 class _StatusBadge extends StatelessWidget {
@@ -2666,7 +2960,10 @@ class _StatusBadge extends StatelessWidget {
       child: Text(
         status.replaceAll('_', ' '),
         style: TextStyle(
-            color: color.shade800, fontSize: 11, fontWeight: FontWeight.w600),
+          color: color.shade800,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -2692,8 +2989,9 @@ class _AdmissionCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                      '${request.admissionType[0].toUpperCase()}${request.admissionType.substring(1)} admission',
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                    '${request.admissionType[0].toUpperCase()}${request.admissionType.substring(1)} admission',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
                 _StatusBadge(status: request.status),
               ],
@@ -2702,8 +3000,10 @@ class _AdmissionCard extends StatelessWidget {
             Text(request.reason, style: const TextStyle(fontSize: 13)),
             if (request.rejectionReason != null) ...[
               const SizedBox(height: 4),
-              Text('Rejected: ${request.rejectionReason}',
-                  style: TextStyle(fontSize: 12, color: Colors.red.shade700)),
+              Text(
+                'Rejected: ${request.rejectionReason}',
+                style: TextStyle(fontSize: 12, color: Colors.red.shade700),
+              ),
             ],
             if (request.isPending) ...[
               const SizedBox(height: 8),
@@ -2712,8 +3012,10 @@ class _AdmissionCard extends StatelessWidget {
                 children: [
                   TextButton(
                     onPressed: () async {
-                      final reason = await showReasonPrompt(context,
-                          title: 'Reject admission request');
+                      final reason = await showReasonPrompt(
+                        context,
+                        title: 'Reject admission request',
+                      );
                       if (reason != null) {
                         provider.rejectAdmission(patientId, request.id, reason);
                       }
@@ -2722,7 +3024,8 @@ class _AdmissionCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   FilledButton(
-                    onPressed: () => provider.acceptAdmission(patientId, request.id),
+                    onPressed: () =>
+                        provider.acceptAdmission(patientId, request.id),
                     child: const Text('Accept'),
                   ),
                 ],
@@ -2754,7 +3057,10 @@ class _TransferCard extends StatelessWidget {
             Row(
               children: [
                 const Expanded(
-                  child: Text('Ward transfer', style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(
+                    'Ward transfer',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
                 _StatusBadge(status: request.status),
               ],
@@ -2763,8 +3069,10 @@ class _TransferCard extends StatelessWidget {
             Text(request.reason, style: const TextStyle(fontSize: 13)),
             if (request.rejectionReason != null) ...[
               const SizedBox(height: 4),
-              Text('Rejected: ${request.rejectionReason}',
-                  style: TextStyle(fontSize: 12, color: Colors.red.shade700)),
+              Text(
+                'Rejected: ${request.rejectionReason}',
+                style: TextStyle(fontSize: 12, color: Colors.red.shade700),
+              ),
             ],
             if (request.isPending) ...[
               const SizedBox(height: 8),
@@ -2773,8 +3081,10 @@ class _TransferCard extends StatelessWidget {
                 children: [
                   TextButton(
                     onPressed: () async {
-                      final reason = await showReasonPrompt(context,
-                          title: 'Reject transfer request');
+                      final reason = await showReasonPrompt(
+                        context,
+                        title: 'Reject transfer request',
+                      );
                       if (reason != null) {
                         provider.rejectTransfer(patientId, request.id, reason);
                       }
@@ -2783,7 +3093,8 @@ class _TransferCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   FilledButton(
-                    onPressed: () => provider.acceptTransfer(patientId, request.id),
+                    onPressed: () =>
+                        provider.acceptTransfer(patientId, request.id),
                     child: const Text('Accept'),
                   ),
                 ],
@@ -2815,67 +3126,102 @@ class _DischargeCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(request.dischargeType.replaceAll('_', ' '),
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(
+                    request.dischargeType.replaceAll('_', ' '),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
                 _StatusBadge(status: request.status),
               ],
             ),
             if (request.dischargeSummary != null) ...[
               const SizedBox(height: 6),
-              Text(request.dischargeSummary!, style: const TextStyle(fontSize: 13)),
+              Text(
+                request.dischargeSummary!,
+                style: const TextStyle(fontSize: 13),
+              ),
             ],
             if (request.signoffs.isNotEmpty) ...[
               const SizedBox(height: 8),
               const Divider(height: 1),
               const SizedBox(height: 6),
-              const Text('Sign-offs', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-              ...request.signoffs.map((s) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 3),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(s.departmentType,
-                              style: const TextStyle(fontSize: 12)),
+              const Text(
+                'Sign-offs',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+              ...request.signoffs.map(
+                (s) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          s.departmentType,
+                          style: const TextStyle(fontSize: 12),
                         ),
-                        _StatusBadge(status: s.status),
-                        if (s.status == 'pending') ...[
-                          const SizedBox(width: 4),
-                          IconButton(
-                            icon: const Icon(Icons.check, size: 18, color: Colors.green),
-                            tooltip: 'Approve',
-                            onPressed: () =>
-                                provider.approveSignoff(patientId, request.id, s.id),
+                      ),
+                      _StatusBadge(status: s.status),
+                      if (s.status == 'pending') ...[
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.check,
+                            size: 18,
+                            color: Colors.green,
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.close, size: 18, color: Colors.red),
-                            tooltip: 'Reject',
-                            onPressed: () async {
-                              final reason = await showReasonPrompt(context,
-                                  title: 'Reject sign-off');
-                              if (reason != null) {
-                                provider.rejectSignoff(
-                                    patientId, request.id, s.id, reason);
-                              }
-                            },
+                          tooltip: 'Approve',
+                          onPressed: () => provider.approveSignoff(
+                            patientId,
+                            request.id,
+                            s.id,
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.gpp_maybe_outlined, size: 18),
-                            tooltip: 'Override',
-                            onPressed: () async {
-                              final reason = await showReasonPrompt(context,
-                                  title: 'Override sign-off',
-                                  label: 'Override reason');
-                              if (reason != null) {
-                                provider.overrideSignoff(
-                                    patientId, request.id, s.id, reason);
-                              }
-                            },
+                        ),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.close,
+                            size: 18,
+                            color: Colors.red,
                           ),
-                        ],
+                          tooltip: 'Reject',
+                          onPressed: () async {
+                            final reason = await showReasonPrompt(
+                              context,
+                              title: 'Reject sign-off',
+                            );
+                            if (reason != null) {
+                              provider.rejectSignoff(
+                                patientId,
+                                request.id,
+                                s.id,
+                                reason,
+                              );
+                            }
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.gpp_maybe_outlined, size: 18),
+                          tooltip: 'Override',
+                          onPressed: () async {
+                            final reason = await showReasonPrompt(
+                              context,
+                              title: 'Override sign-off',
+                              label: 'Override reason',
+                            );
+                            if (reason != null) {
+                              provider.overrideSignoff(
+                                patientId,
+                                request.id,
+                                s.id,
+                                reason,
+                              );
+                            }
+                          },
+                        ),
                       ],
-                    ),
-                  )),
+                    ],
+                  ),
+                ),
+              ),
             ],
             if (request.canRecordsApprove || request.canExecute) ...[
               const SizedBox(height: 8),
@@ -2884,13 +3230,15 @@ class _DischargeCard extends StatelessWidget {
                 children: [
                   if (request.canRecordsApprove)
                     FilledButton.tonal(
-                      onPressed: () => provider.recordsApprove(patientId, request.id),
+                      onPressed: () =>
+                          provider.recordsApprove(patientId, request.id),
                       child: const Text('Records Approve'),
                     ),
                   if (request.canExecute) ...[
                     const SizedBox(width: 8),
                     FilledButton(
-                      onPressed: () => provider.executeDischarge(patientId, request.id),
+                      onPressed: () =>
+                          provider.executeDischarge(patientId, request.id),
                       child: const Text('Discharge Now'),
                     ),
                   ],

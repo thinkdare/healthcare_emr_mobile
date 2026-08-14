@@ -1,11 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../config/theme.dart';
 import '../../../core/platform.dart';
 import '../../../data/models/patient_models.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/patient_provider.dart';
+import '../../../config/app_colors.dart';
 
 /// Patient create / edit form.
 ///
@@ -27,7 +27,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
   // Basic info
   late final TextEditingController _firstName;
   late final TextEditingController _lastName;
-  late final TextEditingController _dob;         // yyyy-MM-dd
+  late final TextEditingController _dob; // yyyy-MM-dd
   String _gender = 'male';
   String? _bloodType;
 
@@ -41,8 +41,8 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
   late final TextEditingController _emergencyPhone;
 
   // Medical arrays
-  final List<Map<String, String>> _allergies = [];       // {name, severity}
-  final List<Map<String, String>> _medications = [];     // {name, dosage}
+  final List<Map<String, String>> _allergies = []; // {name, severity}
+  final List<Map<String, String>> _medications = []; // {name, dosage}
   final List<String> _conditions = [];
 
   // Insurance
@@ -61,9 +61,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
     ('prefer_not_to_say', 'Prefer not to say'),
   ];
 
-  static const _bloodTypes = [
-    'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-',
-  ];
+  static const _bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
   static const _severities = [
     ('mild', 'Mild'),
@@ -77,27 +75,35 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
     super.initState();
     final p = widget.patient;
     _firstName = TextEditingController(text: p?.firstName ?? '');
-    _lastName  = TextEditingController(text: p?.lastName ?? '');
-    _dob       = TextEditingController(text: p?.dateOfBirth ?? '');
-    _gender    = p?.gender ?? 'male';
+    _lastName = TextEditingController(text: p?.lastName ?? '');
+    _dob = TextEditingController(text: p?.dateOfBirth ?? '');
+    _gender = p?.gender ?? 'male';
     _bloodType = p?.bloodType;
 
-    _phone   = TextEditingController(text: p?.phone ?? '');
-    _email   = TextEditingController(text: p?.email ?? '');
+    _phone = TextEditingController(text: p?.phone ?? '');
+    _email = TextEditingController(text: p?.email ?? '');
     _address = TextEditingController(text: p?.address ?? '');
 
-    _emergencyName  = TextEditingController(text: p?.emergencyContactName ?? '');
-    _emergencyPhone = TextEditingController(text: p?.emergencyContactPhone ?? '');
+    _emergencyName = TextEditingController(text: p?.emergencyContactName ?? '');
+    _emergencyPhone = TextEditingController(
+      text: p?.emergencyContactPhone ?? '',
+    );
 
-    _insuranceProvider = TextEditingController(text: p?.insuranceProvider ?? '');
-    _insuranceNumber   = TextEditingController(text: p?.insuranceNumber ?? '');
-    _medicalHistory    = TextEditingController(text: p?.medicalHistory ?? '');
+    _insuranceProvider = TextEditingController(
+      text: p?.insuranceProvider ?? '',
+    );
+    _insuranceNumber = TextEditingController(text: p?.insuranceNumber ?? '');
+    _medicalHistory = TextEditingController(text: p?.medicalHistory ?? '');
 
     if (p != null) {
-      _allergies.addAll(p.allergies.map(
-          (a) => {'name': a.name, 'severity': a.severity}));
-      _medications.addAll(p.currentMedications.map(
-          (m) => {'name': m.name, 'dosage': m.dosage ?? ''}));
+      _allergies.addAll(
+        p.allergies.map((a) => {'name': a.name, 'severity': a.severity}),
+      );
+      _medications.addAll(
+        p.currentMedications.map(
+          (m) => {'name': m.name, 'dosage': m.dosage ?? ''},
+        ),
+      );
       _conditions.addAll(p.chronicConditions);
     }
   }
@@ -105,8 +111,16 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
   @override
   void dispose() {
     for (final c in [
-      _firstName, _lastName, _dob, _phone, _email, _address,
-      _emergencyName, _emergencyPhone, _insuranceProvider, _insuranceNumber,
+      _firstName,
+      _lastName,
+      _dob,
+      _phone,
+      _email,
+      _address,
+      _emergencyName,
+      _emergencyPhone,
+      _insuranceProvider,
+      _insuranceNumber,
       _medicalHistory,
     ]) {
       c.dispose();
@@ -121,7 +135,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
 
     final data = <String, dynamic>{
       'first_name': _firstName.text.trim(),
-      'last_name':  _lastName.text.trim(),
+      'last_name': _lastName.text.trim(),
       'date_of_birth': _dob.text.trim(),
       'gender': _gender,
       if (_bloodType != null) 'blood_type': _bloodType,
@@ -132,14 +146,17 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
         'emergency_contact_name': _emergencyName.text.trim(),
       if (_emergencyPhone.text.trim().isNotEmpty)
         'emergency_contact_phone': _emergencyPhone.text.trim(),
-      'allergies': _allergies.map((a) => {
-        'name': a['name']!,
-        'severity': a['severity']!,
-      }).toList(),
-      'current_medications': _medications.map((m) => {
-        'name': m['name']!,
-        if ((m['dosage'] ?? '').isNotEmpty) 'dosage': m['dosage'],
-      }).toList(),
+      'allergies': _allergies
+          .map((a) => {'name': a['name']!, 'severity': a['severity']!})
+          .toList(),
+      'current_medications': _medications
+          .map(
+            (m) => {
+              'name': m['name']!,
+              if ((m['dosage'] ?? '').isNotEmpty) 'dosage': m['dosage'],
+            },
+          )
+          .toList(),
       'chronic_conditions': _conditions,
       if (_insuranceProvider.text.trim().isNotEmpty)
         'insurance_provider': _insuranceProvider.text.trim(),
@@ -165,7 +182,11 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
     if (result != null) {
       Navigator.of(context).pop(result);
     } else {
-      showAdaptiveToast(context, provider.error ?? 'Failed to save patient', type: ToastType.error);
+      showAdaptiveToast(
+        context,
+        provider.error ?? 'Failed to save patient',
+        type: ToastType.error,
+      );
     }
   }
 
@@ -195,8 +216,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
     return Scaffold(
       appBar: kIsIOS
           ? CupertinoNavigationBar(
-              middle: Text(
-                  widget.isEditing ? 'Edit Patient' : 'New Patient'),
+              middle: Text(widget.isEditing ? 'Edit Patient' : 'New Patient'),
               trailing: CupertinoButton(
                 padding: EdgeInsets.zero,
                 onPressed: _saving ? null : _save,
@@ -206,8 +226,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
               ),
             )
           : AppBar(
-              title: Text(
-                  widget.isEditing ? 'Edit Patient' : 'New Patient'),
+              title: Text(widget.isEditing ? 'Edit Patient' : 'New Patient'),
               actions: [
                 TextButton(
                   onPressed: _saving ? null : _save,
@@ -216,16 +235,20 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation(Colors.white)))
-                      : const Text('Save',
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Save',
                           style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ],
-      ),
+            ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -235,10 +258,16 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
             children: [
               _section('Basic Information'),
               _twoCol(
-                _field(_firstName, 'First Name',
-                    validator: _required('First name')),
-                _field(_lastName, 'Last Name',
-                    validator: _required('Last name')),
+                _field(
+                  _firstName,
+                  'First Name',
+                  validator: _required('First name'),
+                ),
+                _field(
+                  _lastName,
+                  'Last Name',
+                  validator: _required('Last name'),
+                ),
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -258,8 +287,9 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
                 label: 'Gender *',
                 value: _gender,
                 items: _genders
-                    .map((g) => DropdownMenuItem(
-                        value: g.$1, child: Text(g.$2)))
+                    .map(
+                      (g) => DropdownMenuItem(value: g.$1, child: Text(g.$2)),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _gender = v!),
               ),
@@ -269,8 +299,9 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
                 value: _bloodType,
                 items: [
                   const DropdownMenuItem(value: null, child: Text('Unknown')),
-                  ..._bloodTypes.map((t) =>
-                      DropdownMenuItem(value: t, child: Text(t))),
+                  ..._bloodTypes.map(
+                    (t) => DropdownMenuItem(value: t, child: Text(t)),
+                  ),
                 ],
                 onChanged: (v) => setState(() => _bloodType = v),
               ),
@@ -278,41 +309,51 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
               _section('Contact Information'),
               _field(_phone, 'Phone', keyboardType: TextInputType.phone),
               const SizedBox(height: 12),
-              _field(_email, 'Email',
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (v) {
-                    if (v != null && v.isNotEmpty && !v.contains('@')) {
-                      return 'Enter a valid email';
-                    }
-                    return null;
-                  }),
+              _field(
+                _email,
+                'Email',
+                keyboardType: TextInputType.emailAddress,
+                validator: (v) {
+                  if (v != null && v.isNotEmpty && !v.contains('@')) {
+                    return 'Enter a valid email';
+                  }
+                  return null;
+                },
+              ),
               const SizedBox(height: 12),
               _field(_address, 'Address', maxLines: 2),
 
               _section('Emergency Contact'),
               _field(_emergencyName, 'Contact Name'),
               const SizedBox(height: 12),
-              _field(_emergencyPhone, 'Contact Phone',
-                  keyboardType: TextInputType.phone),
+              _field(
+                _emergencyPhone,
+                'Contact Phone',
+                keyboardType: TextInputType.phone,
+              ),
 
               _section('Allergies'),
-              ..._allergies.asMap().entries.map((e) =>
-                  _allergyRow(e.key, e.value)),
+              ..._allergies.asMap().entries.map(
+                (e) => _allergyRow(e.key, e.value),
+              ),
               _addButton('Add Allergy', Icons.add, () {
-                setState(() => _allergies.add(
-                    {'name': '', 'severity': 'mild'}));
+                setState(
+                  () => _allergies.add({'name': '', 'severity': 'mild'}),
+                );
               }),
 
               _section('Current Medications'),
-              ..._medications.asMap().entries.map((e) =>
-                  _medicationRow(e.key, e.value)),
+              ..._medications.asMap().entries.map(
+                (e) => _medicationRow(e.key, e.value),
+              ),
               _addButton('Add Medication', Icons.medication, () {
                 setState(() => _medications.add({'name': '', 'dosage': ''}));
               }),
 
               _section('Chronic Conditions'),
-              ..._conditions.asMap().entries.map((e) =>
-                  _conditionRow(e.key, e.value)),
+              ..._conditions.asMap().entries.map(
+                (e) => _conditionRow(e.key, e.value),
+              ),
               _addButton('Add Condition', Icons.add_circle_outline, () {
                 setState(() => _conditions.add(''));
               }),
@@ -323,8 +364,11 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
               _field(_insuranceNumber, 'Policy / Insurance Number'),
 
               _section('Medical History'),
-              _field(_medicalHistory, 'Medical history, past surgeries, notes…',
-                  maxLines: 5),
+              _field(
+                _medicalHistory,
+                'Medical history, past surgeries, notes…',
+                maxLines: 5,
+              ),
 
               const SizedBox(height: 32),
             ],
@@ -337,19 +381,22 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
   // ── Section helpers ───────────────────────────────────────────────────────
 
   Widget _section(String title) => Padding(
-        padding: const EdgeInsets.only(top: 24, bottom: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title,
-                style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor)),
-            const Divider(height: 8),
-          ],
+    padding: const EdgeInsets.only(top: 24, bottom: 12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: AppColors.of(context).accent,
+          ),
         ),
-      );
+        const Divider(height: 8),
+      ],
+    ),
+  );
 
   Widget _field(
     TextEditingController controller,
@@ -368,12 +415,12 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
   }
 
   Widget _twoCol(Widget left, Widget right) => Row(
-        children: [
-          Expanded(child: left),
-          const SizedBox(width: 12),
-          Expanded(child: right),
-        ],
-      );
+    children: [
+      Expanded(child: left),
+      const SizedBox(width: 12),
+      Expanded(child: right),
+    ],
+  );
 
   Widget _dropdownRow<T>({
     required String label,
@@ -403,7 +450,9 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
               child: TextFormField(
                 initialValue: allergy['name'],
                 decoration: const InputDecoration(
-                    labelText: 'Allergen', isDense: true),
+                  labelText: 'Allergen',
+                  isDense: true,
+                ),
                 validator: _required('Allergen name'),
                 onChanged: (v) => allergy['name'] = v,
               ),
@@ -414,20 +463,21 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
               child: AdaptiveDropdown<String>(
                 value: allergy['severity'],
                 decoration: const InputDecoration(
-                    labelText: 'Severity', isDense: true),
+                  labelText: 'Severity',
+                  isDense: true,
+                ),
                 items: _severities
-                    .map((s) => DropdownMenuItem(
-                        value: s.$1, child: Text(s.$2)))
+                    .map(
+                      (s) => DropdownMenuItem(value: s.$1, child: Text(s.$2)),
+                    )
                     .toList(),
-                onChanged: (v) =>
-                    setState(() => allergy['severity'] = v!),
+                onChanged: (v) => setState(() => allergy['severity'] = v!),
               ),
             ),
             IconButton(
               icon: const Icon(Icons.remove_circle_outline),
-              color: AppTheme.errorColor,
-              onPressed: () =>
-                  setState(() => _allergies.removeAt(index)),
+              color: AppColors.of(context).critical,
+              onPressed: () => setState(() => _allergies.removeAt(index)),
             ),
           ],
         ),
@@ -447,7 +497,9 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
               child: TextFormField(
                 initialValue: med['name'],
                 decoration: const InputDecoration(
-                    labelText: 'Medication', isDense: true),
+                  labelText: 'Medication',
+                  isDense: true,
+                ),
                 validator: _required('Medication name'),
                 onChanged: (v) => med['name'] = v,
               ),
@@ -458,15 +510,16 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
               child: TextFormField(
                 initialValue: med['dosage'],
                 decoration: const InputDecoration(
-                    labelText: 'Dosage (optional)', isDense: true),
+                  labelText: 'Dosage (optional)',
+                  isDense: true,
+                ),
                 onChanged: (v) => med['dosage'] = v,
               ),
             ),
             IconButton(
               icon: const Icon(Icons.remove_circle_outline),
-              color: AppTheme.errorColor,
-              onPressed: () =>
-                  setState(() => _medications.removeAt(index)),
+              color: AppColors.of(context).critical,
+              onPressed: () => setState(() => _medications.removeAt(index)),
             ),
           ],
         ),
@@ -485,17 +538,17 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
               child: TextFormField(
                 initialValue: condition,
                 decoration: const InputDecoration(
-                    labelText: 'Condition', isDense: true),
+                  labelText: 'Condition',
+                  isDense: true,
+                ),
                 validator: _required('Condition'),
-                onChanged: (v) =>
-                    setState(() => _conditions[index] = v),
+                onChanged: (v) => setState(() => _conditions[index] = v),
               ),
             ),
             IconButton(
               icon: const Icon(Icons.remove_circle_outline),
-              color: AppTheme.errorColor,
-              onPressed: () =>
-                  setState(() => _conditions.removeAt(index)),
+              color: AppColors.of(context).critical,
+              onPressed: () => setState(() => _conditions.removeAt(index)),
             ),
           ],
         ),

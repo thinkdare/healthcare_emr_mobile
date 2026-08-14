@@ -1,7 +1,7 @@
 // lib/presentation/subscription/widgets/gateway_picker_sheet.dart
 
 import 'package:flutter/material.dart';
-import '../../../config/theme.dart';
+import '../../../config/app_colors.dart';
 
 enum PaymentGateway { paystack, flutterwave, stripe }
 
@@ -9,33 +9,33 @@ extension PaymentGatewayExt on PaymentGateway {
   String get id => name; // 'paystack' | 'flutterwave' | 'stripe'
 
   String get label => switch (this) {
-    PaymentGateway.paystack    => 'Paystack',
+    PaymentGateway.paystack => 'Paystack',
     PaymentGateway.flutterwave => 'Flutterwave',
-    PaymentGateway.stripe      => 'Stripe',
+    PaymentGateway.stripe => 'Stripe',
   };
 
   String get subtitle => switch (this) {
-    PaymentGateway.paystack    => 'Nigeria & West Africa · NGN',
+    PaymentGateway.paystack => 'Nigeria & West Africa · NGN',
     PaymentGateway.flutterwave => 'Ghana, Kenya, Rwanda + more · NGN',
-    PaymentGateway.stripe      => 'International · USD',
+    PaymentGateway.stripe => 'International · USD',
   };
 
   String get regionNote => switch (this) {
-    PaymentGateway.paystack    => 'Best for Nigerian organisations',
+    PaymentGateway.paystack => 'Best for Nigerian organisations',
     PaymentGateway.flutterwave => 'Best for broader West Africa coverage',
-    PaymentGateway.stripe      => 'Best for international organisations',
+    PaymentGateway.stripe => 'Best for international organisations',
   };
 
   IconData get icon => switch (this) {
-    PaymentGateway.paystack    => Icons.account_balance_wallet_outlined,
+    PaymentGateway.paystack => Icons.account_balance_wallet_outlined,
     PaymentGateway.flutterwave => Icons.flight_takeoff_outlined,
-    PaymentGateway.stripe      => Icons.credit_card_outlined,
+    PaymentGateway.stripe => Icons.credit_card_outlined,
   };
 
   Color get color => switch (this) {
-    PaymentGateway.paystack    => const Color(0xFF00C3F7),
+    PaymentGateway.paystack => const Color(0xFF00C3F7),
     PaymentGateway.flutterwave => const Color(0xFFF5A623),
-    PaymentGateway.stripe      => const Color(0xFF635BFF),
+    PaymentGateway.stripe => const Color(0xFF635BFF),
   };
 }
 
@@ -71,8 +71,7 @@ class _GatewayPickerSheet extends StatelessWidget {
                 const Expanded(
                   child: Text(
                     'Choose payment method',
-                    style: TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
                 IconButton(
@@ -85,11 +84,13 @@ class _GatewayPickerSheet extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               'Your payment is processed securely by the gateway.',
-              style: TextStyle(fontSize: 13, color: AppTheme.gray600),
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.of(context).textSecondary,
+              ),
             ),
             const SizedBox(height: 20),
-            ...PaymentGateway.values
-                .map((g) => _GatewayTile(gateway: g)),
+            ...PaymentGateway.values.map((g) => _GatewayTile(gateway: g)),
           ],
         ),
       ),
@@ -112,7 +113,8 @@ class _GatewayTile extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             border: Border.all(
-                color: AppTheme.gray600.withValues(alpha: 0.2)),
+              color: AppColors.of(context).textSecondary.withValues(alpha: 0.2),
+            ),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -131,23 +133,38 @@ class _GatewayTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(gateway.label,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 15)),
-                    Text(gateway.subtitle,
-                        style: TextStyle(
-                            fontSize: 12, color: AppTheme.gray600)),
+                    Text(
+                      gateway.label,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                    Text(
+                      gateway.subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.of(context).textSecondary,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text(gateway.regionNote,
-                        style: TextStyle(
-                            fontSize: 11,
-                            color: gateway.color,
-                            fontWeight: FontWeight.w500)),
+                    Text(
+                      gateway.regionNote,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: gateway.color,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right,
-                  color: AppTheme.gray600.withValues(alpha: 0.5)),
+              Icon(
+                Icons.chevron_right,
+                color: AppColors.of(
+                  context,
+                ).textSecondary.withValues(alpha: 0.5),
+              ),
             ],
           ),
         ),
