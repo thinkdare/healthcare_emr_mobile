@@ -8,6 +8,9 @@ import '../../../data/providers/auth_provider.dart';
 import '../../dashboard/screens/provider_dashboard_screen.dart';
 import '../../shell/ios_shell.dart';
 import '../../../config/app_colors.dart';
+import '../../../config/app_spacing.dart';
+import '../../shared/widgets/adaptive_card.dart';
+import '../../shared/widgets/adaptive_list_row.dart';
 
 /// Shown after a successful login when the user belongs to more than one
 /// facility, or when the app restores a session that has no stored tenant.
@@ -65,10 +68,13 @@ class _FacilityPickerScreenState extends State<FacilityPickerScreen> {
               automaticallyImplyLeading: false,
               actions: [
                 TextButton.icon(
-                  icon: const Icon(Icons.logout, color: Colors.white),
-                  label: const Text(
+                  icon: Icon(
+                    Icons.logout,
+                    color: AppColors.of(context).onAccent,
+                  ),
+                  label: Text(
                     'Logout',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppColors.of(context).onAccent),
                   ),
                   onPressed: () async {
                     await context.read<AuthProvider>().logout();
@@ -85,93 +91,111 @@ class _FacilityPickerScreenState extends State<FacilityPickerScreen> {
           final facilities = auth.availableFacilities;
           final user = auth.currentUser;
 
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // ── Greeting ─────────────────────────────────────────────
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
+          final tokens = AppColors.of(context);
+
+          return Container(
+            color: tokens.background,
+            child: Padding(
+              // Horizontal inset comes from AdaptiveCard's own 16px margin —
+              // non-card children below re-add a matching 16 so everything
+              // in this column lines up.
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ── Greeting ─────────────────────────────────────────
+                  AdaptiveCard(
                     child: Column(
                       children: [
                         CircleAvatar(
                           radius: 32,
-                          backgroundColor: AppColors.of(context).accent,
+                          backgroundColor: tokens.accent,
                           child: Text(
                             auth.initials,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: tokens.onAccent,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.md),
                         Text(
                           auth.displayName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
+                            color: tokens.textPrimary,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           user?.email ?? '',
                           style: TextStyle(
                             fontSize: 14,
-                            color: AppColors.of(context).textSecondary,
+                            color: tokens.textSecondary,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.xl),
 
-                Text(
-                  'Where are you working today?',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.of(context).textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                if (auth.error != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.of(
-                        context,
-                      ).critical.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
                     ),
                     child: Text(
-                      auth.error!,
-                      style: TextStyle(color: AppColors.of(context).critical),
+                      'Where are you working today?',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: tokens.textSecondary,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                ],
+                  const SizedBox(height: AppSpacing.md),
 
-                // ── Facility list ─────────────────────────────────────────
-                Expanded(
-                  child: ListView.separated(
-                    itemCount: facilities.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (_, i) => _FacilityTile(
-                      facility: facilities[i],
-                      isLoading: _selectingId == facilities[i].id,
-                      onTap: _selectingId == null
-                          ? () => _select(facilities[i])
-                          : null,
+                  if (auth.error != null) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        decoration: BoxDecoration(
+                          color: tokens.criticalTint,
+                          borderRadius: BorderRadius.circular(
+                            AppRadius.control,
+                          ),
+                          border: Border.all(color: tokens.criticalBorder),
+                        ),
+                        child: Text(
+                          auth.error!,
+                          style: TextStyle(color: tokens.critical),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
+
+                  // ── Facility list ────────────────────────────────────
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: facilities.length,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(height: AppSpacing.xs),
+                      itemBuilder: (_, i) => _FacilityTile(
+                        facility: facilities[i],
+                        isLoading: _selectingId == facilities[i].id,
+                        onTap: _selectingId == null
+                            ? () => _select(facilities[i])
+                            : null,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -195,57 +219,38 @@ class _FacilityTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     final membership = facility.membership;
+    final subtitle = [
+      if (facility.organization != null) facility.organization!.name,
+      if (membership != null) membership.displayType,
+    ].join(' · ');
 
-    return Card(
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    return AdaptiveCard(
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
+      child: AdaptiveListRow(
         leading: Container(
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: AppColors.of(context).accent.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
+            color: tokens.accentTint,
+            borderRadius: BorderRadius.circular(AppRadius.control),
           ),
-          child: Icon(
-            Icons.local_hospital,
-            color: AppColors.of(context).accent,
-          ),
+          child: Icon(Icons.local_hospital, color: tokens.accent),
         ),
-        title: Text(
-          facility.name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (facility.organization != null)
-              Text(
-                facility.organization!.name,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.of(context).textSecondary,
-                ),
-              ),
-            if (membership != null)
-              Text(
-                membership.displayType,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.of(context).accent,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-          ],
-        ),
+        title: facility.name,
+        subtitle: subtitle.isEmpty ? null : subtitle,
         trailing: isLoading
             ? const SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : const Icon(Icons.chevron_right),
-        onTap: onTap,
+            : Icon(Icons.chevron_right, color: tokens.textSecondary),
       ),
     );
   }
