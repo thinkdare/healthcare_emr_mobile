@@ -28,6 +28,11 @@ import '../../subscription/screens/subscription_upgrade_screen.dart';
 import '../../subscription/widgets/trial_status_banner.dart';
 import '../../sync/widgets/sync_banner.dart';
 import '../../../config/app_colors.dart';
+import '../../../config/app_spacing.dart';
+import '../../shared/widgets/adaptive_card.dart';
+import '../../shared/widgets/adaptive_badge.dart';
+import '../../shared/widgets/adaptive_list_row.dart';
+import '../../shared/widgets/stat_tile.dart';
 
 class ProviderDashboardScreen extends StatefulWidget {
   const ProviderDashboardScreen({super.key});
@@ -258,28 +263,27 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   onRefresh: _handleRefresh,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    // Horizontal inset comes entirely from AdaptiveCard's own
+                    // AppSpacing.lg margin; vertical gaps between stacked
+                    // cards likewise come from each card's AppSpacing.sm
+                    // margin (sm + sm = 16 between adjacent cards) — no
+                    // manual SizedBox needed between them.
+                    padding: const EdgeInsets.only(
+                      top: AppSpacing.sm,
+                      bottom: AppSpacing.xl,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _WelcomeCard(auth: auth),
-                        const SizedBox(height: 16),
                         if (isOrgAdmin) ...[
                           _SubscriptionCard(),
-                          const SizedBox(height: 16),
                           _OrgAdminQuickActionsCard(),
                         ] else ...[
                           _PatientStatsCard(userId: auth.currentUserId ?? ''),
-                          const SizedBox(height: 16),
                           _RecentPatientsCard(userId: auth.currentUserId ?? ''),
-                          if (showGrants) ...[
-                            const SizedBox(height: 16),
-                            _AccessGrantsCard(),
-                          ],
-                          if (showEmergency) ...[
-                            const SizedBox(height: 16),
-                            _EmergencyAccessCard(),
-                          ],
+                          if (showGrants) _AccessGrantsCard(),
+                          if (showEmergency) _EmergencyAccessCard(),
                         ],
                       ],
                     ),
@@ -599,82 +603,107 @@ class _WelcomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppColors.of(context).accent,
-              AppColors.of(context).accent,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Welcome back,',
-              style: TextStyle(fontSize: 16, color: Colors.white70),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              auth.displayName,
-              style: const TextStyle(
-                fontSize: 24,
+    final tokens = AppColors.of(context);
+    return AdaptiveCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: tokens.accent,
+            child: Text(
+              auth.initials,
+              style: TextStyle(
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: tokens.onAccent,
               ),
             ),
-            const SizedBox(height: 8),
-            if (auth.isOrgAdmin)
-              const Text(
-                'Organization Administrator',
-                style: TextStyle(fontSize: 16, color: Colors.white70),
-              )
-            else if (auth.staffTypeDisplay.isNotEmpty)
-              Text(
-                auth.department.isNotEmpty
-                    ? '${auth.staffTypeDisplay} · ${auth.department}'
-                    : auth.staffTypeDisplay,
-                style: const TextStyle(fontSize: 16, color: Colors.white70),
-              ),
-            if (auth.isOrgAdmin &&
-                auth.currentUser?.primaryOrganizationName != null) ...[
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(Icons.business, size: 14, color: Colors.white54),
-                  const SizedBox(width: 4),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Welcome back,',
+                  style: TextStyle(fontSize: 13, color: tokens.textSecondary),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  auth.displayName,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: tokens.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                if (auth.isOrgAdmin)
                   Text(
-                    auth.currentUser!.primaryOrganizationName!,
-                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                    'Organization Administrator',
+                    style: TextStyle(fontSize: 14, color: tokens.textSecondary),
+                  )
+                else if (auth.staffTypeDisplay.isNotEmpty)
+                  Text(
+                    auth.department.isNotEmpty
+                        ? '${auth.staffTypeDisplay} · ${auth.department}'
+                        : auth.staffTypeDisplay,
+                    style: TextStyle(fontSize: 14, color: tokens.textSecondary),
+                  ),
+                if (auth.isOrgAdmin &&
+                    auth.currentUser?.primaryOrganizationName != null) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.business,
+                        size: 13,
+                        color: tokens.textSecondary,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          auth.currentUser!.primaryOrganizationName!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: tokens.textSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else if (!auth.isOrgAdmin &&
+                    auth.facilityName.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        size: 13,
+                        color: tokens.textSecondary,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          auth.facilityName,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: tokens.textSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ] else if (!auth.isOrgAdmin && auth.facilityName.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.location_on,
-                    size: 14,
-                    color: Colors.white54,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    auth.facilityName,
-                    style: const TextStyle(fontSize: 13, color: Colors.white70),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -685,118 +714,115 @@ class _WelcomeCard extends StatelessWidget {
 class _OrgAdminQuickActionsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.admin_panel_settings,
-                  color: AppColors.of(context).accent,
+    final tokens = AppColors.of(context);
+    return AdaptiveCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.admin_panel_settings, color: tokens.accent),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                'Administration',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: tokens.textPrimary,
                 ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Administration',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const Divider(height: 24),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 2.4,
-              children: [
-                _AdminTile(
-                  icon: Icons.business,
-                  label: 'Organization',
-                  color: Colors.orange.shade700,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => OrganizationProfileScreen(
-                          repository: OrganizationRepository(
-                            apiClient: context.read<ApiClient>(),
-                          ),
+              ),
+            ],
+          ),
+          const Divider(height: AppSpacing.xl),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: AppSpacing.md,
+            mainAxisSpacing: AppSpacing.md,
+            childAspectRatio: 2.4,
+            children: [
+              _AdminTile(
+                icon: Icons.business,
+                label: 'Organization',
+                color: Colors.orange.shade700,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => OrganizationProfileScreen(
+                        repository: OrganizationRepository(
+                          apiClient: context.read<ApiClient>(),
                         ),
                       ),
-                    );
-                  },
-                ),
-                _AdminTile(
-                  icon: Icons.local_hospital_outlined,
-                  label: 'Facilities',
-                  color: Colors.blue.shade700,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const FacilitiesListScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _AdminTile(
-                  icon: Icons.group_outlined,
-                  label: 'Staff',
-                  color: Colors.green.shade700,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => StaffManagementScreen(
-                          repository: StaffRepository(
-                            apiClient: context.read<ApiClient>(),
-                          ),
+                    ),
+                  );
+                },
+              ),
+              _AdminTile(
+                icon: Icons.local_hospital_outlined,
+                label: 'Facilities',
+                color: Colors.blue.shade700,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const FacilitiesListScreen(),
+                    ),
+                  );
+                },
+              ),
+              _AdminTile(
+                icon: Icons.group_outlined,
+                label: 'Staff',
+                color: Colors.green.shade700,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => StaffManagementScreen(
+                        repository: StaffRepository(
+                          apiClient: context.read<ApiClient>(),
                         ),
                       ),
-                    );
-                  },
-                ),
-                _AdminTile(
-                  icon: Icons.mail_outline,
-                  label: 'Invite Staff',
-                  color: Colors.purple.shade700,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const ProviderInvitationScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _AdminTile(
-                  icon: Icons.analytics_outlined,
-                  label: 'Reports',
-                  color: Colors.teal.shade700,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const ReportingScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _AdminTile(
-                  icon: Icons.shield_outlined,
-                  label: 'Access Grants',
-                  color: Colors.indigo.shade700,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const AccessGrantsScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
+                    ),
+                  );
+                },
+              ),
+              _AdminTile(
+                icon: Icons.mail_outline,
+                label: 'Invite Staff',
+                color: Colors.purple.shade700,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const ProviderInvitationScreen(),
+                    ),
+                  );
+                },
+              ),
+              _AdminTile(
+                icon: Icons.analytics_outlined,
+                label: 'Reports',
+                color: Colors.teal.shade700,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ReportingScreen()),
+                  );
+                },
+              ),
+              _AdminTile(
+                icon: Icons.shield_outlined,
+                label: 'Access Grants',
+                color: Colors.indigo.shade700,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const AccessGrantsScreen(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -819,18 +845,21 @@ class _AdminTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(AppRadius.control),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.control),
           border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Row(
           children: [
             Icon(icon, color: color, size: 20),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
                 label,
@@ -856,114 +885,106 @@ class _PatientStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return Consumer<PatientProvider>(
       builder: (context, p, _) {
         final stats = p.stats;
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.analytics, color: AppColors.of(context).accent),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Patient Overview',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+        return AdaptiveCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.analytics, color: tokens.accent),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Patient Overview',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: tokens.textPrimary,
+                      ),
+                    ),
+                  ),
+                  if (p.patientsFromCache)
+                    Tooltip(
+                      message: 'Showing cached data',
+                      child: Icon(
+                        Icons.offline_bolt,
+                        size: 16,
+                        color: tokens.warning,
+                      ),
+                    ),
+                  if (p.isLoadingStats)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                ],
+              ),
+              const Divider(height: AppSpacing.xl),
+              Row(
+                children: [
+                  Expanded(
+                    child: StatTile(
+                      icon: Icons.people,
+                      label: 'Total Patients',
+                      value: p.isLoadingStats ? '…' : '${stats.totalPatients}',
+                      color: tokens.accent,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const PatientListScreen(),
                         ),
                       ),
                     ),
-                    if (p.patientsFromCache)
-                      Tooltip(
-                        message: 'Showing cached data',
-                        child: Icon(
-                          Icons.offline_bolt,
-                          size: 16,
-                          color: AppColors.of(context).warning,
-                        ),
-                      ),
-                    if (p.isLoadingStats)
-                      const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                  ],
-                ),
-                const Divider(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatTile(
-                        icon: Icons.people,
-                        label: 'Total Patients',
-                        value: p.isLoadingStats
-                            ? '…'
-                            : '${stats.totalPatients}',
-                        color: AppColors.of(context).accent,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const PatientListScreen(),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatTile(
-                        icon: Icons.person_add,
-                        label: 'New (7 days)',
-                        value: p.isLoadingStats
-                            ? '…'
-                            : '${stats.recentPatients}',
-                        color: AppColors.of(context).success,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatTile(
-                        icon: Icons.event,
-                        label: 'Appointments',
-                        value: p.isLoadingStats
-                            ? '…'
-                            : '${stats.pendingAppointments}',
-                        color: AppColors.of(context).accent,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatTile(
-                        icon: Icons.medication,
-                        label: 'Prescriptions',
-                        value: p.isLoadingStats
-                            ? '…'
-                            : '${stats.activePrescriptions}',
-                        color: AppColors.of(context).warning,
-                      ),
-                    ),
-                  ],
-                ),
-                if (stats.lastRefreshed != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    'Last refreshed: ${_timeAgo(stats.lastRefreshed!)}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.of(context).textSecondary,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: StatTile(
+                      icon: Icons.person_add,
+                      label: 'New (7 days)',
+                      value: p.isLoadingStats ? '…' : '${stats.recentPatients}',
+                      color: tokens.success,
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: StatTile(
+                      icon: Icons.event,
+                      label: 'Appointments',
+                      value: p.isLoadingStats
+                          ? '…'
+                          : '${stats.pendingAppointments}',
+                      color: tokens.accent,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: StatTile(
+                      icon: Icons.medication,
+                      label: 'Prescriptions',
+                      value: p.isLoadingStats
+                          ? '…'
+                          : '${stats.activePrescriptions}',
+                      color: tokens.warning,
+                    ),
+                  ),
+                ],
+              ),
+              if (stats.lastRefreshed != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Last refreshed: ${_timeAgo(stats.lastRefreshed!)}',
+                  style: TextStyle(fontSize: 11, color: tokens.textSecondary),
+                ),
               ],
-            ),
+            ],
           ),
         );
       },
@@ -987,129 +1008,115 @@ class _RecentPatientsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return Consumer<PatientProvider>(
       builder: (context, p, _) {
         final recent = p.patients.take(5).toList();
 
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.history, color: AppColors.of(context).accent),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Recent Patients',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+        return AdaptiveCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.history, color: tokens.accent),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Recent Patients',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: tokens.textPrimary,
                       ),
                     ),
-                    AdaptiveTextButton(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const PatientListScreen(),
-                        ),
-                      ),
-                      child: const Text('View All'),
-                    ),
-                  ],
-                ),
-                const Divider(height: 16),
-                if (p.isLoading)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                else if (recent.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: Center(
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.people_outline,
-                            size: 48,
-                            color: AppColors.of(context).textSecondary,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'No patients yet',
-                            style: TextStyle(
-                              color: AppColors.of(context).textSecondary,
-                            ),
-                          ),
-                        ],
+                  ),
+                  AdaptiveTextButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const PatientListScreen(),
                       ),
                     ),
-                  )
-                else
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: recent.length,
-                    separatorBuilder: (context, index) =>
-                        const Divider(height: 1),
-                    itemBuilder: (context, i) {
-                      final patient = recent[i];
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(
-                          backgroundColor: AppColors.of(
-                            context,
-                          ).accent.withValues(alpha: 0.1),
-                          child: Text(
-                            '${patient.firstName[0]}${patient.lastName[0]}',
-                            style: TextStyle(
-                              color: AppColors.of(context).accent,
-                              fontWeight: FontWeight.bold,
-                            ),
+                    child: const Text('View All'),
+                  ),
+                ],
+              ),
+              const Divider(height: AppSpacing.lg),
+              if (p.isLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(AppSpacing.xl),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else if (recent.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.people_outline,
+                          size: 48,
+                          color: tokens.textSecondary,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          'No patients yet',
+                          style: TextStyle(color: tokens.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: recent.length,
+                  separatorBuilder: (context, index) =>
+                      const Divider(height: 1),
+                  itemBuilder: (context, i) {
+                    final patient = recent[i];
+                    return AdaptiveListRow(
+                      leading: CircleAvatar(
+                        backgroundColor: tokens.accentTint,
+                        child: Text(
+                          '${patient.firstName[0]}${patient.lastName[0]}',
+                          style: TextStyle(
+                            color: tokens.accent,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        title: Text(
-                          patient.fullName,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        subtitle: Text(
+                      ),
+                      title: patient.fullName,
+                      subtitle:
                           '${patient.gender} · ${patient.ageDisplay}'
                           '${patient.bloodType != null ? ' · ${patient.bloodType}' : ''}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.of(context).textSecondary,
+                      trailing: patient.hasCriticalAllergies
+                          ? Tooltip(
+                              message: 'Critical allergies',
+                              child: Icon(
+                                Icons.warning,
+                                size: 18,
+                                color: tokens.critical,
+                              ),
+                            )
+                          : null,
+                      onTap: () {
+                        context.read<PatientProvider>().setSelectedPatient(
+                          patient,
+                        );
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const PatientListScreen(),
                           ),
-                        ),
-                        trailing: patient.hasCriticalAllergies
-                            ? Tooltip(
-                                message: 'Critical allergies',
-                                child: Icon(
-                                  Icons.warning,
-                                  size: 18,
-                                  color: AppColors.of(context).critical,
-                                ),
-                              )
-                            : null,
-                        onTap: () {
-                          context.read<PatientProvider>().setSelectedPatient(
-                            patient,
-                          );
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const PatientListScreen(),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-              ],
-            ),
+                        );
+                      },
+                    );
+                  },
+                ),
+            ],
           ),
         );
       },
@@ -1122,6 +1129,7 @@ class _RecentPatientsCard extends StatelessWidget {
 class _SubscriptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return Consumer<SubscriptionProvider>(
       builder: (context, sp, _) {
         final subscription = sp.subscription;
@@ -1129,71 +1137,89 @@ class _SubscriptionCard extends StatelessWidget {
 
         final onTrial = subscription.isTrial;
         final daysRemaining = subscription.trialDaysRemaining ?? 0;
-        final statusColor = onTrial
-            ? AppColors.of(context).warning
-            : AppColors.of(context).success;
+        final statusColor = onTrial ? tokens.warning : tokens.success;
+        final statusTint = onTrial ? tokens.warningTint : tokens.successTint;
+        final urgent = daysRemaining <= 7;
 
-        return Card(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              gradient: LinearGradient(
-                colors: [
-                  statusColor.withValues(alpha: 0.1),
-                  statusColor.withValues(alpha: 0.05),
+        return AdaptiveCard(
+          backgroundColor: statusTint,
+          borderColor: statusColor.withValues(alpha: 0.3),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    onTrial ? Icons.schedule : Icons.check_circle,
+                    color: statusColor,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    'Subscription',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: tokens.textPrimary,
+                    ),
+                  ),
                 ],
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              const Divider(height: AppSpacing.lg),
+              Row(
+                children: [
+                  Text(
+                    'Status',
+                    style: TextStyle(
+                      color: tokens.textSecondaryAlt,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  AdaptiveBadge(
+                    label: onTrial ? 'Free Trial' : 'Active',
+                    variant: onTrial
+                        ? BadgeVariant.warning
+                        : BadgeVariant.success,
+                    icon: onTrial ? Icons.schedule : Icons.check_circle,
+                  ),
+                ],
+              ),
+              if (onTrial) ...[
+                const SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
-                    Icon(
-                      onTrial ? Icons.schedule : Icons.check_circle,
-                      color: statusColor,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Subscription',
+                    Text(
+                      'Days Remaining',
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        color: tokens.textSecondaryAlt,
+                        fontWeight: FontWeight.w500,
                       ),
+                    ),
+                    const Spacer(),
+                    AdaptiveBadge(
+                      label:
+                          '$daysRemaining day${daysRemaining == 1 ? '' : 's'}',
+                      variant: urgent
+                          ? BadgeVariant.critical
+                          : BadgeVariant.warning,
+                      icon: Icons.hourglass_bottom,
                     ),
                   ],
                 ),
-                const Divider(height: 16),
-                _InfoRow(
-                  'Status',
-                  onTrial ? 'Free Trial' : 'Active',
-                  valueColor: statusColor,
-                ),
-                if (onTrial) ...[
-                  const SizedBox(height: 8),
-                  _InfoRow(
-                    'Days Remaining',
-                    '$daysRemaining',
-                    valueColor: daysRemaining <= 7
-                        ? AppColors.of(context).critical
-                        : AppColors.of(context).warning,
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: AdaptiveFilledButton(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const SubscriptionUpgradeScreen(),
-                        ),
+                const SizedBox(height: AppSpacing.md),
+                SizedBox(
+                  width: double.infinity,
+                  child: AdaptiveFilledButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const SubscriptionUpgradeScreen(),
                       ),
-                      child: const Text('Upgrade Plan'),
                     ),
+                    child: const Text('Upgrade Plan'),
                   ),
-                ],
+                ),
               ],
-            ),
+            ],
           ),
         );
       },
@@ -1206,6 +1232,7 @@ class _SubscriptionCard extends StatelessWidget {
 class _AccessGrantsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return Consumer<AccessGrantProvider>(
       builder: (context, grants, _) {
         final pending = grants.pendingCount;
@@ -1213,88 +1240,51 @@ class _AccessGrantsCard extends StatelessWidget {
 
         if (!hasActivity && !grants.isLoading) return const SizedBox.shrink();
 
-        return Card(
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AccessGrantsScreen()),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        return AdaptiveCard(
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const AccessGrantsScreen())),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      Icon(
-                        pending > 0
-                            ? Icons.shield_outlined
-                            : Icons.lock_open_outlined,
-                        color: pending > 0
-                            ? AppColors.of(context).warning
-                            : AppColors.of(context).accent,
-                      ),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          'Access Grants',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      Icon(
-                        Icons.chevron_right,
-                        color: AppColors.of(context).textSecondary,
-                      ),
-                    ],
+                  Icon(
+                    pending > 0
+                        ? Icons.shield_outlined
+                        : Icons.lock_open_outlined,
+                    color: pending > 0 ? tokens.warning : tokens.accent,
                   ),
-                  if (pending > 0) ...[
-                    const Divider(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.of(
-                          context,
-                        ).warning.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.pending_actions,
-                            color: AppColors.of(context).warning,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '$pending request${pending == 1 ? '' : 's'} awaiting your approval',
-                            style: TextStyle(
-                              color: AppColors.of(context).warning,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ] else if (grants.myRequests.isNotEmpty) ...[
-                    const Divider(height: 16),
-                    Text(
-                      '${grants.myRequests.length} request${grants.myRequests.length == 1 ? '' : 's'} sent',
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Access Grants',
                       style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.of(context).textSecondary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: tokens.textPrimary,
                       ),
                     ),
-                  ],
+                  ),
+                  Icon(Icons.chevron_right, color: tokens.textSecondary),
                 ],
               ),
-            ),
+              if (pending > 0) ...[
+                const Divider(height: AppSpacing.lg),
+                AdaptiveBadge(
+                  label:
+                      '$pending request${pending == 1 ? '' : 's'} awaiting your approval',
+                  variant: BadgeVariant.warning,
+                  icon: Icons.pending_actions,
+                ),
+              ] else if (grants.myRequests.isNotEmpty) ...[
+                const Divider(height: AppSpacing.lg),
+                Text(
+                  '${grants.myRequests.length} request${grants.myRequests.length == 1 ? '' : 's'} sent',
+                  style: TextStyle(fontSize: 13, color: tokens.textSecondary),
+                ),
+              ],
+            ],
           ),
         );
       },
@@ -1307,6 +1297,7 @@ class _AccessGrantsCard extends StatelessWidget {
 class _EmergencyAccessCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return Consumer<EmergencyAccessProvider>(
       builder: (context, em, _) {
         final unreviewed = em.unreviewedCount;
@@ -1314,181 +1305,54 @@ class _EmergencyAccessCard extends StatelessWidget {
 
         if (!hasActivity && !em.isLoading) return const SizedBox.shrink();
 
-        return Card(
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const EmergencyAccessScreen()),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        return AdaptiveCard(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const EmergencyAccessScreen()),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.warning_amber_rounded,
-                        color: unreviewed > 0
-                            ? AppColors.of(context).critical
-                            : AppColors.of(context).textSecondary,
-                      ),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          'Emergency Access',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      Icon(
-                        Icons.chevron_right,
-                        color: AppColors.of(context).textSecondary,
-                      ),
-                    ],
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: unreviewed > 0
+                        ? tokens.critical
+                        : tokens.textSecondary,
                   ),
-                  if (unreviewed > 0) ...[
-                    const Divider(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.of(
-                          context,
-                        ).critical.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.rate_review_outlined,
-                            color: AppColors.of(context).critical,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '$unreviewed event${unreviewed == 1 ? '' : 's'} awaiting your review',
-                            style: TextStyle(
-                              color: AppColors.of(context).critical,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ] else if (em.logs.isNotEmpty) ...[
-                    const Divider(height: 16),
-                    Text(
-                      '${em.logs.length} event${em.logs.length == 1 ? '' : 's'} logged',
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Emergency Access',
                       style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.of(context).textSecondary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: tokens.textPrimary,
                       ),
                     ),
-                  ],
+                  ),
+                  Icon(Icons.chevron_right, color: tokens.textSecondary),
                 ],
               ),
-            ),
+              if (unreviewed > 0) ...[
+                const Divider(height: AppSpacing.lg),
+                AdaptiveBadge(
+                  label:
+                      '$unreviewed event${unreviewed == 1 ? '' : 's'} awaiting your review',
+                  variant: BadgeVariant.critical,
+                  icon: Icons.rate_review_outlined,
+                ),
+              ] else if (em.logs.isNotEmpty) ...[
+                const Divider(height: AppSpacing.lg),
+                Text(
+                  '${em.logs.length} event${em.logs.length == 1 ? '' : 's'} logged',
+                  style: TextStyle(fontSize: 13, color: tokens.textSecondary),
+                ),
+              ],
+            ],
           ),
         );
       },
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared small widgets
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _StatTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-  final VoidCallback? onTap;
-
-  const _StatTile({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 26),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: AppColors.of(context).textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color? valueColor;
-
-  const _InfoRow(this.label, this.value, {this.valueColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 120,
-          child: Text(
-            '$label:',
-            style: TextStyle(
-              color: AppColors.of(context).textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: TextStyle(fontWeight: FontWeight.w600, color: valueColor),
-          ),
-        ),
-      ],
     );
   }
 }
