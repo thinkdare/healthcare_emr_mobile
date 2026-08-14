@@ -119,21 +119,24 @@ class _ProviderInvitationScreenState extends State<ProviderInvitationScreen> {
         title: const Text('Invite Staff'),
         actions: [
           if (_submitting)
-            const Padding(
-              padding: EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Colors.white,
+                  color: AppColors.of(context).onAccent,
                 ),
               ),
             )
           else
             TextButton(
               onPressed: _submit,
-              child: const Text('Send', style: TextStyle(color: Colors.white)),
+              child: Text(
+                'Send',
+                style: TextStyle(color: AppColors.of(context).onAccent),
+              ),
             ),
         ],
       ),

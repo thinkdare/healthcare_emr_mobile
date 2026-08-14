@@ -125,10 +125,10 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
             ? TextField(
                 controller: _searchCtrl,
                 autofocus: true,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
+                style: TextStyle(color: AppColors.of(context).onAccent),
+                decoration: InputDecoration(
                   hintText: 'Search staff…',
-                  hintStyle: TextStyle(color: Colors.white60),
+                  hintStyle: TextStyle(color: AppColors.of(context).onAccent),
                   border: InputBorder.none,
                 ),
                 onChanged: (v) => setState(() => _searchQuery = v),
@@ -615,10 +615,8 @@ class _EditSheetState extends State<_EditSheet> {
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: _rankId == rank.id
-                              ? AppColors.of(
-                                  context,
-                                ).accent.withValues(alpha: 0.06)
-                              : Colors.white,
+                              ? AppColors.of(context).accentTint
+                              : AppColors.of(context).surface,
                           border: Border.all(
                             color: _rankId == rank.id
                                 ? AppColors.of(context).accent

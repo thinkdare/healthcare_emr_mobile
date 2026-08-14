@@ -200,30 +200,30 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen> {
           else if (_isEditing) ...[
             TextButton(
               onPressed: _cancelEdit,
-              child: const Text(
+              child: Text(
                 'Cancel',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.of(context).onAccent),
               ),
             ),
             if (_saving)
-              const Padding(
-                padding: EdgeInsets.all(14),
+              Padding(
+                padding: const EdgeInsets.all(14),
                 child: SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: AppColors.of(context).onAccent,
                   ),
                 ),
               )
             else
               TextButton(
                 onPressed: _save,
-                child: const Text(
+                child: Text(
                   'Save',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.of(context).onAccent,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

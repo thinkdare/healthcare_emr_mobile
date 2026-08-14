@@ -135,18 +135,20 @@ class _RequestAccessScreenState extends State<RequestAccessScreen> {
                 TextButton(
                   onPressed: _saving ? null : _submit,
                   child: _saving
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                            valueColor: AlwaysStoppedAnimation(
+                              AppColors.of(context).onAccent,
+                            ),
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'Submit',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.of(context).onAccent,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

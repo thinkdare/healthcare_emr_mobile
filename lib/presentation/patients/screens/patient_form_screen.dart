@@ -229,18 +229,20 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
                 TextButton(
                   onPressed: _saving ? null : _save,
                   child: _saving
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                            valueColor: AlwaysStoppedAnimation(
+                              AppColors.of(context).onAccent,
+                            ),
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'Save',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.of(context).onAccent,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
