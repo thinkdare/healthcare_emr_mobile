@@ -11,6 +11,8 @@ import 'facility_picker_screen.dart';
 import 'register_provider_screen.dart';
 import '../../dashboard/screens/provider_dashboard_screen.dart';
 import '../../../config/app_colors.dart';
+import '../../../config/app_spacing.dart';
+import '../../shared/widgets/adaptive_card.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -217,7 +219,11 @@ class _LoginScreenState extends State<LoginScreen> {
           body: SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+                // Horizontal inset is left entirely to AdaptiveCard's own
+                // AppSpacing.lg margin so the card sits at the same inset as
+                // the header below, which re-adds a matching horizontal
+                // padding to stay aligned with it.
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 400),
                   child: Column(
@@ -225,43 +231,71 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // ── Header ───────────────────────────────────────────
-                      Icon(
-                        Icons.local_hospital,
-                        size: 80,
-                        color: AppColors.of(context).accent,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Healthcare EMR',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: AppColors.of(context).accent,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.card,
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.local_hospital,
+                                size: 28,
+                                color: AppColors.of(context).onAccent,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                            const Text(
+                              'Healthcare EMR',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(
+                              show2FA
+                                  ? 'Two-Factor Authentication'
+                                  : 'Provider Login',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: AppColors.of(context).textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        show2FA
-                            ? 'Two-Factor Authentication'
-                            : 'Provider Login',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: AppColors.of(context).textSecondary,
+                      const SizedBox(height: AppSpacing.xl + AppSpacing.sm),
+
+                      AdaptiveCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // ── Error banner ─────────────────────────────
+                            if (_errorMessage != null) ...[
+                              _ErrorBox(message: _errorMessage!),
+                              const SizedBox(height: AppSpacing.lg),
+                            ],
+
+                            if (show2FA)
+                              _buildTwoFactorStep()
+                            else
+                              _buildPasswordStep(),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 48),
-
-                      // ── Error banner ─────────────────────────────────────
-                      if (_errorMessage != null) ...[
-                        _ErrorBox(message: _errorMessage!),
-                        const SizedBox(height: 16),
-                      ],
-
-                      if (show2FA)
-                        _buildTwoFactorStep()
-                      else
-                        _buildPasswordStep(),
                     ],
                   ),
                 ),
@@ -301,7 +335,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Facility selector shown after email check
         if (_emailChecked) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           _FacilitySelector(
             facilities: context.watch<OrganizationProvider>().facilities,
             selected: _selectedFacility,
@@ -309,7 +343,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ],
 
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
         if (!_emailChecked) ...[
           // ── Step 1 ────────────────────────────────────────────────────
@@ -340,17 +374,17 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xl),
           AdaptiveFilledButton(
             onPressed: _loading ? null : _login,
             child: _loading ? _LoadingSpinner() : const Text('Login'),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           AdaptiveTextButton(
             onPressed: () => _openForgotPassword(context),
             child: const Text('Forgot Password?'),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           AdaptiveTextButton(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const RegisterProviderScreen()),
@@ -369,10 +403,10 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
-            color: AppColors.of(context).accent.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(12),
+            color: AppColors.of(context).accentTint,
+            borderRadius: BorderRadius.circular(AppRadius.control),
           ),
           child: Column(
             children: [
@@ -381,17 +415,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 color: AppColors.of(context).accent,
                 size: 40,
               ),
-              const SizedBox(height: 12),
-              const Text(
+              const SizedBox(height: AppSpacing.md),
+              Text(
                 'Enter the 6-digit code from your authenticator app, '
                 'or one of your backup codes.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.of(context).textPrimary,
+                ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.xl),
         TextFormField(
           controller: _twoFactorController,
           keyboardType: TextInputType.number,
@@ -404,12 +441,12 @@ class _LoginScreenState extends State<LoginScreen> {
             prefixIcon: Icon(Icons.pin),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.xl),
         AdaptiveFilledButton(
           onPressed: _loading ? null : _verify2FA,
           child: _loading ? _LoadingSpinner() : const Text('Verify'),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         AdaptiveTextButton(
           onPressed: _resetToEmailStep,
           child: const Text('Back to login'),
@@ -441,41 +478,41 @@ class _FacilitySelector extends StatelessWidget {
     if (facilities.length == 1) {
       // Single facility — display name only, no interaction needed
       final f = facilities.first;
+      final tokens = AppColors.of(context);
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm + 2,
+        ),
         decoration: BoxDecoration(
-          color: AppColors.of(context).accent.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: AppColors.of(context).accent.withValues(alpha: 0.2),
-          ),
+          color: tokens.accentTint,
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          border: Border.all(color: tokens.accent.withValues(alpha: 0.2)),
         ),
         child: Row(
           children: [
             Icon(
               Icons.local_hospital_outlined,
               size: 18,
-              color: AppColors.of(context).accent,
+              color: tokens.accent,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     f.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
+                      color: tokens.textPrimary,
                     ),
                   ),
                   if (f.organization != null)
                     Text(
                       f.organization!.name,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.of(context).textSecondary,
-                      ),
+                      style: TextStyle(fontSize: 12, color: tokens.textSecondary),
                     ),
                 ],
               ),
@@ -531,30 +568,22 @@ class _ErrorBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.of(context).critical.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.of(context).critical.withValues(alpha: 0.3),
-        ),
+        color: tokens.criticalTint,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        border: Border.all(color: tokens.criticalBorder),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.error_outline,
-            color: AppColors.of(context).critical,
-            size: 20,
-          ),
-          const SizedBox(width: 8),
+          Icon(Icons.error_outline, color: tokens.critical, size: 20),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
-                color: AppColors.of(context).critical,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: tokens.critical, fontSize: 14),
             ),
           ),
         ],
@@ -566,12 +595,12 @@ class _ErrorBox extends StatelessWidget {
 class _LoadingSpinner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    return SizedBox(
       height: 20,
       width: 20,
       child: CircularProgressIndicator(
         strokeWidth: 2,
-        valueColor: AlwaysStoppedAnimation(Colors.white),
+        valueColor: AlwaysStoppedAnimation(AppColors.of(context).onAccent),
       ),
     );
   }
