@@ -2,11 +2,20 @@ import 'package:flutter/material.dart';
 import '../../../data/models/patient_models.dart';
 import '../screens/patient_detail_screen.dart';
 import '../../../config/app_colors.dart';
+import '../../../config/app_spacing.dart';
+import '../../shared/widgets/adaptive_badge.dart';
+import '../../shared/widgets/adaptive_card.dart';
 
 /// PatientCard
 ///
 /// Used in both the patient list screen and the dashboard recent patients section.
 /// Tapping navigates to the patient detail screen (Phase 2 stub, full in Phase 5).
+///
+/// Note: this deliberately does not route through AdaptiveListRow — that
+/// component's subtitle is a single string with a fixed style, and this row
+/// needs two visually distinct subtitle lines (demographic meta text, plus
+/// an accent-colored chronic-condition line), so the layout stays hand-rolled
+/// inside an AdaptiveCard shell instead.
 class PatientCard extends StatelessWidget {
   final PatientModel patient;
   final VoidCallback? onTap;
@@ -15,79 +24,78 @@ class PatientCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap ?? () => _onDefaultTap(context),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              // ── Avatar ────────────────────────────────────────────────────
-              _PatientAvatar(patient: patient),
-              const SizedBox(width: 14),
+    final tokens = AppColors.of(context);
+    return AdaptiveCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      onTap: onTap ?? () => _onDefaultTap(context),
+      child: Row(
+        children: [
+          // ── Avatar ────────────────────────────────────────────────────
+          _PatientAvatar(patient: patient),
+          const SizedBox(width: AppSpacing.md),
 
-              // ── Info ──────────────────────────────────────────────────────
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          // ── Info ──────────────────────────────────────────────────────
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Name row
+                Row(
                   children: [
-                    // Name row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            patient.fullName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (patient.hasCriticalAllergies) _AllergyBadge(),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-
-                    // MRN + demographic line
-                    Text(
-                      _demographicLine,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.of(context).textSecondary,
-                      ),
-                    ),
-
-                    // Chronic conditions (first one only)
-                    if (patient.chronicConditions.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        patient.chronicConditions.first,
+                    Expanded(
+                      child: Text(
+                        patient.fullName,
                         style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.of(context).accent,
-                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: tokens.textPrimary,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                    ),
+                    if (patient.hasCriticalAllergies) ...[
+                      const SizedBox(width: AppSpacing.xs),
+                      const Tooltip(
+                        message: 'Critical allergies',
+                        child: AdaptiveBadge(
+                          label: 'Allergy',
+                          variant: BadgeVariant.critical,
+                        ),
+                      ),
                     ],
                   ],
                 ),
-              ),
+                const SizedBox(height: AppSpacing.xs),
 
-              const SizedBox(width: 8),
-              Icon(
-                Icons.chevron_right,
-                color: AppColors.of(context).textSecondary,
-                size: 20,
-              ),
-            ],
+                // MRN + demographic line
+                Text(
+                  _demographicLine,
+                  style: TextStyle(fontSize: 12, color: tokens.textSecondary),
+                ),
+
+                // Chronic conditions (first one only)
+                if (patient.chronicConditions.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    patient.chronicConditions.first,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: tokens.accent,
+                      fontStyle: FontStyle.italic,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
           ),
-        ),
+
+          const SizedBox(width: AppSpacing.sm),
+          Icon(Icons.chevron_right, color: tokens.textSecondary, size: 20),
+        ],
       ),
     );
   }
@@ -115,13 +123,14 @@ class _PatientAvatar extends StatelessWidget {
   final PatientModel patient;
   const _PatientAvatar({required this.patient});
 
+  // Gender doesn't currently vary the avatar tint (both branches resolve to
+  // `accent`) — kept as a branch rather than collapsed so a future
+  // gender-specific tint only requires filling in the other arm.
   Color _avatarColor(BuildContext context) {
-    if (patient.hasCriticalAllergies) {
-      return AppColors.of(context).critical.withValues(alpha: 0.15);
-    }
+    if (patient.hasCriticalAllergies) return AppColors.of(context).criticalTint;
     return patient.gender == 'female'
-        ? AppColors.of(context).accent.withValues(alpha: 0.15)
-        : AppColors.of(context).accent.withValues(alpha: 0.15);
+        ? AppColors.of(context).accentTint
+        : AppColors.of(context).accentTint;
   }
 
   Color _textColor(BuildContext context) {
@@ -142,44 +151,6 @@ class _PatientAvatar extends StatelessWidget {
           fontWeight: FontWeight.bold,
           color: _textColor(context),
           fontSize: 15,
-        ),
-      ),
-    );
-  }
-}
-
-// ── Allergy badge ─────────────────────────────────────────────────────────────
-
-class _AllergyBadge extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: 'Critical allergies',
-      child: Container(
-        margin: const EdgeInsets.only(left: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: AppColors.of(context).critical.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.warning,
-              size: 10,
-              color: AppColors.of(context).critical,
-            ),
-            const SizedBox(width: 3),
-            Text(
-              'Allergy',
-              style: TextStyle(
-                fontSize: 10,
-                color: AppColors.of(context).critical,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
         ),
       ),
     );

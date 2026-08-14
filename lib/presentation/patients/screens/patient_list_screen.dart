@@ -7,6 +7,8 @@ import '../../../data/providers/patient_provider.dart';
 import '../widgets/patient_card.dart';
 import 'patient_form_screen.dart';
 import '../../../config/app_colors.dart';
+import '../../../config/app_spacing.dart';
+import '../../shared/widgets/adaptive_card.dart';
 
 class PatientListScreen extends StatefulWidget {
   const PatientListScreen({super.key});
@@ -110,11 +112,15 @@ class _PatientListScreenState extends State<PatientListScreen> {
                   ? TextField(
                       controller: _searchController,
                       autofocus: true,
-                      style: const TextStyle(color: Colors.white),
-                      cursorColor: Colors.white,
-                      decoration: const InputDecoration(
+                      style: TextStyle(color: AppColors.of(context).onAccent),
+                      cursorColor: AppColors.of(context).onAccent,
+                      decoration: InputDecoration(
                         hintText: 'Search by name, MRN, phone or email…',
-                        hintStyle: TextStyle(color: Colors.white70),
+                        hintStyle: TextStyle(
+                          color: AppColors.of(
+                            context,
+                          ).onAccent.withValues(alpha: 0.7),
+                        ),
                         border: InputBorder.none,
                         filled: false,
                       ),
@@ -198,7 +204,10 @@ class _PatientListScreenState extends State<PatientListScreen> {
                         onRefresh: _onRefresh,
                         child: ListView.builder(
                           controller: _scrollController,
-                          padding: const EdgeInsets.only(top: 8, bottom: 32),
+                          padding: const EdgeInsets.only(
+                            top: AppSpacing.sm,
+                            bottom: AppSpacing.xl,
+                          ),
                           itemCount:
                               patients.length +
                               (patientProvider.isLoadingMore ? 1 : 0),
@@ -244,17 +253,18 @@ class _CacheBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.of(context).warning.withValues(alpha: 0.12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    final tokens = AppColors.of(context);
+    return AdaptiveCard(
+      backgroundColor: tokens.warningTint,
+      borderColor: tokens.warning.withValues(alpha: 0.35),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
       child: Row(
         children: [
-          Icon(
-            Icons.offline_bolt,
-            size: 16,
-            color: AppColors.of(context).warning,
-          ),
-          const SizedBox(width: 8),
+          Icon(Icons.offline_bolt, size: 16, color: tokens.warning),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               lastRefreshed != null
@@ -262,7 +272,8 @@ class _CacheBanner extends StatelessWidget {
                   : 'Showing cached data',
               style: TextStyle(
                 fontSize: 12,
-                color: AppColors.of(context).warning,
+                fontWeight: FontWeight.w600,
+                color: tokens.warning,
               ),
             ),
           ),
@@ -286,32 +297,30 @@ class _ErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.of(context).critical.withValues(alpha: 0.08),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    final tokens = AppColors.of(context);
+    return AdaptiveCard(
+      backgroundColor: tokens.criticalTint,
+      borderColor: tokens.criticalBorder,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
       child: Row(
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 16,
-            color: AppColors.of(context).critical,
-          ),
-          const SizedBox(width: 8),
+          Icon(Icons.error_outline, size: 16, color: tokens.critical),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               message,
               style: TextStyle(
                 fontSize: 12,
-                color: AppColors.of(context).critical,
+                fontWeight: FontWeight.w600,
+                color: tokens.critical,
               ),
             ),
           ),
           IconButton(
-            icon: Icon(
-              Icons.close,
-              size: 16,
-              color: AppColors.of(context).critical,
-            ),
+            icon: Icon(Icons.close, size: 16, color: tokens.critical),
             onPressed: onDismiss,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -332,38 +341,43 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              isSearching ? Icons.search_off : Icons.people_outline,
-              size: 64,
-              color: AppColors.of(context).textSecondary,
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: tokens.surfaceTint,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isSearching ? Icons.search_off : Icons.people_outline,
+                size: 40,
+                color: tokens.textSecondary,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               isSearching
                   ? 'No patients matching "$searchQuery"'
                   : 'No patients yet',
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.of(context).textSecondary,
+                fontWeight: FontWeight.w700,
+                color: tokens.textPrimary,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               isSearching
                   ? 'Try a different name, MRN, phone or email'
                   : 'Add your first patient to get started',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.of(context).textSecondary,
-              ),
+              style: TextStyle(fontSize: 13, color: tokens.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],
