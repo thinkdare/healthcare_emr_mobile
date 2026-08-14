@@ -25,6 +25,11 @@ import '../widgets/clinical_record_tab.dart';
 import '../widgets/clinical_record_forms.dart';
 import 'patient_form_screen.dart';
 import '../../../config/app_colors.dart';
+import '../../../config/app_spacing.dart';
+import '../../shared/widgets/adaptive_card.dart';
+import '../../shared/widgets/adaptive_badge.dart';
+import '../../shared/widgets/adaptive_list_row.dart';
+import '../../shared/widgets/critical_alert_card.dart';
 
 class PatientDetailScreen extends StatefulWidget {
   final PatientModel patient;
@@ -652,73 +657,70 @@ class _PatientAuditLogSheet extends StatelessWidget {
       minChildSize: 0.4,
       maxChildSize: 0.95,
       expand: false,
-      builder: (context, scrollController) => Column(
-        children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.of(context).textSecondary.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(2),
+      builder: (context, scrollController) {
+        final tokens = AppColors.of(context);
+        return Column(
+          children: [
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: tokens.textSecondary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'Audit Log',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Text(
+                'Audit Log',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: tokens.textPrimary,
+                ),
+              ),
             ),
-          ),
-          Expanded(
-            child: logs.isEmpty
-                ? Center(
-                    child: Text(
-                      'No audit entries',
-                      style: TextStyle(
-                        color: AppColors.of(context).textSecondary,
+            Expanded(
+              child: logs.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No audit entries',
+                        style: TextStyle(color: tokens.textSecondary),
                       ),
+                    )
+                  : ListView.separated(
+                      controller: scrollController,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                      ),
+                      itemCount: logs.length,
+                      separatorBuilder: (_, _) =>
+                          Divider(height: 1, color: tokens.surfaceBorder),
+                      itemBuilder: (context, i) {
+                        final log = logs[i];
+                        return AdaptiveListRow(
+                          leading: Icon(
+                            log['was_emergency'] == true
+                                ? Icons.warning_amber
+                                : Icons.fingerprint,
+                            color: log['was_emergency'] == true
+                                ? tokens.critical
+                                : tokens.textSecondary,
+                            size: 20,
+                          ),
+                          title:
+                              '${log['action'] ?? ''} · ${log['resource_type'] ?? ''}',
+                          subtitle:
+                              '${log['access_authority'] ?? ''} · ${log['accessed_at'] ?? ''}'
+                              '${log['was_offline'] == true ? ' · offline' : ''}',
+                        );
+                      },
                     ),
-                  )
-                : ListView.separated(
-                    controller: scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: logs.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1),
-                    itemBuilder: (context, i) {
-                      final log = logs[i];
-                      return ListTile(
-                        dense: true,
-                        leading: Icon(
-                          log['was_emergency'] == true
-                              ? Icons.warning_amber
-                              : Icons.fingerprint,
-                          color: log['was_emergency'] == true
-                              ? AppColors.of(context).critical
-                              : AppColors.of(context).textSecondary,
-                          size: 20,
-                        ),
-                        title: Text(
-                          '${log['action'] ?? ''} · ${log['resource_type'] ?? ''}',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        subtitle: Text(
-                          '${log['access_authority'] ?? ''} · ${log['accessed_at'] ?? ''}'
-                          '${log['was_offline'] == true ? ' · offline' : ''}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.of(context).textSecondary,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -732,249 +734,250 @@ class _OverviewTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = patient;
+    final tokens = AppColors.of(context);
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      // Horizontal inset comes from AdaptiveCard/CriticalAlertCard's own
+      // 16px margin; the _SectionHeader siblings below carry a matching
+      // Padding(horizontal: 16) so headers and cards stay flush.
+      padding: const EdgeInsets.fromLTRB(0, AppSpacing.lg, 0, AppSpacing.xl),
       child: Column(
+        // Keyed so the safety-invariant test can target this exact Column
+        // deterministically — do not remove this key, and do not rely on
+        // find.byType(Column).first in any test, since AdaptiveCard/
+        // AdaptiveListRow and ancestor widgets (AppBar, Scaffold,
+        // TabBarView) also build Columns.
+        key: const Key('overview_tab_column'),
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Critical allergies — MUST stay first. See CriticalAlertCard's
+          // doc comment and test/patients/patient_detail_overview_order_test.dart.
+          if (p.hasCriticalAllergies)
+            CriticalAlertCard(
+              title: 'CRITICAL ALLERGY',
+              items: p.allergies
+                  .where((a) => a.isLifeThreatening || a.isSevere)
+                  .map((a) => '${a.name} — ${a.severity.replaceAll('_', ' ')}')
+                  .toList(),
+            ),
+
           // Patient summary card
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 32,
-                        backgroundColor: AppColors.of(
-                          context,
-                        ).accent.withValues(alpha: 0.15),
-                        child: Text(
-                          p.firstName[0] + p.lastName[0],
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.of(context).accent,
+          AdaptiveCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 32,
+                      backgroundColor: tokens.accentTint,
+                      child: Text(
+                        p.firstName[0] + p.lastName[0],
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: tokens.accent,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.lg),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            p.fullName,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: tokens.textPrimary,
+                            ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              p.fullName,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            '${p.ageDisplay} · ${p.gender} · ${p.bloodType ?? 'Blood type unknown'}',
+                            style: TextStyle(
+                              color: tokens.textSecondary,
+                              fontSize: 14,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${p.ageDisplay} · ${p.gender} · ${p.bloodType ?? 'Blood type unknown'}',
-                              style: TextStyle(
-                                color: AppColors.of(context).textSecondary,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  const Divider(height: 24),
-                  if (p.mrn != null) _InfoRow('MRN', p.mrn!),
-                  _InfoRow('Date of Birth', p.dateOfBirth),
-                  if (p.phone != null) _InfoRow('Phone', p.phone!),
-                  if (p.email != null) _InfoRow('Email', p.email!),
-                  if (p.address != null) _InfoRow('Address', p.address!),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.message_outlined, size: 18),
-                          label: const Text('Messages'),
-                          onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => ChangeNotifierProvider.value(
-                                value: context.read<PatientMessageProvider>(),
-                                child: PatientMessagesScreen(
-                                  patientId: p.id,
-                                  patientName: p.fullName,
-                                ),
+                    ),
+                  ],
+                ),
+                Divider(height: AppSpacing.xl, color: tokens.surfaceBorder),
+                if (p.mrn != null) _InfoRow('MRN', p.mrn!),
+                _InfoRow('Date of Birth', p.dateOfBirth),
+                if (p.phone != null) _InfoRow('Phone', p.phone!),
+                if (p.email != null) _InfoRow('Email', p.email!),
+                if (p.address != null) _InfoRow('Address', p.address!),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.message_outlined, size: 18),
+                        label: const Text('Messages'),
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => ChangeNotifierProvider.value(
+                              value: context.read<PatientMessageProvider>(),
+                              child: PatientMessagesScreen(
+                                patientId: p.id,
+                                patientName: p.fullName,
                               ),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(
-                            Icons.privacy_tip_outlined,
-                            size: 18,
-                          ),
-                          label: const Text('Consent'),
-                          onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => ChangeNotifierProvider.value(
-                                value: context.read<PatientConsentProvider>(),
-                                child: PatientConsentScreen(
-                                  patientId: p.id,
-                                  patientName: p.fullName,
-                                ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(
+                          Icons.privacy_tip_outlined,
+                          size: 18,
+                        ),
+                        label: const Text('Consent'),
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => ChangeNotifierProvider.value(
+                              value: context.read<PatientConsentProvider>(),
+                              child: PatientConsentScreen(
+                                patientId: p.id,
+                                patientName: p.fullName,
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
 
           // Allergies
           if (p.hasAllergies) ...[
-            _SectionHeader(
-              'Allergies',
-              badge: p.hasCriticalAllergies ? 'CRITICAL' : null,
-              badgeColor: AppColors.of(context).critical,
-            ),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: p.allergies.map((a) {
-                    final isSerious = a.isLifeThreatening || a.isSevere;
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        Icons.warning_rounded,
-                        color: isSerious
-                            ? AppColors.of(context).critical
-                            : AppColors.of(context).warning,
-                      ),
-                      title: Text(
-                        a.name,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      subtitle: Text(
-                        a.severity.replaceAll('_', ' ').toUpperCase(),
-                      ),
-                      dense: true,
-                    );
-                  }).toList(),
-                ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: _SectionHeader(
+                'Allergies',
+                badge: p.hasCriticalAllergies ? 'CRITICAL' : null,
               ),
             ),
-            const SizedBox(height: 16),
+            AdaptiveCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: p.allergies.map((a) {
+                  final isSerious = a.isLifeThreatening || a.isSevere;
+                  return AdaptiveListRow(
+                    leading: Icon(
+                      Icons.warning_rounded,
+                      color: isSerious ? tokens.critical : tokens.warning,
+                    ),
+                    title: a.name,
+                    subtitle: a.severity.replaceAll('_', ' ').toUpperCase(),
+                    trailing: AdaptiveBadge(
+                      label: a.severity.replaceAll('_', ' '),
+                      variant: isSerious
+                          ? BadgeVariant.critical
+                          : BadgeVariant.warning,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
           ],
 
           // Current medications
           if (p.currentMedications.isNotEmpty) ...[
-            const _SectionHeader('Current Medications'),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: p.currentMedications
-                      .map(
-                        (m) => ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: Icon(
-                            Icons.medication,
-                            color: AppColors.of(context).accent,
-                          ),
-                          title: Text(
-                            m.name,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          subtitle: Text(m.displayDose),
-                          dense: true,
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: _SectionHeader('Current Medications'),
+            ),
+            AdaptiveCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: p.currentMedications
+                    .map(
+                      (m) => AdaptiveListRow(
+                        leading: Icon(
+                          Icons.medication,
+                          color: tokens.accent,
                         ),
-                      )
-                      .toList(),
-                ),
+                        title: m.name,
+                        subtitle: m.displayDose,
+                      ),
+                    )
+                    .toList(),
               ),
             ),
-            const SizedBox(height: 16),
           ],
 
           // Chronic conditions
           if (p.chronicConditions.isNotEmpty) ...[
-            const _SectionHeader('Chronic Conditions'),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: p.chronicConditions
-                      .map(
-                        (c) => Chip(
-                          label: Text(c, style: const TextStyle(fontSize: 13)),
-                          backgroundColor: AppColors.of(
-                            context,
-                          ).accent.withValues(alpha: 0.08),
-                        ),
-                      )
-                      .toList(),
-                ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: _SectionHeader('Chronic Conditions'),
+            ),
+            AdaptiveCard(
+              child: Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: p.chronicConditions
+                    .map((c) => AdaptiveBadge(label: c, variant: BadgeVariant.neutral))
+                    .toList(),
               ),
             ),
-            const SizedBox(height: 16),
           ],
 
           // Medical history (free-text narrative)
           if (p.medicalHistory != null && p.medicalHistory!.isNotEmpty) ...[
-            const _SectionHeader('Medical History'),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  p.medicalHistory!,
-                  style: const TextStyle(fontSize: 13, height: 1.5),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: _SectionHeader('Medical History'),
+            ),
+            AdaptiveCard(
+              child: Text(
+                p.medicalHistory!,
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.5,
+                  color: tokens.textPrimary,
                 ),
               ),
             ),
-            const SizedBox(height: 16),
           ],
 
           // Emergency contact
-          _SectionHeader('Emergency Contact', icon: Icons.emergency),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _InfoRow('Name', p.emergencyContactName),
-                  _InfoRow('Phone', p.emergencyContactPhone),
-                ],
-              ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: _SectionHeader('Emergency Contact', icon: Icons.emergency),
+          ),
+          AdaptiveCard(
+            child: Column(
+              children: [
+                _InfoRow('Name', p.emergencyContactName),
+                _InfoRow('Phone', p.emergencyContactPhone),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
 
           // Insurance
           if (p.insuranceProvider != null) ...[
-            const _SectionHeader('Insurance'),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    _InfoRow('Provider', p.insuranceProvider!),
-                    if (p.insuranceNumber != null)
-                      _InfoRow('Number', p.insuranceNumber!),
-                  ],
-                ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: _SectionHeader('Insurance'),
+            ),
+            AdaptiveCard(
+              child: Column(
+                children: [
+                  _InfoRow('Provider', p.insuranceProvider!),
+                  if (p.insuranceNumber != null)
+                    _InfoRow('Number', p.insuranceNumber!),
+                ],
               ),
             ),
           ],
@@ -1002,7 +1005,7 @@ class _AppointmentsTab extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () => context.read<ClinicalProvider>().loadAppointments(),
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
         itemCount: appointments.length,
         itemBuilder: (context, i) => _AppointmentCard(appt: appointments[i]),
       ),
@@ -1108,6 +1111,7 @@ class _AppointmentCardState extends State<_AppointmentCard> {
   @override
   Widget build(BuildContext context) {
     final appt = widget.appt;
+    final tokens = AppColors.of(context);
     final auth = context.read<AuthProvider>();
     final canModify =
         (auth.currentUser?.isSuperAdmin ?? false) ||
@@ -1116,133 +1120,108 @@ class _AppointmentCardState extends State<_AppointmentCard> {
     final canCancel = canModify && isOpen;
     final canComplete = canModify && isOpen;
 
-    Color statusColor;
+    BadgeVariant statusVariant;
     switch (appt.status) {
       case 'completed':
-        statusColor = AppColors.of(context).success;
+        statusVariant = BadgeVariant.success;
         break;
       case 'cancelled':
       case 'no_show':
-        statusColor = AppColors.of(context).textSecondary;
+        statusVariant = BadgeVariant.critical;
         break;
       case 'checked_in':
-        statusColor = AppColors.of(context).accent;
+        statusVariant = BadgeVariant.accent;
         break;
       default:
-        statusColor = AppColors.of(context).warning;
+        statusVariant = BadgeVariant.warning;
     }
 
     final dt = appt.appointmentDate;
     final dateStr =
         '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 4,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        appt.appointmentType.replaceAll('_', ' ').toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
+    return AdaptiveCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      appt.appointmentType.replaceAll('_', ' ').toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: tokens.textPrimary,
                       ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      dateStr,
+                      style: TextStyle(
+                        color: tokens.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                    if (appt.reason != null) ...[
                       const SizedBox(height: 2),
                       Text(
-                        dateStr,
+                        appt.reason!,
                         style: TextStyle(
-                          color: AppColors.of(context).textSecondary,
-                          fontSize: 13,
+                          fontSize: 12,
+                          color: tokens.textSecondary,
                         ),
                       ),
-                      if (appt.reason != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          appt.reason!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.of(context).textSecondary,
-                          ),
-                        ),
-                      ],
                     ],
-                  ),
+                  ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    appt.status.replaceAll('_', ' ').toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: statusColor,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            if (canCancel || canComplete) ...[
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                children: [
-                  if (canComplete)
-                    OutlinedButton.icon(
-                      onPressed: _completing ? null : _complete,
-                      icon: _completing
-                          ? const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.check_circle_outline, size: 16),
-                      label: Text(_completing ? 'Saving…' : 'Mark Complete'),
-                    ),
-                  if (canCancel)
-                    OutlinedButton.icon(
-                      onPressed: _cancelling ? null : _cancel,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.of(context).critical,
-                      ),
-                      icon: _cancelling
-                          ? const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.event_busy, size: 16),
-                      label: Text(_cancelling ? 'Cancelling…' : 'Cancel'),
-                    ),
-                ],
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              AdaptiveBadge(
+                label: appt.status.replaceAll('_', ' '),
+                variant: statusVariant,
               ),
             ],
+          ),
+          if (canCancel || canComplete) ...[
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              spacing: AppSpacing.sm,
+              children: [
+                if (canComplete)
+                  OutlinedButton.icon(
+                    onPressed: _completing ? null : _complete,
+                    icon: _completing
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.check_circle_outline, size: 16),
+                    label: Text(_completing ? 'Saving…' : 'Mark Complete'),
+                  ),
+                if (canCancel)
+                  OutlinedButton.icon(
+                    onPressed: _cancelling ? null : _cancel,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: tokens.critical,
+                    ),
+                    icon: _cancelling
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.event_busy, size: 16),
+                    label: Text(_cancelling ? 'Cancelling…' : 'Cancel'),
+                  ),
+              ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -1263,7 +1242,7 @@ class _PrescriptionsTab extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () => context.read<ClinicalProvider>().loadPrescriptions(),
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
         itemCount: prescriptions.length,
         itemBuilder: (context, i) => _PrescriptionCard(rx: prescriptions[i]),
       ),
@@ -1472,6 +1451,7 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
   @override
   Widget build(BuildContext context) {
     final rx = widget.rx;
+    final tokens = AppColors.of(context);
     final auth = context.read<AuthProvider>();
     final isPharmacist = auth.staffType == 'pharmacist';
     final canFill =
@@ -1484,143 +1464,115 @@ class _PrescriptionCardState extends State<_PrescriptionCard> {
         ((auth.currentUser?.isSuperAdmin ?? false) ||
             auth.currentUserId == rx.prescriberId);
     final canPrint = auth.canPrescribe;
-    final color = rx.isActive
-        ? AppColors.of(context).success
-        : AppColors.of(context).textSecondary;
+    final statusVariant = rx.isActive
+        ? BadgeVariant.success
+        : BadgeVariant.neutral;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return AdaptiveCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.medication, color: tokens.accent, size: 20),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  rx.medicationName,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: tokens.textPrimary,
+                  ),
+                ),
+              ),
+              AdaptiveBadge(label: rx.status, variant: statusVariant),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            rx.doseDisplay,
+            style: TextStyle(fontSize: 13, color: tokens.textSecondary),
+          ),
+          if (rx.refillsRemaining > 0) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              '${rx.refillsRemaining} refill(s) remaining',
+              style: TextStyle(fontSize: 12, color: tokens.textSecondary),
+            ),
+          ],
+          if (rx.specialInstructions != null) ...[
+            const SizedBox(height: AppSpacing.xs + 2),
+            Text(
+              rx.specialInstructions!,
+              style: TextStyle(
+                fontSize: 12,
+                color: tokens.warning,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+          if (canFill) ...[
+            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+              width: double.infinity,
+              child: AdaptiveFilledButton(
+                onPressed: _filling ? null : _showFillDialog,
+                icon: _filling
+                    ? SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(
+                            tokens.onAccent,
+                          ),
+                        ),
+                      )
+                    : const Icon(Icons.local_pharmacy, size: 16),
+                child: Text(_filling ? 'Dispensing…' : 'Dispense / Fill'),
+              ),
+            ),
+          ],
+          if (canRefill || canEdit || canPrint) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.sm,
               children: [
-                Icon(
-                  Icons.medication,
-                  color: AppColors.of(context).accent,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    rx.medicationName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                if (canRefill)
+                  OutlinedButton.icon(
+                    onPressed: _refilling ? null : _refill,
+                    icon: _refilling
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.autorenew, size: 16),
+                    label: Text(_refilling ? 'Refilling…' : 'Refill'),
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
+                if (canEdit)
+                  OutlinedButton.icon(
+                    onPressed: _showEditDialog,
+                    icon: const Icon(Icons.edit_outlined, size: 16),
+                    label: const Text('Edit'),
                   ),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
+                if (canPrint)
+                  OutlinedButton.icon(
+                    onPressed: _printing ? null : _print,
+                    icon: _printing
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.print_outlined, size: 16),
+                    label: Text(_printing ? 'Loading…' : 'Print'),
                   ),
-                  child: Text(
-                    rx.status.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: color,
-                    ),
-                  ),
-                ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              rx.doseDisplay,
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.of(context).textSecondary,
-              ),
-            ),
-            if (rx.refillsRemaining > 0) ...[
-              const SizedBox(height: 4),
-              Text(
-                '${rx.refillsRemaining} refill(s) remaining',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.of(context).textSecondary,
-                ),
-              ),
-            ],
-            if (rx.specialInstructions != null) ...[
-              const SizedBox(height: 6),
-              Text(
-                rx.specialInstructions!,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.of(context).warning,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
-            if (canFill) ...[
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: AdaptiveFilledButton(
-                  onPressed: _filling ? null : _showFillDialog,
-                  icon: _filling
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(Colors.white),
-                          ),
-                        )
-                      : const Icon(Icons.local_pharmacy, size: 16),
-                  child: Text(_filling ? 'Dispensing…' : 'Dispense / Fill'),
-                ),
-              ),
-            ],
-            if (canRefill || canEdit || canPrint) ...[
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  if (canRefill)
-                    OutlinedButton.icon(
-                      onPressed: _refilling ? null : _refill,
-                      icon: _refilling
-                          ? const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.autorenew, size: 16),
-                      label: Text(_refilling ? 'Refilling…' : 'Refill'),
-                    ),
-                  if (canEdit)
-                    OutlinedButton.icon(
-                      onPressed: _showEditDialog,
-                      icon: const Icon(Icons.edit_outlined, size: 16),
-                      label: const Text('Edit'),
-                    ),
-                  if (canPrint)
-                    OutlinedButton.icon(
-                      onPressed: _printing ? null : _print,
-                      icon: _printing
-                          ? const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.print_outlined, size: 16),
-                      label: Text(_printing ? 'Loading…' : 'Print'),
-                    ),
-                ],
-              ),
-            ],
           ],
-        ),
+        ],
       ),
     );
   }
@@ -1712,7 +1664,7 @@ class _LabResultsTab extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () => context.read<ClinicalProvider>().loadLabResults(),
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
         itemCount: labs.length,
         itemBuilder: (context, i) => _LabResultCard(lab: labs[i]),
       ),
@@ -1987,6 +1939,7 @@ class _LabResultCardState extends State<_LabResultCard> {
   @override
   Widget build(BuildContext context) {
     final lab = widget.lab;
+    final tokens = AppColors.of(context);
     final auth = context.read<AuthProvider>();
     final isLabTech =
         auth.staffType == 'lab_technician' || auth.staffType == 'lab_tech';
@@ -2003,217 +1956,164 @@ class _LabResultCardState extends State<_LabResultCard> {
         ((auth.currentUser?.isSuperAdmin ?? false) ||
             auth.currentUserId == lab.orderedById);
 
-    Color statusColor;
+    BadgeVariant statusVariant;
     switch (lab.status) {
       case 'completed':
-        statusColor = lab.hasAbnormalResults
-            ? AppColors.of(context).critical
-            : AppColors.of(context).success;
+        statusVariant = lab.hasAbnormalResults
+            ? BadgeVariant.critical
+            : BadgeVariant.success;
         break;
       case 'cancelled':
-        statusColor = AppColors.of(context).textSecondary;
+        statusVariant = BadgeVariant.neutral;
         break;
       default:
-        statusColor = AppColors.of(context).warning;
+        statusVariant = BadgeVariant.warning;
     }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    return AdaptiveCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.science, color: tokens.accent, size: 20),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  lab.testName,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: tokens.textPrimary,
+                  ),
+                ),
+              ),
+              if (lab.isUrgent) ...[
+                AdaptiveBadge(
+                  label: lab.priority,
+                  variant: BadgeVariant.critical,
+                  icon: Icons.priority_high,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
+              AdaptiveBadge(
+                label: lab.status.replaceAll('_', ' '),
+                variant: statusVariant,
+              ),
+            ],
+          ),
+          if (lab.testType != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              lab.testType!,
+              style: TextStyle(fontSize: 13, color: tokens.textSecondary),
+            ),
+          ],
+          if (lab.results != null && lab.results!.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Results: ${lab.results!}',
+              style: TextStyle(fontSize: 13, color: tokens.textPrimary),
+            ),
+          ],
+          if (lab.abnormalFlags.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: lab.abnormalFlags
+                  .map((f) => AdaptiveBadge(label: f, variant: BadgeVariant.critical))
+                  .toList(),
+            ),
+          ],
+          if (lab.requiresFollowup) ...[
+            const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
-                Icon(
-                  Icons.science,
-                  color: AppColors.of(context).accent,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    lab.testName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                if (lab.isUrgent)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    margin: const EdgeInsets.only(right: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.of(context).critical,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      lab.priority.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    lab.status.replaceAll('_', ' ').toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: statusColor,
-                    ),
-                  ),
+                Icon(Icons.flag, size: 14, color: tokens.warning),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  'Follow-up required',
+                  style: TextStyle(fontSize: 12, color: tokens.warning),
                 ),
               ],
             ),
-            if (lab.testType != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                lab.testType!,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.of(context).textSecondary,
-                ),
-              ),
-            ],
-            if (lab.results != null && lab.results!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Results: ${lab.results!}',
-                style: const TextStyle(fontSize: 13),
-              ),
-            ],
-            if (lab.abnormalFlags.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 6,
-                children: lab.abnormalFlags
-                    .map(
-                      (f) => Chip(
-                        label: Text(f, style: const TextStyle(fontSize: 11)),
-                        backgroundColor: AppColors.of(
-                          context,
-                        ).critical.withValues(alpha: 0.1),
-                        side: BorderSide(
-                          color: AppColors.of(
-                            context,
-                          ).critical.withValues(alpha: 0.3),
-                        ),
-                        padding: EdgeInsets.zero,
-                      ),
-                    )
-                    .toList(),
-              ),
-            ],
-            if (lab.requiresFollowup) ...[
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Icon(
-                    Icons.flag,
-                    size: 14,
-                    color: AppColors.of(context).warning,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Follow-up required',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.of(context).warning,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            if (canRecord) ...[
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: AdaptiveFilledButton(
-                  onPressed: _recording ? null : _showRecordDialog,
-                  icon: _recording
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(Colors.white),
-                          ),
-                        )
-                      : const Icon(Icons.science, size: 16),
-                  child: Text(_recording ? 'Saving…' : 'Record Results'),
-                ),
-              ),
-            ],
-            if (canCancel || canPrint || canReview) ...[
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  if (canReview)
-                    AdaptiveFilledButton(
-                      onPressed: _reviewing ? null : _review,
-                      icon: _reviewing
-                          ? const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(
-                                  Colors.white,
-                                ),
-                              ),
-                            )
-                          : const Icon(Icons.fact_check_outlined, size: 16),
-                      child: Text(_reviewing ? 'Saving…' : 'Review Results'),
-                    ),
-                  if (canCancel)
-                    OutlinedButton.icon(
-                      onPressed: _cancelling ? null : _cancel,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.of(context).critical,
-                      ),
-                      icon: _cancelling
-                          ? const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.cancel_outlined, size: 16),
-                      label: Text(_cancelling ? 'Cancelling…' : 'Cancel Test'),
-                    ),
-                  if (canPrint)
-                    OutlinedButton.icon(
-                      onPressed: _printing ? null : _print,
-                      icon: _printing
-                          ? const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.print_outlined, size: 16),
-                      label: Text(_printing ? 'Loading…' : 'Print'),
-                    ),
-                ],
-              ),
-            ],
           ],
-        ),
+          if (canRecord) ...[
+            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+              width: double.infinity,
+              child: AdaptiveFilledButton(
+                onPressed: _recording ? null : _showRecordDialog,
+                icon: _recording
+                    ? SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(
+                            tokens.onAccent,
+                          ),
+                        ),
+                      )
+                    : const Icon(Icons.science, size: 16),
+                child: Text(_recording ? 'Saving…' : 'Record Results'),
+              ),
+            ),
+          ],
+          if (canCancel || canPrint || canReview) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.sm,
+              children: [
+                if (canReview)
+                  AdaptiveFilledButton(
+                    onPressed: _reviewing ? null : _review,
+                    icon: _reviewing
+                        ? SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation(
+                                tokens.onAccent,
+                              ),
+                            ),
+                          )
+                        : const Icon(Icons.fact_check_outlined, size: 16),
+                    child: Text(_reviewing ? 'Saving…' : 'Review Results'),
+                  ),
+                if (canCancel)
+                  OutlinedButton.icon(
+                    onPressed: _cancelling ? null : _cancel,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: tokens.critical,
+                    ),
+                    icon: _cancelling
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.cancel_outlined, size: 16),
+                    label: Text(_cancelling ? 'Cancelling…' : 'Cancel Test'),
+                  ),
+                if (canPrint)
+                  OutlinedButton.icon(
+                    onPressed: _printing ? null : _print,
+                    icon: _printing
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.print_outlined, size: 16),
+                    label: Text(_printing ? 'Loading…' : 'Print'),
+                  ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -2301,7 +2201,7 @@ class _DocumentsTab extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () => context.read<ClinicalProvider>().loadDocuments(),
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
         itemCount: docs.length,
         itemBuilder: (context, i) => _DocumentCard(doc: docs[i]),
       ),
@@ -2354,6 +2254,7 @@ class _DocumentCardState extends State<_DocumentCard> {
   @override
   Widget build(BuildContext context) {
     final doc = widget.doc;
+    final tokens = AppColors.of(context);
 
     IconData icon;
     if (doc.isPdf) {
@@ -2364,53 +2265,42 @@ class _DocumentCardState extends State<_DocumentCard> {
       icon = Icons.insert_drive_file;
     }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: ListTile(
+    return AdaptiveCard(
+      child: AdaptiveListRow(
         leading: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
-            color: AppColors.of(context).accent.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
+            color: tokens.accentTint,
+            borderRadius: BorderRadius.circular(AppRadius.control),
           ),
-          child: Icon(icon, color: AppColors.of(context).accent),
+          child: Icon(icon, color: tokens.accent),
         ),
-        title: Text(
-          doc.title,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(
-          [
-            doc.documentType.replaceAll('_', ' '),
-            if (doc.fileSizeDisplay.isNotEmpty) doc.fileSizeDisplay,
-            if (doc.isConfidential) 'Confidential',
-          ].join(' · '),
-          style: TextStyle(
-            fontSize: 12,
-            color: AppColors.of(context).textSecondary,
-          ),
-        ),
+        title: doc.title,
+        subtitle: [
+          doc.documentType.replaceAll('_', ' '),
+          if (doc.fileSizeDisplay.isNotEmpty) doc.fileSizeDisplay,
+          if (doc.isConfidential) 'Confidential',
+        ].join(' · '),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (doc.isConfidential)
               Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: Icon(
-                  Icons.lock,
-                  size: 16,
-                  color: AppColors.of(context).warning,
-                ),
+                padding: const EdgeInsets.only(right: AppSpacing.xs),
+                child: Icon(Icons.lock, size: 16, color: tokens.warning),
               ),
             _downloading
-                ? const SizedBox(
+                ? SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: tokens.accent,
+                    ),
                   )
                 : IconButton(
                     icon: const Icon(Icons.download_outlined, size: 22),
-                    color: AppColors.of(context).accent,
+                    color: tokens.accent,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     tooltip: 'View / Download',
@@ -2428,42 +2318,35 @@ class _DocumentCardState extends State<_DocumentCard> {
 class _SectionHeader extends StatelessWidget {
   final String title;
   final String? badge;
-  final Color? badgeColor;
   final IconData? icon;
 
-  const _SectionHeader(this.title, {this.badge, this.badgeColor, this.icon});
+  const _SectionHeader(this.title, {this.badge, this.icon});
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(
+        top: AppSpacing.sm,
+        bottom: AppSpacing.sm,
+      ),
       child: Row(
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 18, color: AppColors.of(context).textSecondary),
-            const SizedBox(width: 6),
+            Icon(icon, size: 18, color: tokens.textSecondary),
+            const SizedBox(width: AppSpacing.xs),
           ],
           Text(
             title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: tokens.textPrimary,
+            ),
           ),
           if (badge != null) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: badgeColor ?? AppColors.of(context).critical,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                badge!,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            const SizedBox(width: AppSpacing.sm),
+            AdaptiveBadge(label: badge!, variant: BadgeVariant.critical),
           ],
         ],
       ),
@@ -2478,8 +2361,9 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2488,7 +2372,7 @@ class _InfoRow extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                color: AppColors.of(context).textSecondary,
+                color: tokens.textSecondary,
                 fontWeight: FontWeight.w500,
                 fontSize: 13,
               ),
@@ -2497,7 +2381,11 @@ class _InfoRow extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: tokens.textPrimary,
+              ),
             ),
           ),
         ],
@@ -2513,21 +2401,26 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 64,
-            color: AppColors.of(context).textSecondary.withValues(alpha: 0.5),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: tokens.surfaceTint,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 40, color: tokens.textSecondary),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             message,
             style: TextStyle(
               fontSize: 16,
-              color: AppColors.of(context).textSecondary,
+              fontWeight: FontWeight.w600,
+              color: tokens.textPrimary,
             ),
           ),
         ],
@@ -2543,24 +2436,27 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 48,
-            color: AppColors.of(context).critical,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.of(context).textSecondary),
-          ),
-          const SizedBox(height: 16),
-          AdaptiveFilledButton(onPressed: onRetry, child: const Text('Retry')),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: tokens.critical),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: tokens.textSecondary),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            AdaptiveFilledButton(
+              onPressed: onRetry,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2604,6 +2500,7 @@ class _NotesTabState extends State<_NotesTab> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -2611,18 +2508,18 @@ class _NotesTabState extends State<_NotesTab> {
     if (_error != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline, size: 48, color: Colors.grey.shade400),
-              const SizedBox(height: 12),
+              Icon(Icons.error_outline, size: 48, color: tokens.critical),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 _error!,
-                style: TextStyle(color: AppColors.of(context).textSecondary),
+                style: TextStyle(color: tokens.textSecondary),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               AdaptiveFilledButton(
                 onPressed: _load,
                 child: const Text('Retry'),
@@ -2636,23 +2533,35 @@ class _NotesTabState extends State<_NotesTab> {
     if (_notes.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.notes_outlined, size: 56, color: Colors.grey.shade300),
-              const SizedBox(height: 16),
-              const Text(
-                'No clinical notes',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                decoration: BoxDecoration(
+                  color: tokens.surfaceTint,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.notes_outlined,
+                  size: 40,
+                  color: tokens.textSecondary,
+                ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'No clinical notes',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: tokens.textPrimary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 'Consultation responses will appear here once a colleague has reviewed this patient.',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.of(context).textSecondary,
-                ),
+                style: TextStyle(fontSize: 13, color: tokens.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -2664,7 +2573,7 @@ class _NotesTabState extends State<_NotesTab> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
         itemCount: _notes.length,
         itemBuilder: (_, i) => _ClinicalNoteCard(note: _notes[i]),
       ),
@@ -2678,74 +2587,75 @@ class _ClinicalNoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     final isResponse = note.isConsultationResponse;
     final isDeclined = note.isConsultationDeclined;
-    final accentColor = isDeclined
-        ? AppColors.of(context).warning
-        : AppColors.of(context).success;
-    final bgColor = isDeclined ? Colors.orange.shade50 : Colors.green.shade50;
-    final borderColor = isDeclined
-        ? Colors.orange.shade200
-        : Colors.green.shade200;
+    final accentColor = isDeclined ? tokens.warning : tokens.success;
+    final bgColor = isDeclined ? tokens.warningTint : tokens.successTint;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  isResponse
-                      ? Icons.check_circle_outline
-                      : isDeclined
-                      ? Icons.cancel_outlined
-                      : Icons.notes_outlined,
-                  size: 18,
-                  color: isResponse || isDeclined
-                      ? accentColor
-                      : AppColors.of(context).accent,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    note.displayTitle,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
+    return AdaptiveCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isResponse
+                    ? Icons.check_circle_outline
+                    : isDeclined
+                    ? Icons.cancel_outlined
+                    : Icons.notes_outlined,
+                size: 18,
+                color: isResponse || isDeclined
+                    ? accentColor
+                    : tokens.accent,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  note.displayTitle,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    color: tokens.textPrimary,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${note.authoredByName}  ·  ${_fmtDate(note.authoredAt)}',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-            ),
-            const Divider(height: 20),
-            if (isResponse || isDeclined)
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: borderColor),
-                ),
-                child: Text(
-                  note.body,
-                  style: const TextStyle(fontSize: 13, height: 1.5),
-                ),
-              )
-            else
-              Text(
-                note.body,
-                style: const TextStyle(fontSize: 13, height: 1.5),
               ),
-          ],
-        ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            '${note.authoredByName}  ·  ${_fmtDate(note.authoredAt)}',
+            style: TextStyle(fontSize: 11, color: tokens.textSecondary),
+          ),
+          Divider(height: AppSpacing.xl, color: tokens.surfaceBorder),
+          if (isResponse || isDeclined)
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(AppRadius.control),
+                border: Border.all(color: accentColor.withValues(alpha: 0.35)),
+              ),
+              child: Text(
+                note.body,
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.5,
+                  color: tokens.textPrimary,
+                ),
+              ),
+            )
+          else
+            Text(
+              note.body,
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.5,
+                color: tokens.textPrimary,
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -2770,22 +2680,23 @@ class _WardTab extends StatelessWidget {
         if (ward.isLoading && ward.admissionRequests.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
+        final tokens = AppColors.of(context);
         return RefreshIndicator(
           onRefresh: () => ward.loadAll(patientId),
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
             children: [
               if (ward.error != null)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(8),
+                AdaptiveCard(
+                  backgroundColor: tokens.criticalTint,
+                  borderColor: tokens.criticalBorder,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
                   ),
                   child: Text(
                     ward.error!,
-                    style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                    style: TextStyle(color: tokens.critical, fontSize: 12),
                   ),
                 ),
               _WardSection(
@@ -2816,7 +2727,7 @@ class _WardTab extends StatelessWidget {
                           )
                           .toList(),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.xl),
               _WardSection(
                 title: 'Transfer Requests',
                 onRequest: () => _openSheet(
@@ -2840,7 +2751,7 @@ class _WardTab extends StatelessWidget {
                           )
                           .toList(),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.xl),
               _WardSection(
                 title: 'Discharge',
                 onRequest: () => _openSheet(
@@ -2895,28 +2806,32 @@ class _WardSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: tokens.textPrimary,
+                  ),
                 ),
               ),
-            ),
-            TextButton(onPressed: onForce, child: const Text('Force')),
-            FilledButton.tonal(
-              onPressed: onRequest,
-              child: const Text('Request'),
-            ),
-          ],
+              TextButton(onPressed: onForce, child: const Text('Force')),
+              FilledButton.tonal(
+                onPressed: onRequest,
+                child: const Text('Request'),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 8),
         ...children,
       ],
     );
@@ -2929,10 +2844,13 @@ class _EmptyHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 12),
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.lg,
+      vertical: AppSpacing.md,
+    ),
     child: Text(
       text,
-      style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+      style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13),
     ),
   );
 }
@@ -2943,28 +2861,17 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (status) {
-      'pending' => Colors.amber,
-      'accepted' || 'records_approved' => Colors.blue,
-      'rejected' => Colors.red,
-      'cancelled' => Colors.grey,
-      'discharged' => Colors.green,
-      _ => Colors.grey,
+    final variant = switch (status) {
+      'pending' => BadgeVariant.warning,
+      'accepted' || 'records_approved' => BadgeVariant.accent,
+      'rejected' => BadgeVariant.critical,
+      'cancelled' => BadgeVariant.neutral,
+      'discharged' => BadgeVariant.success,
+      _ => BadgeVariant.neutral,
     };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.shade100,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        status.replaceAll('_', ' '),
-        style: TextStyle(
-          color: color.shade800,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+    return AdaptiveBadge(
+      label: status.replaceAll('_', ' '),
+      variant: variant,
     );
   }
 }
@@ -2977,62 +2884,65 @@ class _AdmissionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     final provider = context.read<WardWorkflowProvider>();
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '${request.admissionType[0].toUpperCase()}${request.admissionType.substring(1)} admission',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+    return AdaptiveCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${request.admissionType[0].toUpperCase()}${request.admissionType.substring(1)} admission',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: tokens.textPrimary,
                   ),
                 ),
-                _StatusBadge(status: request.status),
+              ),
+              _StatusBadge(status: request.status),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            request.reason,
+            style: TextStyle(fontSize: 13, color: tokens.textPrimary),
+          ),
+          if (request.rejectionReason != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Rejected: ${request.rejectionReason}',
+              style: TextStyle(fontSize: 12, color: tokens.critical),
+            ),
+          ],
+          if (request.isPending) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () async {
+                    final reason = await showReasonPrompt(
+                      context,
+                      title: 'Reject admission request',
+                    );
+                    if (reason != null) {
+                      provider.rejectAdmission(patientId, request.id, reason);
+                    }
+                  },
+                  child: const Text('Reject'),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                FilledButton(
+                  onPressed: () =>
+                      provider.acceptAdmission(patientId, request.id),
+                  child: const Text('Accept'),
+                ),
               ],
             ),
-            const SizedBox(height: 6),
-            Text(request.reason, style: const TextStyle(fontSize: 13)),
-            if (request.rejectionReason != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                'Rejected: ${request.rejectionReason}',
-                style: TextStyle(fontSize: 12, color: Colors.red.shade700),
-              ),
-            ],
-            if (request.isPending) ...[
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () async {
-                      final reason = await showReasonPrompt(
-                        context,
-                        title: 'Reject admission request',
-                      );
-                      if (reason != null) {
-                        provider.rejectAdmission(patientId, request.id, reason);
-                      }
-                    },
-                    child: const Text('Reject'),
-                  ),
-                  const SizedBox(width: 4),
-                  FilledButton(
-                    onPressed: () =>
-                        provider.acceptAdmission(patientId, request.id),
-                    child: const Text('Accept'),
-                  ),
-                ],
-              ),
-            ],
           ],
-        ),
+        ],
       ),
     );
   }
@@ -3046,62 +2956,65 @@ class _TransferCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     final provider = context.read<WardWorkflowProvider>();
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Ward transfer',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+    return AdaptiveCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Ward transfer',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: tokens.textPrimary,
                   ),
                 ),
-                _StatusBadge(status: request.status),
+              ),
+              _StatusBadge(status: request.status),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            request.reason,
+            style: TextStyle(fontSize: 13, color: tokens.textPrimary),
+          ),
+          if (request.rejectionReason != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Rejected: ${request.rejectionReason}',
+              style: TextStyle(fontSize: 12, color: tokens.critical),
+            ),
+          ],
+          if (request.isPending) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () async {
+                    final reason = await showReasonPrompt(
+                      context,
+                      title: 'Reject transfer request',
+                    );
+                    if (reason != null) {
+                      provider.rejectTransfer(patientId, request.id, reason);
+                    }
+                  },
+                  child: const Text('Reject'),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                FilledButton(
+                  onPressed: () =>
+                      provider.acceptTransfer(patientId, request.id),
+                  child: const Text('Accept'),
+                ),
               ],
             ),
-            const SizedBox(height: 6),
-            Text(request.reason, style: const TextStyle(fontSize: 13)),
-            if (request.rejectionReason != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                'Rejected: ${request.rejectionReason}',
-                style: TextStyle(fontSize: 12, color: Colors.red.shade700),
-              ),
-            ],
-            if (request.isPending) ...[
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () async {
-                      final reason = await showReasonPrompt(
-                        context,
-                        title: 'Reject transfer request',
-                      );
-                      if (reason != null) {
-                        provider.rejectTransfer(patientId, request.id, reason);
-                      }
-                    },
-                    child: const Text('Reject'),
-                  ),
-                  const SizedBox(width: 4),
-                  FilledButton(
-                    onPressed: () =>
-                        provider.acceptTransfer(patientId, request.id),
-                    child: const Text('Accept'),
-                  ),
-                ],
-              ),
-            ],
           ],
-        ),
+        ],
       ),
     );
   }
@@ -3115,138 +3028,145 @@ class _DischargeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     final provider = context.read<WardWorkflowProvider>();
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    request.dischargeType.replaceAll('_', ' '),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+    return AdaptiveCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  request.dischargeType.replaceAll('_', ' '),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: tokens.textPrimary,
                   ),
                 ),
-                _StatusBadge(status: request.status),
-              ],
-            ),
-            if (request.dischargeSummary != null) ...[
-              const SizedBox(height: 6),
-              Text(
-                request.dischargeSummary!,
-                style: const TextStyle(fontSize: 13),
               ),
+              _StatusBadge(status: request.status),
             ],
-            if (request.signoffs.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              const Divider(height: 1),
-              const SizedBox(height: 6),
-              const Text(
-                'Sign-offs',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+          if (request.dischargeSummary != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              request.dischargeSummary!,
+              style: TextStyle(fontSize: 13, color: tokens.textPrimary),
+            ),
+          ],
+          if (request.signoffs.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Divider(height: 1, color: tokens.surfaceBorder),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Sign-offs',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: tokens.textPrimary,
               ),
-              ...request.signoffs.map(
-                (s) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          s.departmentType,
-                          style: const TextStyle(fontSize: 12),
+            ),
+            ...request.signoffs.map(
+              (s) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        s.departmentType,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: tokens.textPrimary,
                         ),
                       ),
-                      _StatusBadge(status: s.status),
-                      if (s.status == 'pending') ...[
-                        const SizedBox(width: 4),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.check,
-                            size: 18,
-                            color: Colors.green,
-                          ),
-                          tooltip: 'Approve',
-                          onPressed: () => provider.approveSignoff(
-                            patientId,
-                            request.id,
-                            s.id,
-                          ),
+                    ),
+                    _StatusBadge(status: s.status),
+                    if (s.status == 'pending') ...[
+                      const SizedBox(width: AppSpacing.xs),
+                      IconButton(
+                        icon: Icon(
+                          Icons.check,
+                          size: 18,
+                          color: tokens.success,
                         ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.close,
-                            size: 18,
-                            color: Colors.red,
-                          ),
-                          tooltip: 'Reject',
-                          onPressed: () async {
-                            final reason = await showReasonPrompt(
-                              context,
-                              title: 'Reject sign-off',
+                        tooltip: 'Approve',
+                        onPressed: () => provider.approveSignoff(
+                          patientId,
+                          request.id,
+                          s.id,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.close,
+                          size: 18,
+                          color: tokens.critical,
+                        ),
+                        tooltip: 'Reject',
+                        onPressed: () async {
+                          final reason = await showReasonPrompt(
+                            context,
+                            title: 'Reject sign-off',
+                          );
+                          if (reason != null) {
+                            provider.rejectSignoff(
+                              patientId,
+                              request.id,
+                              s.id,
+                              reason,
                             );
-                            if (reason != null) {
-                              provider.rejectSignoff(
-                                patientId,
-                                request.id,
-                                s.id,
-                                reason,
-                              );
-                            }
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.gpp_maybe_outlined, size: 18),
-                          tooltip: 'Override',
-                          onPressed: () async {
-                            final reason = await showReasonPrompt(
-                              context,
-                              title: 'Override sign-off',
-                              label: 'Override reason',
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.gpp_maybe_outlined, size: 18),
+                        tooltip: 'Override',
+                        onPressed: () async {
+                          final reason = await showReasonPrompt(
+                            context,
+                            title: 'Override sign-off',
+                            label: 'Override reason',
+                          );
+                          if (reason != null) {
+                            provider.overrideSignoff(
+                              patientId,
+                              request.id,
+                              s.id,
+                              reason,
                             );
-                            if (reason != null) {
-                              provider.overrideSignoff(
-                                patientId,
-                                request.id,
-                                s.id,
-                                reason,
-                              );
-                            }
-                          },
-                        ),
-                      ],
+                          }
+                        },
+                      ),
                     ],
-                  ),
+                  ],
                 ),
               ),
-            ],
-            if (request.canRecordsApprove || request.canExecute) ...[
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (request.canRecordsApprove)
-                    FilledButton.tonal(
-                      onPressed: () =>
-                          provider.recordsApprove(patientId, request.id),
-                      child: const Text('Records Approve'),
-                    ),
-                  if (request.canExecute) ...[
-                    const SizedBox(width: 8),
-                    FilledButton(
-                      onPressed: () =>
-                          provider.executeDischarge(patientId, request.id),
-                      child: const Text('Discharge Now'),
-                    ),
-                  ],
-                ],
-              ),
-            ],
+            ),
           ],
-        ),
+          if (request.canRecordsApprove || request.canExecute) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (request.canRecordsApprove)
+                  FilledButton.tonal(
+                    onPressed: () =>
+                        provider.recordsApprove(patientId, request.id),
+                    child: const Text('Records Approve'),
+                  ),
+                if (request.canExecute) ...[
+                  const SizedBox(width: AppSpacing.sm),
+                  FilledButton(
+                    onPressed: () =>
+                        provider.executeDischarge(patientId, request.id),
+                    child: const Text('Discharge Now'),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
