@@ -2,19 +2,33 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 class AppConfig {
+  /// Throws in any non-debug build when [url] is not https. This replaces an
+  /// assert(), which Dart strips from release builds and so enforced nothing.
+  static void _requireHttpsOutsideDebug(String url) {
+    if (!kDebugMode && !url.startsWith('https://')) {
+      throw StateError('Production build must use HTTPS. Got: $url');
+    }
+  }
+
+  static void _requireExplicitUrlOutsideDebug(String define) {
+    if (!kDebugMode) {
+      throw StateError(
+        '$define must be set via --dart-define in non-debug builds.',
+      );
+    }
+  }
+
   static const String appName = 'Healthcare EMR System';
   static const String apiVersion = 'v1';
 
   static String get baseUrl {
     const fromEnv = String.fromEnvironment('API_BASE_URL');
     if (fromEnv.isNotEmpty) {
-      assert(
-        kDebugMode || fromEnv.startsWith('https://'),
-        'Production build must use HTTPS. Got: $fromEnv',
-      );
+      _requireHttpsOutsideDebug(fromEnv);
       return fromEnv;
     }
-    // Dev fallback only — never present in a production build
+    // Dev fallback only: a non-debug build must be given an explicit https URL.
+    _requireExplicitUrlOutsideDebug('API_BASE_URL');
     if (Platform.isAndroid) return 'http://10.0.3.2:8000/api/v1';
     return 'http://localhost:8000/api/v1';
   }
@@ -25,13 +39,11 @@ class AppConfig {
   static String get authBaseUrl {
     const fromEnv = String.fromEnvironment('AUTH_BASE_URL');
     if (fromEnv.isNotEmpty) {
-      assert(
-        kDebugMode || fromEnv.startsWith('https://'),
-        'Production build must use HTTPS. Got: $fromEnv',
-      );
+      _requireHttpsOutsideDebug(fromEnv);
       return fromEnv;
     }
-    // Dev fallback only — never present in a production build.
+    // Dev fallback only: a non-debug build must be given an explicit https URL.
+    _requireExplicitUrlOutsideDebug('AUTH_BASE_URL');
     return 'http://auth.localhost:8000';
   }
 
