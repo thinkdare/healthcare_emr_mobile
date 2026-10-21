@@ -13,8 +13,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/platform.dart';
-import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/clinical_provider.dart';
+import '../../../data/providers/vitals_local_provider.dart';
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -155,25 +155,20 @@ class _VitalSignFormState extends State<VitalSignForm> {
       if (_notesCtrl.text.trim().isNotEmpty) 'notes': _notesCtrl.text.trim(),
     };
 
-    final recordedById = context.read<AuthProvider>().currentUserId!;
-    final clinical = context.read<ClinicalProvider>();
-    final result =
-        await clinical.createVitalSign(data, recordedById: recordedById);
+    // Local-first: the reading is committed to the on-device database (with its
+    // outbox entry) before this returns. The network is not involved.
+    final vitals = context.read<VitalsLocalProvider>();
+    final result = await vitals.record(data);
     if (!mounted) return;
     setState(() => _saving = false);
 
     if (result != null) {
-      Navigator.pop(context, true);
-    } else if (clinical.error?.startsWith('Offline —') ?? false) {
-      // Queued locally — not a failure, just deferred.
-      showAdaptiveToast(context, clinical.error!, type: ToastType.info);
+      if (!result.synced) {
+        showAdaptiveToast(context, 'Saved on this device. It will be sent when you are online.', type: ToastType.info);
+      }
       Navigator.pop(context, true);
     } else {
-      showAdaptiveToast(
-        context,
-        clinical.error ?? 'Failed to record vital signs',
-        type: ToastType.error,
-      );
+      showAdaptiveToast(context, vitals.error ?? 'Failed to record vital signs', type: ToastType.error);
     }
   }
 

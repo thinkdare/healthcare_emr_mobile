@@ -15,13 +15,29 @@ Read both before changing anything in sync, storage or auth. Targets in the repo
 
 ## Current state versus the target (read this first)
 
-The app is **online-first with an offline queue added on**, not offline-first. Screens still send most writes to the server first; some vitals, prescription and encounter-note writes are queued when offline. The target (ADR 0001) is:
+**Vital signs are local-first** (first slice, `lib/core/localfirst/`). Every other module is still online-first with a queue bolted on. The local-first rules (ADR 0001):
 
-1. Every clinical write goes to SQLCipher and the outbox in one local transaction. The network is never on the write path.
-2. UI reads only from the local database. A background sync worker pushes the outbox and pulls changes.
-3. Screens never call the API directly. Only the sync layer may import the HTTP client.
+1. Every clinical write goes to SQLCipher and the outbox in ONE local transaction. The network is never on the write path.
+2. The UI reads only from the local database. A sync engine pushes the outbox and pulls changes.
+3. Screens never call the API. `test/architecture/local_first_architecture_test.dart` enforces it, with a ratchet list of older screens that still import the API client (the list may only shrink).
 
-Do not add new modules on the current pattern; each would need rework. The first slice to convert is vitals, and it must pass the fault-injection cases in the contract spec (section 11) before anything else is converted.
+Do not convert the next module (encounter notes, then prescriptions, patient lookup, handover) until vitals has passed the harness on real hardware (below). Do not add new modules on the old pattern.
+
+### The local-first layer (`lib/core/localfirst/`)
+
+| File | Role |
+|---|---|
+| `local_store.dart` | Per-user database (one file and one SQLCipher key per user): vitals, `outbox`, generic `records`, scope acks. Exact-bytes outbox. |
+| `vitals_repository.dart` | The write path: validates at the bedside, writes reading + outbox entry in one transaction, amendments. No network imports. |
+| `sync_engine.dart` | Push (exact stored bytes, dead-letter per entry, isolate a bad entry on a whole-request 422) then pull (cursor stored with the page, scope eviction with ack, keeps a patient while unsynced writes remain). |
+| `sync_transport.dart` | The only file that imports the HTTP client. |
+| `sync_coordinator.dart` | WHEN to sync: foreground, connectivity regained, after a write, a foreground timer, exponential backoff. |
+| `offline_session_policy.dart` | 72h offline ceiling and logged break-glass continuation. |
+| `local_first_session.dart` | Attaches the store, engine and coordinator to the signed-in user; wipes the store on sign-out only if nothing is unsynced. |
+
+Entries are serialised once and the stored text is resent unchanged on every retry. The server hashes the RFC 8785 canonical form, so re-serialising would also work, but the client does not rely on that.
+
+Not built yet, and required before any device goes to a real facility: device enrolment with Android Key Attestation / Play Integrity (iOS: App Attest), device-bound refresh tokens, sync telemetry and the unsynced-writes / silence alerts, remote wipe with quarantine upload, WorkManager as a background supplement, and a run of the harness on a physical mid-range Android device (ideally Transsion: Tecno, Infinix, itel). Background execution is not relied on: those phones kill it aggressively.
 
 ### The backend sync API is disabled
 
@@ -38,8 +54,8 @@ Backend rules that now apply to everything this app writes:
 ```bash
 flutter pub get
 flutter run
-flutter test                       # 28 test files under test/
-flutter test test/widget_test.dart # single file
+flutter test                       # needs libsqlite3.so, see "Running tests"
+flutter test test/localfirst       # the local-first layer and fault-injection harness
 flutter analyze
 
 # Regenerate JSON serialisation code after editing any @JsonSerializable class
@@ -50,6 +66,19 @@ flutter build ios
 ```
 
 Pass the API base URL for anything but local dev: `--dart-define=API_BASE_URL=https://...`. Non-debug builds throw a `StateError` at startup unless `API_BASE_URL` and `AUTH_BASE_URL` are provided and start with `https://` (this used to be an `assert()`, which Dart strips from release builds). TLS pinning needs `--dart-define=TLS_CERT_PEM_B64=<base64 pem>` (see `lib/core/network/tls_pinning.dart`); without it pinning is off.
+
+### Running tests
+
+Database tests use `sqflite_common_ffi`, which loads `libsqlite3.so`. Many Linux machines only have `libsqlite3.so.0`, so every database test fails to load until it is on the library path:
+
+```bash
+mkdir -p ~/.local/lib/sqlite && ln -sf /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 ~/.local/lib/sqlite/libsqlite3.so
+LD_LIBRARY_PATH=~/.local/lib/sqlite flutter test
+```
+
+Also, `.dart_tool/package_config.json` embeds absolute pub-cache paths; after a machine or username change run `flutter pub get` (it rewrites the tracked `pubspec.lock` and the generated plugin registrants, so commit those deliberately).
+
+The harness (`test/localfirst/fault_injection_test.dart`) maps case by case to section 11 of the sync contract and runs against an in-memory server that implements the contract (`support/fake_server.dart`). `contract_fixture_test.dart` writes the real client entries to the backend repo's `tests/Fixtures/flutter_outbox_entries.json`, which `SyncFlutterContractTest` pushes at the real API.
 
 ## Architecture
 
@@ -65,6 +94,7 @@ lib/
     notifications/          push_notification_service.dart (FCM + local notifications)
     security/               root_detection_provider.dart
     sync/                   sync_diff_helper.dart (pure Dart conflict diffing)
+    localfirst/             local-first layer (see above)
     platform.dart           platform detection and adaptive UI helpers
   data/
     models/                 domain models; a few have generated *.g.dart files

@@ -16,6 +16,12 @@ class ApiException implements Exception {
   String toString() => 'ApiException($statusCode): $message';
 }
 
+class RawApiResponse {
+  final int statusCode;
+  final Map<String, dynamic>? json;
+  const RawApiResponse(this.statusCode, this.json);
+}
+
 class ApiClient {
   late final Dio _dio;
   final FlutterSecureStorage _storage;
@@ -124,6 +130,43 @@ class ApiClient {
     } else {
       throw ApiException('Unexpected response format');
     }
+  }
+
+  /// A request that never throws for an HTTP error status, so the caller can
+  /// branch on it (the sync layer must tell 401, 404, 422 and 5xx apart).
+  /// [body] is sent verbatim: the sync outbox depends on its exact bytes.
+  /// Network failures (no route, timeout) throw [DioException].
+  Future<RawApiResponse> sendRaw(
+    String method,
+    String path, {
+    String? body,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    final response = await _dio.request<dynamic>(
+      path,
+      data: body,
+      queryParameters: queryParameters,
+      options: Options(
+        method: method,
+        contentType: 'application/json',
+        validateStatus: (_) => true,
+        // Laravel reads repeated array parameters as key[]=a&key[]=b.
+        listFormat: ListFormat.multiCompatible,
+      ),
+    );
+
+    Map<String, dynamic>? json;
+    final data = response.data;
+    if (data is Map<String, dynamic>) {
+      json = data;
+    } else if (data is String && data.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(data);
+        if (decoded is Map<String, dynamic>) json = decoded;
+      } catch (_) {}
+    }
+
+    return RawApiResponse(response.statusCode ?? 0, json);
   }
 
   Future<Map<String, dynamic>> get(

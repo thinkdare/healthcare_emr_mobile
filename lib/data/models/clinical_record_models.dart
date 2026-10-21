@@ -31,6 +31,14 @@ class VitalSignModel {
   final int version;
   final DateTime? createdAt;
 
+  /// Vitals are append-only: a correction is a new reading that points at the
+  /// one it corrects, and a mistaken reading stays visible as 'entered_in_error'.
+  final String? amendsId;
+  final String status; // 'active' | 'entered_in_error'
+  final String? enteredInErrorReason;
+
+  bool get isEnteredInError => status == 'entered_in_error';
+
   const VitalSignModel({
     required this.id,
     required this.patientId,
@@ -54,6 +62,9 @@ class VitalSignModel {
     this.notes,
     required this.version,
     this.createdAt,
+    this.amendsId,
+    this.status = 'active',
+    this.enteredInErrorReason,
   });
 
   factory VitalSignModel.fromJson(Map<String, dynamic> json) {
@@ -85,6 +96,9 @@ class VitalSignModel {
       notes: json['notes'] as String?,
       version: (json['version'] as num?)?.toInt() ?? 1,
       createdAt: d('created_at'),
+      amendsId: json['amends_id'] as String?,
+      status: json['status'] as String? ?? 'active',
+      enteredInErrorReason: json['entered_in_error_reason'] as String?,
     );
   }
 

@@ -11,6 +11,9 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'config/app_config.dart';
 import 'core/api/api_client.dart';
 import 'core/database/local_database.dart';
+import 'core/localfirst/local_first_session.dart';
+import 'core/localfirst/sync_engine.dart' show SyncOutcome;
+import 'core/localfirst/sync_transport.dart';
 import 'core/platform.dart';
 import 'data/repositories/access_grant_repository.dart';
 import 'data/repositories/auth_repository.dart';
@@ -34,6 +37,7 @@ import 'data/providers/patient_provider.dart';
 import 'data/providers/reporting_provider.dart';
 import 'data/providers/subscription_provider.dart';
 import 'data/providers/sync_provider.dart';
+import 'data/providers/vitals_local_provider.dart';
 import 'data/providers/referral_provider.dart';
 import 'data/providers/ward_workflow_provider.dart';
 import 'data/providers/patient_message_provider.dart';
@@ -108,6 +112,7 @@ class _MyAppState extends State<MyApp> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           try { context.read<SyncProvider>().sync(); } catch (_) {}
+          try { context.read<LocalFirstSession>().onResume(); } catch (_) {}
           try { context.read<BiometricProvider>().checkResumeLock(); } catch (_) {}
         });
       },
@@ -300,6 +305,21 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(
           create: (_) => ReferralProvider(repository: referralRepository),
         ),
+        // Local-first layer (ADR 0001): per-user encrypted store, outbox and
+        // sync engine. Attached to the signed-in user by _LocalFirstBridge.
+        ChangeNotifierProvider<LocalFirstSession>(
+          create: (_) => LocalFirstSession(
+            transport: ApiSyncTransport(apiClient),
+            openStore: LocalStoreFactory.openForUser,
+            connectivity: connectivityStream,
+            appVersion: '1.0.0',
+            platform: kIsWeb ? 'web' : (kIsIOS ? 'ios' : 'android'),
+          ),
+        ),
+        ChangeNotifierProxyProvider<LocalFirstSession, VitalsLocalProvider>(
+          create: (ctx) => VitalsLocalProvider(ctx.read<LocalFirstSession>()),
+          update: (_, session, previous) => previous ?? VitalsLocalProvider(session),
+        ),
         ChangeNotifierProvider(
           create: (_) => IntraGrantProvider(repository: intraGrantRepository),
         ),
@@ -325,13 +345,66 @@ class _MyAppState extends State<MyApp> {
       // Platform branch: web → OrgAdminWebShell or ClinicalWebShell (by role)
       // iOS → IOSShell (branches internally on isOrgAdmin)
       // Android → AndroidShell (branches internally on isOrgAdmin)
-      child: kIsWeb
-          ? const _WebRoot()
-          : kIsIOS
-              ? const IOSShell()
-              : const AndroidShell(),
+      child: _LocalFirstBridge(
+        child: kIsWeb
+            ? const _WebRoot()
+            : kIsIOS
+                ? const IOSShell()
+                : const AndroidShell(),
+      ),
     );
   }
+}
+
+/// Attaches the local-first session to whoever is signed in, and detaches it on
+/// sign-out (wiping the store when nothing is waiting to sync). Org admins use
+/// the web back office and get no on-device clinical store.
+class _LocalFirstBridge extends StatefulWidget {
+  final Widget child;
+  const _LocalFirstBridge({required this.child});
+
+  @override
+  State<_LocalFirstBridge> createState() => _LocalFirstBridgeState();
+}
+
+class _LocalFirstBridgeState extends State<_LocalFirstBridge> {
+  String? _attachedUserId;
+  bool _handlingExpiry = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reconcile();
+  }
+
+  Future<void> _reconcile() async {
+    final auth = context.watch<AuthProvider>();
+    final session = context.read<LocalFirstSession>();
+
+    final userId = auth.isAuthenticated && !auth.isOrgAdmin ? auth.currentUserId : null;
+    if (userId == _attachedUserId) return;
+
+    final signedOut = userId == null;
+    _attachedUserId = userId;
+
+    if (signedOut) {
+      await session.detach(signedOut: true);
+    } else {
+      await session.attach(userId);
+      session.addListener(_checkExpiry);
+    }
+  }
+
+  void _checkExpiry() {
+    final session = context.read<LocalFirstSession>();
+    if (session.lastReport?.outcome == SyncOutcome.authExpired && !_handlingExpiry) {
+      _handlingExpiry = true;
+      context.read<AuthProvider>().logout().whenComplete(() => _handlingExpiry = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// Web root — MaterialApp with auth wrapper.

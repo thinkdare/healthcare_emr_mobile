@@ -12,7 +12,9 @@ import 'package:provider/provider.dart';
 import '../../../config/app_colors.dart';
 import '../../../core/platform.dart';
 import '../../../data/models/clinical_record_models.dart';
+import '../../../core/localfirst/vitals_repository.dart';
 import '../../../data/providers/clinical_provider.dart';
+import '../../../data/providers/vitals_local_provider.dart';
 import 'clinical_record_forms.dart';
 
 class ClinicalRecordTab extends StatelessWidget {
@@ -48,7 +50,7 @@ class ClinicalRecordTab extends StatelessWidget {
         }
 
         final sections = [
-          _VitalSignsSection(clinical.vitalSigns),
+          _VitalSignsSection(patientId: clinical.patientId),
           _DiagnosesSection(clinical.diagnoses),
           _ProblemsSection(clinical.problems),
           _ProceduresSection(clinical.procedures),
@@ -159,78 +161,94 @@ Future<void> _confirmDelete(
 
 // ── Vital Signs ───────────────────────────────────────────────────────────────
 
-class _VitalSignsSection extends StatelessWidget {
-  final List<VitalSignModel> items;
-  const _VitalSignsSection(this.items);
+/// Vital signs read from the LOCAL database only (ADR 0001). A reading appears
+/// the moment it is saved, whether or not the server has it yet.
+class _VitalSignsSection extends StatefulWidget {
+  final String? patientId;
+  const _VitalSignsSection({required this.patientId});
+
+  @override
+  State<_VitalSignsSection> createState() => _VitalSignsSectionState();
+}
+
+class _VitalSignsSectionState extends State<_VitalSignsSection> {
+  @override
+  void initState() {
+    super.initState();
+    final id = widget.patientId;
+    if (id != null) WidgetsBinding.instance.addPostFrameCallback((_) => context.read<VitalsLocalProvider>().load(id));
+  }
 
   @override
   Widget build(BuildContext context) {
+    final vitals = context.watch<VitalsLocalProvider>();
+    final items = vitals.items;
+
     return _Section(
       title: 'Vital Signs',
       count: items.length,
       form: const VitalSignForm(),
-      children: items.map((v) => _VitalSignTile(v)).toList(),
+      children: [
+        if (vitals.deadLetters.isNotEmpty)
+          ListTile(
+            dense: true,
+            leading: const Icon(Icons.error_outline, color: Colors.red),
+            title: Text('${vitals.deadLetters.length} reading(s) could not be sent'),
+            subtitle: Text(vitals.deadLetters.first.error ?? 'Rejected by the server'),
+            trailing: vitals.deadLetters.first.retryable
+                ? TextButton(onPressed: () => vitals.retry(vitals.deadLetters.first), child: const Text('Retry'))
+                : null,
+          ),
+        ...items.map((v) => _VitalSignTile(v)),
+      ],
     );
   }
 }
 
 class _VitalSignTile extends StatelessWidget {
-  final VitalSignModel v;
-  const _VitalSignTile(this.v);
+  final LocalVital item;
+  const _VitalSignTile(this.item);
+
+  VitalSignModel get v => item.vital;
 
   @override
   Widget build(BuildContext context) {
-    final date =
-        DateFormat('dd MMM yyyy HH:mm').format(v.recordedAt.toLocal());
+    final date = DateFormat('dd MMM yyyy HH:mm').format(v.recordedAt.toLocal());
+    final struck = v.isEnteredInError;
+    final style = TextStyle(decoration: struck ? TextDecoration.lineThrough : null);
+
     final subtitle = Wrap(
       spacing: 12,
       children: [
-        if (v.bloodPressureSystolic != null) Text('BP: ${v.bpDisplay}'),
-        if (v.heartRate != null) Text('HR: ${v.heartRate} bpm'),
-        if (v.oxygenSaturation != null) Text('SpO₂: ${v.spo2Display}'),
-        if (v.temperature != null) Text('Temp: ${v.tempDisplay}'),
+        if (v.bloodPressureSystolic != null) Text('BP: ${v.bpDisplay}', style: style),
+        if (v.heartRate != null) Text('HR: ${v.heartRate} bpm', style: style),
+        if (v.oxygenSaturation != null) Text('SpO₂: ${v.spo2Display}', style: style),
+        if (v.temperature != null) Text('Temp: ${v.tempDisplay}', style: style),
+        if (v.amendsId != null) const Text('(amends an earlier reading)'),
+        if (struck) Text('Entered in error: ${v.enteredInErrorReason ?? ''}'),
       ],
     );
 
+    // Vitals are append-only: no delete. A saved reading that the server does not
+    // have yet is marked so the clinician knows it is safe on the device but not
+    // yet on the record.
+    final badge = item.synced
+        ? null
+        : const Tooltip(message: 'Saved on this device; not yet sent', child: Icon(Icons.cloud_upload_outlined, size: 18));
+
     if (kIsIOS) {
-      return Dismissible(
-        key: ValueKey(v.id),
-        direction: DismissDirection.endToStart,
-        confirmDismiss: (_) async {
-          bool confirmed = false;
-          await _confirmDelete(
-              context, 'vital sign reading', () => confirmed = true);
-          return confirmed;
-        },
-        onDismissed: (_) =>
-            context.read<ClinicalProvider>().deleteVitalSign(v.id),
-        background: Container(
-          color: AppColors.error,
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 20),
-          child: const Icon(CupertinoIcons.delete,
-              color: CupertinoColors.white),
-        ),
-        child: CupertinoListTile(
-          title: Text(date,
-              style: const TextStyle(fontWeight: FontWeight.w500)),
-          subtitle: subtitle,
-        ),
+      return CupertinoListTile(
+        title: Text(date, style: const TextStyle(fontWeight: FontWeight.w500)),
+        subtitle: subtitle,
+        trailing: badge,
       );
     }
 
     return ListTile(
       dense: true,
-      title: Text(date,
-          style: const TextStyle(fontWeight: FontWeight.w500)),
+      title: Text(date, style: const TextStyle(fontWeight: FontWeight.w500)),
       subtitle: subtitle,
-      trailing: IconButton(
-        icon: const Icon(Icons.delete_outline, color: Colors.red),
-        onPressed: () =>
-            _confirmDelete(context, 'vital sign reading', () {
-          context.read<ClinicalProvider>().deleteVitalSign(v.id);
-        }),
-      ),
+      trailing: badge,
     );
   }
 }
