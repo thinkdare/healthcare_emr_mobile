@@ -78,6 +78,8 @@ LD_LIBRARY_PATH=~/.local/lib/sqlite flutter test
 
 Also, `.dart_tool/package_config.json` embeds absolute pub-cache paths; after a machine or username change run `flutter pub get` (it rewrites the tracked `pubspec.lock` and the generated plugin registrants, so commit those deliberately).
 
+`test/localfirst/live_backend_test.dart` runs the real engine and Dio transport against a real local backend and is skipped unless `SYNC_LIVE_TOKEN` and `SYNC_LIVE_TENANT` are set (also pass `--dart-define=API_BASE_URL=http://127.0.0.1:8180/api/v1`; the backend needs `SYNC_API_ENABLED=true`, non-production, and its PHP containers restarted after code changes because of opcache preload).
+
 The harness (`test/localfirst/fault_injection_test.dart`) maps case by case to section 11 of the sync contract and runs against an in-memory server that implements the contract (`support/fake_server.dart`). `contract_fixture_test.dart` writes the real client entries to the backend repo's `tests/Fixtures/flutter_outbox_entries.json`, which `SyncFlutterContractTest` pushes at the real API.
 
 ## Architecture
