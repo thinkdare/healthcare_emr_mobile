@@ -121,6 +121,12 @@ class SyncEngine implements SyncRunner {
         pushed += r.completed;
         dead += r.deadLettered;
         if (r.stop != null) return stop(r.stop!);
+
+        // A 200 that acknowledges nothing leaves the same entries pending, so
+        // asking again at once would loop forever. Stop and retry next round.
+        if (r.completed + r.deadLettered == 0) {
+          return stop(SyncOutcome.serverUnavailable, 'push response acknowledged no entries');
+        }
       }
 
       // ── pull ────────────────────────────────────────────────────────────

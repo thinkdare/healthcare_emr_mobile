@@ -278,6 +278,24 @@ void main() {
     });
   });
 
+  group('10b. a push response that acknowledges nothing', () {
+    test('ends the round instead of re-sending the same batch in a loop', () async {
+      server.acknowledgeNothing = true;
+      await device.vitals.record(patientId: patient, values: {'heart_rate': 70});
+
+      final report = await device.sync();
+
+      expect(report.outcome, SyncOutcome.serverUnavailable);
+      expect(server.pushCalls, 1);
+      expect(await device.store.pending(), hasLength(1), reason: 'still queued, same bytes');
+
+      server.acknowledgeNothing = false;
+      expect((await device.sync()).outcome, SyncOutcome.ok);
+      expect(await device.store.pending(), isEmpty);
+      expect(server.vitals, hasLength(1));
+    });
+  });
+
   group('11. app upgrade with a non-empty outbox', () {
     test('50 queued entries (some from an older entry format) survive a restart and all sync', () async {
       for (var i = 0; i < 50; i++) {

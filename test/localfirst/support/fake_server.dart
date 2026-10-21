@@ -41,6 +41,9 @@ class FakeServer implements SyncTransport {
   /// Answer every request with this status until cleared (401, 503, ...).
   int? forceStatus;
 
+  /// Answer pushes with 200 and no items, applying nothing (a truncated response).
+  bool acknowledgeNothing = false;
+
   /// Answer the next whole-batch push with 422.
   bool rejectNextBatchWith422 = false;
 
@@ -91,6 +94,10 @@ class FakeServer implements SyncTransport {
     if (rejectNextBatchWith422) {
       rejectNextBatchWith422 = false;
       return const TransportResponse(422, {'message': 'The given data was invalid.'});
+    }
+
+    if (acknowledgeNothing) {
+      return const TransportResponse(200, {'success': true, 'data': {'items': []}});
     }
 
     final body = jsonDecode(rawBody) as Map<String, dynamic>;
