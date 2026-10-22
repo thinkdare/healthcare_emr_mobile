@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/emergency_access_models.dart';
 import '../repositories/emergency_access_repository.dart';
+export '../repositories/emergency_access_repository.dart' show EmergencyAuthorization;
 
 class EmergencyAccessProvider extends ChangeNotifier {
   final EmergencyAccessRepository repository;
@@ -62,6 +63,18 @@ class EmergencyAccessProvider extends ChangeNotifier {
 
   // ── Trigger ────────────────────────────────────────────────────────────────
 
+  /// Asks the server to start (and, for non-2FA accounts, email) the
+  /// authorization code. Returns null on failure; see [error].
+  Future<EmergencyAuthorization?> requestAuthorization() async {
+    try {
+      return await repository.requestAuthorization();
+    } catch (e) {
+      _error = _friendly(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<EmergencyAccessModel?> trigger(Map<String, dynamic> data) async {
     try {
       final log = await repository.trigger(data);
@@ -106,6 +119,9 @@ class EmergencyAccessProvider extends ChangeNotifier {
         return 'You do not have emergency access capability at this facility.';
       }
       return 'You do not have permission to perform this action.';
+    }
+    if (msg.contains('429')) {
+      return 'Too many emergency access attempts. Wait a few minutes or contact your administrator.';
     }
     if (msg.contains('ALREADY_REVIEWED')) {
       return 'This event has already been reviewed.';

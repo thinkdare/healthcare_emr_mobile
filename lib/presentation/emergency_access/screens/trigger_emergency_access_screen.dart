@@ -32,9 +32,16 @@ class _TriggerEmergencyAccessScreenState
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _patientIdCtrl;
   final _detailsCtrl = TextEditingController();
+  final _codeCtrl = TextEditingController();
 
   String _emergencyType = 'life_threatening';
   bool _saving = false;
+
+  // Second factor: asked for when the form opens so an emailed code is already
+  // waiting. null while requesting; see _requestCode.
+  EmergencyAuthorization? _authorization;
+  bool _requestingCode = false;
+  String? _codeRequestError;
 
   static const _types = [
     ('life_threatening',  'Life Threatening'),
@@ -48,12 +55,30 @@ class _TriggerEmergencyAccessScreenState
     super.initState();
     _patientIdCtrl =
         TextEditingController(text: widget.prefillPatientId ?? '');
+    WidgetsBinding.instance.addPostFrameCallback((_) => _requestCode());
+  }
+
+  Future<void> _requestCode() async {
+    if (!mounted) return;
+    setState(() {
+      _requestingCode = true;
+      _codeRequestError = null;
+    });
+    final provider = context.read<EmergencyAccessProvider>();
+    final result = await provider.requestAuthorization();
+    if (!mounted) return;
+    setState(() {
+      _requestingCode = false;
+      _authorization = result;
+      _codeRequestError = result == null ? provider.error : null;
+    });
   }
 
   @override
   void dispose() {
     _patientIdCtrl.dispose();
     _detailsCtrl.dispose();
+    _codeCtrl.dispose();
     super.dispose();
   }
 
@@ -80,6 +105,7 @@ class _TriggerEmergencyAccessScreenState
       'master_patient_id': _patientIdCtrl.text.trim(),
       'emergency_type':    _emergencyType,
       'emergency_details': _detailsCtrl.text.trim(),
+      'authorization_code': _codeCtrl.text.trim(),
     };
 
     final provider = context.read<EmergencyAccessProvider>();
@@ -92,6 +118,9 @@ class _TriggerEmergencyAccessScreenState
       showAdaptiveToast(context, 'Emergency access granted. Primary provider notified.');
       Navigator.of(context).pop(true);
     } else {
+      // An emailed code is single use and a TOTP code cannot be replayed, so a
+      // failed attempt needs a fresh one.
+      _codeCtrl.clear();
       showAdaptiveToast(context, provider.error ?? 'Request failed', type: ToastType.error);
     }
   }
@@ -235,11 +264,62 @@ class _TriggerEmergencyAccessScreenState
                 },
               ),
 
+              _sectionHeader('Authorization'),
+              _buildAuthorizationField(),
+
               const SizedBox(height: 32),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildAuthorizationField() {
+    final auth = _authorization;
+    final String helper;
+    if (_requestingCode) {
+      helper = 'Requesting your authorization code…';
+    } else if (_codeRequestError != null) {
+      helper = _codeRequestError!;
+    } else if (auth == null) {
+      helper = 'Authorization code required.';
+    } else if (auth.isTotp) {
+      helper = 'Enter the code from your authenticator app, or an unused backup code.';
+    } else {
+      helper = 'A code was emailed to you. It expires in '
+          '${auth.expiresInMinutes ?? 10} minutes and works once.';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: _codeCtrl,
+          decoration: InputDecoration(
+            labelText: 'Authorization code *',
+            helperText: helper,
+            helperMaxLines: 3,
+            prefixIcon: const Icon(Icons.verified_user_outlined),
+          ),
+          autocorrect: false,
+          enableSuggestions: false,
+          keyboardType: TextInputType.visiblePassword,
+          validator: (v) => (v == null || v.trim().isEmpty)
+              ? 'Enter the authorization code'
+              : null,
+        ),
+        // Email codes can be re-sent; an authenticator needs no resend, but
+        // the same button retries a failed request.
+        if (!_requestingCode && (auth == null || !auth.isTotp))
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: _saving ? null : _requestCode,
+              child: Text(auth == null ? 'Try again' : 'Send a new code'),
+            ),
+          ),
+      ],
     );
   }
 
