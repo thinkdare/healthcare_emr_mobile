@@ -18,3 +18,5 @@ samples, guidance on mobile development, and a full API reference.
 ---
 
 Claude Sonnet 4.6 <noreply@anthropic.com> was used in this project.
+
+Claude Sonnet 5.5 <noreply@anthropic.com> was used in this project.
