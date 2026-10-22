@@ -49,6 +49,35 @@ class SubscriptionPlanModel {
 
 // ── Subscription ──────────────────────────────────────────────────────────────
 
+/// What a staff member may know about their organisation's plan
+/// (GET /billing/organizations/{orgId}/plan). No amounts, periods or invoices:
+/// those stay admin-only on the full subscription endpoint.
+class PlanSummaryModel {
+  final String organizationId;
+  final String? planSlug;
+  final String? planName;
+  final String status;
+  final bool isTrial;
+
+  const PlanSummaryModel({
+    required this.organizationId,
+    this.planSlug,
+    this.planName,
+    required this.status,
+    required this.isTrial,
+  });
+
+  factory PlanSummaryModel.fromJson(Map<String, dynamic> json) {
+    return PlanSummaryModel(
+      organizationId: json['organization_id'] as String,
+      planSlug: json['plan_slug'] as String?,
+      planName: json['plan_name'] as String?,
+      status: json['status'] as String? ?? 'active',
+      isTrial: json['is_trial'] as bool? ?? false,
+    );
+  }
+}
+
 class SubscriptionModel {
   final String id;
   final String organizationId;

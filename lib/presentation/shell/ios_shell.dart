@@ -18,6 +18,7 @@ import '../roster/screens/roster_screen.dart';
 import '../sync/widgets/root_warning_banner.dart';
 import '../sync/widgets/sync_banner.dart';
 import 'org_admin_ios_shell.dart';
+import '../subscription/widgets/plan_loader.dart';
 
 /// CupertinoApp root for iOS.
 /// Four tabs: Patients · Roster · Access · More
@@ -53,7 +54,7 @@ class _IOSAuthWrapper extends StatelessWidget {
         // Show biometric lock screen when the app is locked
         final isLocked = context.watch<BiometricProvider>().isLocked;
         if (isLocked) return const BiometricLockScreen();
-        return const _IOSTabs();
+        return const PlanLoader(child: _IOSTabs());
       },
     );
   }

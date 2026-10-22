@@ -53,6 +53,23 @@ class SubscriptionRepository {
     }
   }
 
+  /// GET /billing/organizations/{orgId}/plan
+  ///
+  /// Readable by staff of the organisation (unlike [getSubscription], which is
+  /// org admin only). Returns null when there is no active subscription or the
+  /// call fails, so callers fail closed.
+  Future<PlanSummaryModel?> getPlanSummary(String orgId) async {
+    try {
+      final response =
+          await apiClient.get('/billing/organizations/$orgId/plan');
+      if (response['success'] != true) return null;
+      return PlanSummaryModel.fromJson(
+          Map<String, dynamic>.from(response['data'] as Map));
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// POST /billing/organizations/{orgId}/subscriptions/trial
   Future<SubscriptionModel> startTrial(
     String orgId, {

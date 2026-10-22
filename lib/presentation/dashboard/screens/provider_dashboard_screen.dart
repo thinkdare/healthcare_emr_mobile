@@ -51,7 +51,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
     await Future.wait([
       if (orgId != null)
-        context.read<SubscriptionProvider>().loadSubscription(orgId),
+        context
+            .read<SubscriptionProvider>()
+            .loadForRole(orgId, isOrgAdmin: auth.isOrgAdmin),
       // Clinical endpoints require tenant context — skip for org admins.
       if (!auth.isOrgAdmin) ...[
         if (userId != null)
@@ -73,7 +75,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
     await Future.wait([
       if (orgId != null)
-        context.read<SubscriptionProvider>().loadSubscription(orgId),
+        context
+            .read<SubscriptionProvider>()
+            .loadForRole(orgId, isOrgAdmin: auth.isOrgAdmin),
       if (!auth.isOrgAdmin && userId != null)
         context.read<PatientProvider>().loadPatients(
               providerId: userId,

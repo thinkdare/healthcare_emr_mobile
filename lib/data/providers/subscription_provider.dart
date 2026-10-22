@@ -11,6 +11,7 @@ class SubscriptionProvider extends ChangeNotifier {
 
   List<SubscriptionPlanModel> _plans = [];
   SubscriptionModel? _subscription;
+  PlanSummaryModel? _planSummary;
   List<InvoiceModel> _invoices = [];
 
   bool _isLoading = false;
@@ -40,10 +41,16 @@ class SubscriptionProvider extends ChangeNotifier {
   /// the 30-day free trial period regardless of which plan is being trialed.
   bool? get isProfessionalOrHigher {
     if (_subLoadState != SubscriptionLoadState.loaded) return null;
-    if (_subscription == null) return null;
-    if (_subscription!.isTrial) return true;
-    final slug = _subscription!.plan?.slug.toLowerCase() ?? '';
-    return !slug.contains('starter');
+    final sub = _subscription;
+    if (sub != null) {
+      if (sub.isTrial) return true;
+      return !(sub.plan?.slug.toLowerCase() ?? '').contains('starter');
+    }
+    // Staff cannot read the full subscription; they get the plan summary.
+    final summary = _planSummary;
+    if (summary == null) return null;
+    if (summary.isTrial) return true;
+    return !(summary.planSlug?.toLowerCase() ?? '').contains('starter');
   }
 
   // ── Plans ─────────────────────────────────────────────────────────────────
@@ -61,6 +68,30 @@ class SubscriptionProvider extends ChangeNotifier {
   }
 
   // ── Subscription ──────────────────────────────────────────────────────────
+
+  /// Loads what the signed-in role may read: the full subscription for org
+  /// admins, the plan summary for staff.
+  Future<void> loadForRole(String orgId, {required bool isOrgAdmin}) =>
+      isOrgAdmin ? loadSubscription(orgId) : loadPlanSummary(orgId);
+
+  Future<void> loadPlanSummary(String orgId) async {
+    _subLoadState = SubscriptionLoadState.loading;
+    _setLoading(true);
+    try {
+      _planSummary = await repository.getPlanSummary(orgId);
+      _subscription = null;
+      _subLoadState = _planSummary != null
+          ? SubscriptionLoadState.loaded
+          : SubscriptionLoadState.error;
+      _error = null;
+    } catch (e) {
+      _subLoadState = SubscriptionLoadState.error;
+      _error = e.toString();
+      _planSummary = null;
+    } finally {
+      _setLoading(false);
+    }
+  }
 
   Future<void> loadSubscription(String orgId) async {
     _subLoadState = SubscriptionLoadState.loading;
