@@ -82,7 +82,7 @@ class WardWorkflowRepository {
         'ward_id': wardId,
         'admission_type': admissionType,
         'reason': reason,
-        if (bedId != null) 'bed_id': bedId,
+        'bed_id': ?bedId,
       },
     );
     if (response['success'] != true) {
@@ -95,7 +95,7 @@ class WardWorkflowRepository {
   Future<void> acceptAdmission(String requestId, {String? bedId}) async {
     final response = await apiClient.post(
       '/admission-requests/$requestId/accept',
-      data: {if (bedId != null) 'bed_id': bedId},
+      data: {'bed_id': ?bedId},
     );
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to accept admission');
@@ -134,7 +134,7 @@ class WardWorkflowRepository {
         'admission_type': admissionType,
         'reason': reason,
         'override_reason': overrideReason,
-        if (bedId != null) 'bed_id': bedId,
+        'bed_id': ?bedId,
       },
     );
     if (response['success'] != true) {
@@ -169,7 +169,7 @@ class WardWorkflowRepository {
       data: {
         'to_ward_id': toWardId,
         'reason': reason,
-        if (toBedId != null) 'to_bed_id': toBedId,
+        'to_bed_id': ?toBedId,
       },
     );
     if (response['success'] != true) {
@@ -182,7 +182,7 @@ class WardWorkflowRepository {
   Future<void> acceptTransfer(String requestId, {String? toBedId}) async {
     final response = await apiClient.post(
       '/transfer-requests/$requestId/accept',
-      data: {if (toBedId != null) 'to_bed_id': toBedId},
+      data: {'to_bed_id': ?toBedId},
     );
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to accept transfer');
@@ -212,7 +212,7 @@ class WardWorkflowRepository {
         'to_ward_id': toWardId,
         'reason': reason,
         'override_reason': overrideReason,
-        if (toBedId != null) 'to_bed_id': toBedId,
+        'to_bed_id': ?toBedId,
       },
     );
     if (response['success'] != true) {
@@ -245,7 +245,7 @@ class WardWorkflowRepository {
       '/patients/$patientId/discharge-requests',
       data: {
         'discharge_type': dischargeType,
-        if (dischargeSummary != null) 'discharge_summary': dischargeSummary,
+        'discharge_summary': ?dischargeSummary,
       },
     );
     if (response['success'] != true) {
@@ -259,7 +259,7 @@ class WardWorkflowRepository {
       {String? notes}) async {
     final response = await apiClient.post(
       '/discharge-requests/$requestId/signoffs/$signoffId/approve',
-      data: {if (notes != null) 'notes': notes},
+      data: {'notes': ?notes},
     );
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Failed to approve sign-off');
@@ -321,7 +321,7 @@ class WardWorkflowRepository {
       data: {
         'discharge_type': dischargeType,
         'override_reason': overrideReason,
-        if (dischargeSummary != null) 'discharge_summary': dischargeSummary,
+        'discharge_summary': ?dischargeSummary,
       },
     );
     if (response['success'] != true) {

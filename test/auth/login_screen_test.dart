@@ -63,7 +63,7 @@ void main() {
     testWidgets('invalid email shows a validation error without calling the API',
         (tester) async {
       var called = false;
-      await tester.pumpWidget(_wrap(_FakeApiClient(postHandler: (_, __) {
+      await tester.pumpWidget(_wrap(_FakeApiClient(postHandler: (_, _) {
         called = true;
         return {'success': true, 'data': {}};
       })));
@@ -117,7 +117,7 @@ void main() {
     });
 
     testWidgets('unknown email shows a not-found error', (tester) async {
-      await tester.pumpWidget(_wrap(_FakeApiClient(postHandler: (_, __) => {
+      await tester.pumpWidget(_wrap(_FakeApiClient(postHandler: (_, _) => {
             'success': true,
             'data': {'exists': false, 'has_password': false, 'facilities': []},
           })));
@@ -134,7 +134,7 @@ void main() {
 
     testWidgets('a connection failure shows a distinct error from unknown email',
         (tester) async {
-      await tester.pumpWidget(_wrap(_FakeApiClient(postHandler: (_, __) {
+      await tester.pumpWidget(_wrap(_FakeApiClient(postHandler: (_, _) {
         throw ApiException('Network error: connection timed out');
       })));
 
