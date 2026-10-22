@@ -215,8 +215,11 @@ class SyncEngine implements SyncRunner {
     if (await store.getMeta('registered') == '1') return null;
 
     final res = await transport.register(clientId, appVersion: appVersion, platform: platform);
-    final failure = _classify(res);
-    if (failure != null) return failure;
+    if (!res.ok) {
+      // Any failure leaves the device unregistered. Carrying on would make the
+      // push fail with UNREGISTERED_DEVICE, which must never reach the entries.
+      return _classify(res) ?? SyncOutcome.serverUnavailable;
+    }
 
     await store.setMeta('registered', '1');
     return null;
@@ -240,6 +243,14 @@ class SyncEngine implements SyncRunner {
 
     final failure = _classify(res);
     if (failure != null) return _PushResult(stop: failure);
+
+    // The server does not know this device (reinstall, restored database, or a
+    // registration that never took). That says nothing about the entries: keep
+    // them queued and register again next round.
+    if (res.errorCode == 'UNREGISTERED_DEVICE') {
+      await store.setMeta('registered', '0');
+      return const _PushResult(stop: SyncOutcome.serverUnavailable);
+    }
 
     // A 4xx for the whole request (typically 422). Isolate the offending entry
     // instead of failing the batch: one bad entry must not stall the queue.

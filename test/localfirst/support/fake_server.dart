@@ -31,6 +31,9 @@ class FakeServer implements SyncTransport {
 
   // ── fault injection ──
 
+  /// Answer /register with this status (and register nothing) until cleared.
+  int? registerStatus;
+
   /// Apply the push on the server, then fail the response to the client (the
   /// classic "request landed, response lost" case).
   int dropResponseAfterApplying = 0;
@@ -77,6 +80,7 @@ class FakeServer implements SyncTransport {
   @override
   Future<TransportResponse> register(String clientId, {String? appVersion, String? platform}) async {
     if (forceStatus != null) return TransportResponse(forceStatus!, {'message': 'forced'});
+    if (registerStatus != null) return TransportResponse(registerStatus!, {'message': 'registration refused'});
     registered.add(clientId);
     return const TransportResponse(201, {'success': true});
   }
@@ -101,6 +105,12 @@ class FakeServer implements SyncTransport {
     }
 
     final body = jsonDecode(rawBody) as Map<String, dynamic>;
+    if (!registered.contains(body['client_id'])) {
+      return const TransportResponse(422, {
+        'message': 'Device not registered. Call /sync/register first.',
+        'error': {'code': 'UNREGISTERED_DEVICE'},
+      });
+    }
     final changes = (body['changes'] as List).cast<Map<String, dynamic>>();
 
     // One malformed entry fails the whole request, like Laravel's validate().

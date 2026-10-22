@@ -13,6 +13,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:healthcare_emr_mobile/core/localfirst/offline_session_policy.dart';
 import 'package:healthcare_emr_mobile/core/localfirst/sync_engine.dart';
+import 'package:healthcare_emr_mobile/core/localfirst/vitals_repository.dart';
 
 import 'support/fake_server.dart';
 import 'support/harness.dart';
@@ -111,7 +112,7 @@ void main() {
         'id': original['id'],
       };
 
-      final res = await server.push(jsonEncode({'client_id': 'c', 'changes': [reordered]}));
+      final res = await server.push(jsonEncode({'client_id': server.registered.first, 'changes': [reordered]}));
       expect(((res.json!['data'] as Map)['items'] as List).single['outcome'], 'completed');
       expect(server.vitals.length, 1);
     });
@@ -210,6 +211,7 @@ void main() {
     test('break-glass needs a reason', () async {
       final policy = OfflineSessionPolicy(store: device.store, clock: () => device.now);
       await expectLater(policy.breakGlass('  '), throwsArgumentError);
+      await expectLater(policy.breakGlass('x' * 501), throwsArgumentError, reason: 'the server refuses a reason over 500 characters');
     });
   });
 
@@ -293,6 +295,39 @@ void main() {
       expect((await device.sync()).outcome, SyncOutcome.ok);
       expect(await device.store.pending(), isEmpty);
       expect(server.vitals, hasLength(1));
+    });
+  });
+
+  group('10c. the server does not know this device', () {
+    test('a refused registration keeps the readings queued and retries registration', () async {
+      server.registerStatus = 422;
+      await device.vitals.record(patientId: patient, values: {'heart_rate': 70});
+
+      final report = await device.sync();
+
+      expect(report.outcome, SyncOutcome.serverUnavailable);
+      expect(await device.store.deadLetters(), isEmpty);
+      expect(await device.store.pending(), hasLength(1));
+
+      server.registerStatus = null;
+      expect((await device.sync()).outcome, SyncOutcome.ok);
+      expect(server.vitals, hasLength(1));
+      expect(await device.store.pending(), isEmpty);
+    });
+
+    test('a server that forgot the device does not dead-letter queued readings', () async {
+      expect((await device.sync()).outcome, SyncOutcome.ok); // registers
+      server.registered.clear(); // reinstall or restored database on the server
+
+      await device.vitals.record(patientId: patient, values: {'heart_rate': 71});
+      final report = await device.sync();
+
+      expect(report.outcome, SyncOutcome.serverUnavailable);
+      expect(await device.store.deadLetters(), isEmpty);
+      expect(await device.store.pending(), hasLength(1));
+
+      expect((await device.sync()).outcome, SyncOutcome.ok, reason: 'registers again, then pushes');
+      expect(server.vitals.values.single['heart_rate'], 71);
     });
   });
 
@@ -459,6 +494,53 @@ void main() {
       expect(payload['patient_id'], patient);
       expect(payload.containsKey('recorded_by_id'), isFalse);
       expect(payload.containsKey('version'), isFalse);
+    });
+  });
+
+  group('bedside validation matches the server', () {
+    test('a fractional heart rate or blood pressure is refused, a whole-number double is sent as an int', () async {
+      for (final key in ['heart_rate', 'respiratory_rate', 'blood_pressure_systolic', 'blood_pressure_diastolic']) {
+        await expectLater(
+          device.vitals.record(patientId: patient, values: {key: 72.5}),
+          throwsA(isA<VitalsValidationException>()),
+          reason: '$key is validated as integer on the server',
+        );
+      }
+      expect(await device.store.pending(), isEmpty);
+
+      await device.vitals.record(patientId: patient, values: {'heart_rate': 72.0});
+      final payload = _changes('{"changes":[${(await device.store.pending()).single.body}]}').single['payload'] as Map;
+      expect(payload['heart_rate'], 72);
+      expect(payload['heart_rate'], isA<int>());
+    });
+
+    test('ids must be uuids and notes are counted in characters, not UTF-16 units', () async {
+      await expectLater(
+        device.vitals.record(patientId: patient, values: {'heart_rate': 70, 'ward_id': 'ward-3'}),
+        throwsA(isA<VitalsValidationException>()),
+      );
+      // 2000 emoji are 4000 UTF-16 units but 2000 characters: the server accepts them.
+      await device.vitals.record(patientId: patient, values: {'heart_rate': 70, 'notes': '😀' * 2000});
+      await expectLater(
+        device.vitals.record(patientId: patient, values: {'heart_rate': 70, 'notes': '😀' * 2001}),
+        throwsA(isA<VitalsValidationException>()),
+      );
+    });
+
+    test('decimals are rounded to the precision the server stores, so the bedside value does not change after sync', () async {
+      final local = await device.vitals.record(
+        patientId: patient,
+        values: {'heart_rate': 70, 'temperature': 37.26, 'oxygen_saturation': 97.44, 'weight': 70.126, 'height': 170.04},
+      );
+      expect(local.vital.temperature, 37.3);
+      expect(local.vital.oxygenSaturation, 97.4);
+      expect(local.vital.weight, 70.13);
+      expect(local.vital.height, 170.0);
+
+      final entry = (await device.store.pending()).single;
+      final payload = _changes('{"changes":[${entry.body}]}').single['payload'] as Map;
+      expect(payload['temperature'], 37.3);
+      expect(payload['weight'], 70.13);
     });
   });
 
