@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:uuid/uuid.dart';
 
@@ -28,6 +29,29 @@ class VitalsValidator {
     'height': (30, 300),
   };
 
+  /// The server validates these as `integer`: 72.5 is rejected, 72 and 72.0 pass.
+  static const Set<String> integers = {
+    'blood_pressure_systolic',
+    'blood_pressure_diastolic',
+    'heart_rate',
+    'respiratory_rate',
+  };
+
+  /// Columns the server validates as `uuid`.
+  static const Set<String> uuids = {'encounter_id', 'roster_entry_id', 'ward_id'};
+
+  /// Decimal places the server stores (`decimal:N` casts). Rounding before the
+  /// write makes the bedside value equal to what comes back on the next pull.
+  static const Map<String, int> decimals = {
+    'temperature': 1,
+    'oxygen_saturation': 1,
+    'weight': 2,
+    'height': 1,
+    'bmi': 1,
+  };
+
+  static final RegExp _uuid = RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', caseSensitive: false);
+
   static const Map<String, List<String>> units = {
     'temperature_unit': ['C', 'F'],
     'weight_unit': ['kg', 'lbs'],
@@ -51,10 +75,17 @@ class VitalsValidator {
       if (v == null) return;
       if (v is! num) {
         errors[key] = 'must be a number';
+      } else if (integers.contains(key) && v != v.truncate()) {
+        errors[key] = 'must be a whole number';
       } else if (v < range.$1 || v > range.$2) {
         errors[key] = 'must be between ${range.$1} and ${range.$2}';
       }
     });
+
+    for (final key in uuids) {
+      final v = values[key];
+      if (v != null && !(v is String && _uuid.hasMatch(v))) errors[key] = 'must be a valid id';
+    }
 
     units.forEach((key, allowed) {
       final v = values[key];
@@ -62,9 +93,28 @@ class VitalsValidator {
     });
 
     final notes = values['notes'];
-    if (notes is String && notes.length > 2000) errors['notes'] = 'is too long';
+    // Laravel counts characters, Dart's length counts UTF-16 units.
+    if (notes is String && notes.runes.length > 2000) errors['notes'] = 'is too long';
 
     return errors;
+  }
+
+  /// Applies the server's storage precision to already validated values:
+  /// whole numbers become ints and decimals are rounded.
+  static Map<String, dynamic> normalize(Map<String, dynamic> values) {
+    final out = Map<String, dynamic>.from(values);
+    for (final key in integers) {
+      final v = out[key];
+      if (v is num) out[key] = v.toInt();
+    }
+    decimals.forEach((key, places) {
+      final v = out[key];
+      if (v is num) {
+        final f = math.pow(10, places).toDouble();
+        out[key] = (v * f).round() / f;
+      }
+    });
+    return out;
   }
 }
 
@@ -162,11 +212,12 @@ class VitalsRepository {
   }) async {
     final breakGlass = await beforeWrite?.call();
 
-    final clean = _only(values);
-    clean['recorded_at'] ??= _now().toUtc().toIso8601String();
+    final raw = _only(values);
+    raw['recorded_at'] ??= _now().toUtc().toIso8601String();
 
-    final errors = VitalsValidator.validate(clean);
+    final errors = VitalsValidator.validate(raw);
     if (errors.isNotEmpty) throw VitalsValidationException(errors);
+    final clean = VitalsValidator.normalize(raw);
 
     final nowIso = _now().toUtc().toIso8601String();
     final id = _uuid.v7();

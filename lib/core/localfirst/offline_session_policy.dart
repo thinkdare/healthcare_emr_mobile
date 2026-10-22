@@ -47,6 +47,8 @@ class OfflineSessionPolicy {
   Future<void> breakGlass(String reason) async {
     final trimmed = reason.trim();
     if (trimmed.isEmpty) throw ArgumentError('A break-glass reason is required.');
+    // The server refuses a reason over 500 characters; catch it before it is queued.
+    if (trimmed.runes.length > 500) throw ArgumentError('A break-glass reason can be at most 500 characters.');
 
     final now = _now().toUtc();
     await store.setMeta('break_glass_reason', trimmed);
