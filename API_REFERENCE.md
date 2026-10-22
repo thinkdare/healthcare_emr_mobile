@@ -37,12 +37,12 @@
 ### Base URL
 
 ```
-http://localhost/api/v1          ← iOS simulator, desktop, web
-http://10.0.2.2/api/v1           ← Android emulator (AVD, standard)
-http://10.0.3.2/api/v1           ← Android emulator (Genymotion)
+http://localhost:8180/api/v1     ← iOS simulator, desktop, web
+http://10.0.2.2:8180/api/v1      ← Android emulator (AVD, standard)
+http://10.0.3.2:8180/api/v1      ← Android emulator (Genymotion)
 ```
 
-> Backend runs on **port 80** via Nginx. Do not use port 8000.
+> The backend dev stack serves nginx on `NGINX_PORT` (8180 in its `.env.example`), not port 80 or 8000.
 
 ### Required Headers
 

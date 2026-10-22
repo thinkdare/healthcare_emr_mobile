@@ -141,7 +141,9 @@ No router package. Navigation is imperative (`Navigator.push` / `pushNamed`), an
 
 ## Key notes
 
-- **Android emulator address:** the dev fallback in `app_config.dart` is `http://10.0.3.2:8000/api/v1` (Genymotion). For the standard AVD use `10.0.2.2`, or pass `API_BASE_URL`. The backend dev stack's own port is set by `NGINX_PORT` / `APP_PORT` in its `.env`, so confirm it before assuming 8000.
+- **Dev API address:** the debug fallback in `app_config.dart` is `http://10.0.2.2:8180/api/v1` on Android (the stock AVD's alias for the host) and `http://localhost:8180/api/v1` elsewhere. 8180 is the backend's `NGINX_PORT`; if you changed it, or you use Genymotion (`10.0.3.2`) or a real device, pass `--dart-define=API_BASE_URL=...`. Non-debug builds require an explicit https URL.
+- **Break-glass needs a second factor.** `TriggerEmergencyAccessScreen` calls `POST /emergency-access/authorize` when it opens (the backend emails a code, or says to use the authenticator for 2FA accounts) and sends the result as `authorization_code`.
+- **Plan gating for staff** uses `GET /billing/organizations/{orgId}/plan` (`PlanSummaryModel`); the full subscription endpoint is admin-only and returns 403 for staff.
 - **Password reset** opens the backend's web flow in an external browser (`authBaseUrl`); it is not an API call.
 - **Docs in this repo:** `API_CONTRACT.md` and `API_REFERENCE.md` describe the backend API as of the original build and may be stale; the backend repo's `API_HANDOVER.md` is the more current reference. `SCREENS.md` lists screens.
 - **Security features present:** biometric unlock (`local_auth`), jailbreak/root detection (`flutter_jailbreak_detection`), optional TLS pinning, SQLCipher at rest, FCM push.

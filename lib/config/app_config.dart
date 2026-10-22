@@ -18,6 +18,9 @@ class AppConfig {
     }
   }
 
+  /// Port of the backend dev stack (NGINX_PORT). Only used by the debug fallbacks below.
+  static const String _devPort = '8180';
+
   static const String appName = 'Healthcare EMR System';
   static const String apiVersion = 'v1';
 
@@ -29,8 +32,11 @@ class AppConfig {
     }
     // Dev fallback only: a non-debug build must be given an explicit https URL.
     _requireExplicitUrlOutsideDebug('API_BASE_URL');
-    if (Platform.isAndroid) return 'http://10.0.3.2:8000/api/v1';
-    return 'http://localhost:8000/api/v1';
+    // The backend's nginx listens on NGINX_PORT (8180 in its .env.example). The stock
+    // Android emulator reaches the host at 10.0.2.2; Genymotion (10.0.3.2) and real
+    // devices must pass API_BASE_URL.
+    if (Platform.isAndroid) return 'http://10.0.2.2:$_devPort/api/v1';
+    return 'http://localhost:$_devPort/api/v1';
   }
 
   /// Base URL for the password-reset web flow (routes/auth.php on the
@@ -44,7 +50,7 @@ class AppConfig {
     }
     // Dev fallback only: a non-debug build must be given an explicit https URL.
     _requireExplicitUrlOutsideDebug('AUTH_BASE_URL');
-    return 'http://auth.localhost:8000';
+    return 'http://auth.localhost:$_devPort';
   }
 
   // Timeout configurations
