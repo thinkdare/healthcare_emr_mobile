@@ -493,7 +493,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     style: TextStyle(color: AppTheme.errorColor)),
                 onTap: () {
                   Navigator.of(context).pop();
-                  _handleLogout(context);
+                  // The drawer's own context is unmounted once it closes, so
+                  // the confirm sheet and the post-logout navigation need the
+                  // screen State's context.
+                  _handleLogout(this.context);
                 },
               ),
               const Spacer(),
